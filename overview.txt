@@ -1,4 +1,4 @@
-Node:
+Node (flexible):
 -node object
 
 Tree:
