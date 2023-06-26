@@ -1,0 +1,14 @@
+Node:
+-node object
+
+Tree:
+-Fitted object
+
+TreeBuilder
+-fits  the entire tree
+
+Splitter (vanilla)
+-splitter
+
+Criteria (flexible)
+-criteria simple function
