@@ -1,6 +1,11 @@
 # Ignore the ipynb for testing:
 timing.ipynb
 
+# Ignore the csv testing files
+*.csv
+
+# Ignore vscode setup
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
