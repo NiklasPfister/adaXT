@@ -5,49 +5,98 @@ from typing import Callable
 criteria = gini_index
 
 class Splitter():
-
-    def __init__(self, data: np.dtype, max_features: int = None, max_samples: int = None, sample_weight: list = None, criterion: Callable = None) -> None:
+    """
+    Splitter function used to create splits of the data
+    """
+    def __init__(self, data: np.dtype, criterion: Callable = None) -> None:
+        """
+        Parameters
+        ----------
+        data : np.dtype
+            the data used for the tree entire tree generation
+        criterion : Callable, optional
+            Criteria function for calculating information gain,
+            if None it uses the specified function in the start of splitter.py
+        """
         self.features = data[:, :-1] # all but the last column for each data input
         self.outcomes = data[:, -1] # the last column only
 
         self.n_features = len(self.features[0])
 
-        self.max_features = max_features
-        self.max_samples = max_samples
         if criterion:
             self.criteria = criterion
         else:
             self.criteria = criteria
         self.constant_features = np.empty(len(self.features))
     
-    def test_split(self, index, threshold):
-        start, end = self.start, self.end
-        split = [[], []]
-        idx = 0
-        for i, row in enumerate(self.features[start:end]):
+    def test_split(self, index: int, threshold: float) -> list[list]:
+        """
+        Creates a split on the given feature index with the given threshold
+
+        Parameters
+        ----------
+        index : int
+            index of the feature to split on
+        threshold : float
+            the threshold value to split on
+
+        Returns
+        -------
+        float
+            the information gain given the criteria function
+        list[list]
+            first index is the list of indices split to the left, second index is the list of indices split to the right
+        """        
+        indices = self.indices
+        idx_split = [[], []]
+        for idx in indices:
             # if the value of a given row is below the threshold then add it to the left side
-            if row[index] < threshold:
-                split[0].append(self.outcomes[start + i])
-                idx += 1 # Used to find where the split is made
+            if self.features[idx, index] < threshold:
+                idx_split[0].append(idx)
+
             # else to the right side
             else:
-                split[1].append(self.outcomes[start + i])
+                idx_split[1].append(idx)
         crit = 0
-        for i in range(len(split)):
-            if len(split[i]) == 0:
+        for i in range(len(idx_split)):
+            n_outcomes = len(idx_split[i]) # number of outcomes in the given side
+            # Make sure not to divide by 0 in criteria function
+            if n_outcomes == 0:
                 continue
-            crit += self.criteria(split[i]) * (len(split[i]) / len(self.features[start:end]))
-        return crit, (start + idx)
+            crit += self.criteria(self.outcomes[idx_split[i]]) * (n_outcomes / len(self.features[indices]))
+        return crit, idx_split
     
-    def get_split(self, start, end):
-        self.start, self.end = start, end 
+    """ TODO: Currently getting the same splits, however there are differences in the thresholds between our implementation and sklearn.
+        Reason for this is not clear atm
+    """
+    def get_split(self, indices: list[int]) -> tuple:
+        """
+        gets the best split given the criteria function
+
+        Parameters
+        ----------
+        indices : list[int]
+            indices of all rows to take into account when splitting
+
+        Returns
+        -------
+        list[list]
+            first index is the list of indices split to the left, second index is the list of indices split to the right
+        float
+            the best threshold value for the split
+        int
+            the feature index splitting on
+        float
+            the information gain score of the given split
+        """
+        self.indices = indices
         best_index, best_threshold, best_score = np.inf, np.inf, np.inf
-        split = 0
+        split = []
         # for all features
         for index in range(self.n_features):
 
             # For all samples within the start and end
-            for row in self.features[start:end]:
+            for row in self.features[indices]:
                 crit, t_split = self.test_split(index, row[index])
                 if crit < best_score:
                     best_index, best_threshold, best_score = index, row[index], crit
