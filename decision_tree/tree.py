@@ -1,10 +1,11 @@
-from .criteria import *
-from .splitter import Splitter
+from . import criteria
+from . import splitter
 from typing import Callable
 import numpy as np
+import numpy.typing as npt
 
 
-criteria = gini_index # default criteria function
+crit = criteria.gini_index # default criteria function
 
 
 class Node: # should just be a ctype struct in later implementation
@@ -30,7 +31,7 @@ class Node: # should just be a ctype struct in later implementation
     right_child : Node
         right child, by default None
     """
-    def __init__(self, indices: list[int], depth: int, impurity: float, parent = None, threshold: float = None, split_idx: int = None, value: float = None) -> None:
+    def __init__(self, indices: list[int], depth: int, impurity: float, parent = None, threshold: float|None = None, split_idx: int|None = None, value: float|None = None) -> None:
         """
         Parameters
         ----------
@@ -61,7 +62,7 @@ class Tree:
     """
     Tree object built by the tree builder class
     """
-    def __init__(self, root: Node = None, n_nodes: int = None, n_features: int = None, n_obs: int = None, max_depth: int = None) -> None:
+    def __init__(self, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_obs: int|None = None, max_depth: int|None = None) -> None:
         """
         Parameters
         ----------
@@ -100,7 +101,7 @@ class Tree:
 
 
 class queue_obj:
-    def __init__(self, indices : list, depth : int, idx:int, parent: Node = None, is_left : int = None) -> None:
+    def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
         """
         queue object
 
@@ -118,14 +119,14 @@ class queue_obj:
         """
         self.indices = indices
         self.depth = depth
-        self.idx = idx
+        self.impurity = impurity
         self.parent = parent
         self.is_left = is_left
 class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, data: np.dtype, max_depth: int, criterion: Callable = None, tol : float = 1e-7) -> None:
+    def __init__(self, data: npt.NDArray, max_depth: int, criterion: Callable | None = None, tol : float = 1e-7) -> None:
         """
         Parameters
         ----------
@@ -143,11 +144,10 @@ class DepthTreeBuilder:
         """
         self.max_depth = max_depth
         self.data = data
+        self.criteria = crit
         if criterion:
             self.criteria = criterion
-        else:
-            self.criteria = criteria
-        self.splitter = Splitter(data, self.criteria)
+        self.splitter = splitter.Splitter(data, self.criteria)
         self.tol = tol
     
     def build_tree(self, tree: Tree) -> Tree:
@@ -176,13 +176,12 @@ class DepthTreeBuilder:
         n_obs = len(data)
         queue = [] # built of lists, where each list is the indices of samples in a given node
         
-        all_idx = range(n_obs) # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, 0))
+        all_idx = [*range(n_obs)] # root node contains all indices
+        queue.append(queue_obj(all_idx, 0, criteria(outcomes[all_idx])))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
-            indices, depth, idx, parent, is_left = obj.indices, obj.depth, obj.idx, obj.parent, obj.is_left
-            impurity = criteria(outcomes[indices])
+            indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             is_leaf = (depth >= max_depth or impurity <= self.tol)
 
             if depth > max_depth_seen: # keep track of the max depth seen
@@ -199,9 +198,9 @@ class DepthTreeBuilder:
 
                 left, right = split
                 # Add the left node to the queue of nodes yet to be computed
-                queue.append(queue_obj(left, depth+1, 2*idx+1, new_node, 1))
+                queue.append(queue_obj(left, depth+1, chil_imp[0], new_node, 1))
                 # Add the right node to the queue of nodes yet to be computed
-                queue.append(queue_obj(right, depth+1, 2*idx + 2, new_node, 0))
+                queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
                 mean_value = np.mean(data[indices][-1]) # calculate the mean outcome value of the nodes in the leaf
                 new_node = Node(indices, depth, impurity, parent, value = mean_value)

@@ -1,14 +1,15 @@
 import pandas as pd
 from sklearn import tree
 import matplotlib.pyplot as plt
-from decision_tree import DepthTreeBuilder, Tree
-from decision_tree import gini_index
+import decision_tree
+from importlib import reload
+reload(decision_tree)
 
-data = pd.read_csv(r'C:\Users\Simon\Programming\adaXT\decision_tree\tests\data_banknote_authentication.csv')
+data = pd.read_csv(r'C:\Users\Simon\Programming\adaXT\decision_tree\data\data_banknote_authentication.csv')
 
 data = data.to_numpy()
-builder = DepthTreeBuilder(data, 2, gini_index)
-our_tree = Tree()
+builder = decision_tree.tree.DepthTreeBuilder(data, 2)
+our_tree = decision_tree.tree.Tree()
 our_tree =builder.build_tree(our_tree)
 
 clf = tree.DecisionTreeClassifier(max_depth=2)

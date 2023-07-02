@@ -1,12 +1,12 @@
-import numpy as np
 from typing import Callable
 import numpy as np
+import numpy.typing as npt
 
 class Splitter():
     """
     Splitter function used to create splits of the data
     """
-    def __init__(self, data: np.dtype, criterion: Callable) -> None:
+    def __init__(self, data: npt.NDArray, criterion: Callable) -> None:
         """
         Parameters
         ----------
@@ -24,7 +24,7 @@ class Splitter():
         self.criteria = criterion
         self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
     
-    def test_split(self, index: int, threshold: float) -> list[list]:
+    def test_split(self, index: int, threshold: float) -> tuple:
         """
         Creates a split on the given feature index with the given threshold
 
@@ -91,7 +91,7 @@ class Splitter():
             list of 2 elements, impurity of left child followed by right child
         """
         self.indices = indices
-        best_index, best_threshold, best_score = np.inf, np.inf, np.inf
+        best_index, best_threshold, best_score, best_imp = np.inf, np.inf, np.inf, [-1, -1]
         split = []
         # for all features
         for index in range(self.n_features):
