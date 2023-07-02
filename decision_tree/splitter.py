@@ -1,14 +1,12 @@
-from decision_tree.criteria import *
 import numpy as np
 from typing import Callable
-
-criteria = gini_index
+import numpy as np
 
 class Splitter():
     """
     Splitter function used to create splits of the data
     """
-    def __init__(self, data: np.dtype, criterion: Callable = None) -> None:
+    def __init__(self, data: np.dtype, criterion: Callable) -> None:
         """
         Parameters
         ----------
@@ -23,11 +21,8 @@ class Splitter():
 
         self.n_features = len(self.features[0])
 
-        if criterion:
-            self.criteria = criterion
-        else:
-            self.criteria = criteria
-        self.constant_features = np.empty(len(self.features))
+        self.criteria = criterion
+        self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
     
     def test_split(self, index: int, threshold: float) -> list[list]:
         """
@@ -46,9 +41,12 @@ class Splitter():
             the information gain given the criteria function
         list[list]
             first index is the list of indices split to the left, second index is the list of indices split to the right
+        list[float]
+            the impurity of the left side followed by impurity of the right side
         """        
         indices = self.indices
         idx_split = [[], []]
+        imp = [0, 0]
         for idx in indices:
             # if the value of a given row is below the threshold then add it to the left side
             if self.features[idx, index] < threshold:
@@ -63,8 +61,9 @@ class Splitter():
             # Make sure not to divide by 0 in criteria function
             if n_outcomes == 0:
                 continue
-            crit += self.criteria(self.outcomes[idx_split[i]]) * (n_outcomes / len(self.features[indices]))
-        return crit, idx_split
+            imp[i] = self.criteria(self.outcomes[idx_split[i]]) # calculate the impurity
+            crit += self.criteria(self.outcomes[idx_split[i]]) * (n_outcomes / len(self.features[indices])) # weight the impurity
+        return crit, idx_split, imp
     
     """ TODO: Currently getting the same splits, however there are differences in the thresholds between our implementation and sklearn.
         Reason for this is not clear atm
@@ -87,7 +86,9 @@ class Splitter():
         int
             the feature index splitting on
         float
-            the information gain score of the given split
+            the best score of a split
+        list[float]
+            list of 2 elements, impurity of left child followed by right child
         """
         self.indices = indices
         best_index, best_threshold, best_score = np.inf, np.inf, np.inf
@@ -95,14 +96,13 @@ class Splitter():
         # for all features
         for index in range(self.n_features):
 
-            # For all samples within the start and end
+            # For all samples in the node
             for row in self.features[indices]:
-                crit, t_split = self.test_split(index, row[index])
+                crit, t_split, imp = self.test_split(index, row[index]) # test the split
                 if crit < best_score:
-                    best_index, best_threshold, best_score = index, row[index], crit
+                    best_index, best_threshold, best_score, best_imp = index, row[index], crit, imp # save the best split
                     split = t_split
-        print('X%d < %.3f Gini=%.3f' % ((best_index), best_threshold, best_score))
-        return split, best_threshold, best_index, best_score
+        return split, best_threshold, best_index, best_score, best_imp # return the best split
 
 
 

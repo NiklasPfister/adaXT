@@ -2,7 +2,7 @@ import pandas as pd
 import sys
 from sklearn import tree
 import matplotlib.pyplot as plt
-
+from decision_tree.criteria import *
 from decision_tree.splitter import Splitter
 
 
@@ -10,7 +10,7 @@ data = pd.read_csv('./tests/data_banknote_authentication.csv')
 #print(data.head(657).describe())
 data = data.to_numpy()
 print(data[data[:, 0] <= 0.32])
-splitter = Splitter(data, 1000, 1000)
+splitter = Splitter(data, gini_index)
 
 split, best_threshold, best_index, best_score = splitter.get_split(range(len(data)))
 clf = tree.DecisionTreeClassifier(max_depth=2)
