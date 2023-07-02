@@ -1,8 +1,10 @@
-from decision_tree.criteria import *
-from decision_tree.splitter import Splitter
+from .criteria import *
+from .splitter import Splitter
 from typing import Callable
 import numpy as np
-criteria = gini_index
+
+
+criteria = gini_index # default criteria function
 
 
 class Node: # should just be a ctype struct in later implementation
@@ -46,6 +48,7 @@ class Node: # should just be a ctype struct in later implementation
             mean outcome value of datapoints in leaf node, by default None
         """
         self.indices = indices # indices of values within the node
+        self.depth = depth
         self.impurity = impurity
         self.parent = parent
         self.threshold = threshold # None for leaf nodes.
@@ -57,7 +60,7 @@ class Tree:
     """
     Tree object built by the tree builder class
     """
-    def __init__(self, root: Node, n_nodes: int, n_features: int, n_obs: int, max_depth: int) -> None:
+    def __init__(self, root: Node = None, n_nodes: int = None, n_features: int = None, n_obs: int = None, max_depth: int = None) -> None:
         """
         Parameters
         ----------
@@ -77,6 +80,19 @@ class Tree:
         self.n_features = n_features
         self.n_obs = n_obs
         self.max_depth = max_depth
+    
+    def print_tree(self):
+        queue = []
+        queue.append(self.root)
+        while len(queue) > 0:
+            node = queue.pop()
+            if node:
+                print(f"Depth: {node.depth}")
+                print(f"Impurity: {node.impurity}")
+                queue.append(node.left_child)
+                queue.append(node.right_child)
+
+
 
 class queue_obj:
     def __init__(self, indices : list, depth : int, idx:int, parent: Node = None, is_left : int = None) -> None:
@@ -147,17 +163,21 @@ class DepthTreeBuilder:
         max_depth = self.max_depth
         criteria = self.criteria
         data = self.data
+        outcomes = data[:, -1]
+        root = None
     
         max_depth_seen = 0
-
+        
         n_obs = len(data)
         queue = [] # built of lists, where each list is the indices of samples in a given node
         
-        all_idx = [range(n_obs)] # root node contains all indices
+        all_idx = range(n_obs) # root node contains all indices
         queue.append(queue_obj(all_idx, 0, 0))
+        n_nodes = 0
         while len(queue) > 0:
-            indices, depth, idx, parent, is_left = queue.pop()
-            impurity = criteria(indices)
+            obj = queue.pop()
+            indices, depth, idx, parent, is_left = obj.indices, obj.depth, obj.idx, obj.parent, obj.is_left
+            impurity = criteria(outcomes[indices])
             is_leaf = (depth >= max_depth or impurity <= self.tol)
 
             if depth > max_depth_seen: # keep track of the max depth seen
@@ -166,10 +186,10 @@ class DepthTreeBuilder:
             if not is_leaf:
                 split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(indices)
                 # Add the decision node to the list of nodes
-                new_node = Node(indices, depth, criteria(indices), parent, best_threshold, best_index)
-                if is_left:
+                new_node = Node(indices, depth, impurity, parent, best_threshold, best_index)
+                if is_left and parent: # if there is a parent
                     parent.left_child = new_node
-                else:
+                elif parent:
                     parent.right_child = new_node
 
                 left, right = split
@@ -179,9 +199,22 @@ class DepthTreeBuilder:
                 queue.append(queue_obj(right, depth+1, 2*idx + 2, new_node, 0))
             else:
                 mean_value = np.mean(data[indices][-1]) # calculate the mean outcome value of the nodes in the leaf
-                new_node = Node(indices, depth, criteria(indices), parent, value = mean_value)
+                new_node = Node(indices, depth, impurity, parent, value = mean_value)
+                if is_left and parent: # if there is a parent
+                    parent.left_child = new_node
+                elif parent:
+                    parent.right_child = new_node
+            if n_nodes == 0:
+                root = new_node
+            n_nodes += 1 # number of nodes increase by 1
 
+        tree.n_nodes = n_nodes
+        tree.max_depth = max_depth_seen
+        tree.n_features = splitter.n_features
+        tree.n_obs = n_obs
+        tree.root = root
+        return tree
 
     
 
-        
+    
