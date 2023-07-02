@@ -52,6 +52,7 @@ class Node: # should just be a ctype struct in later implementation
         self.impurity = impurity
         self.parent = parent
         self.threshold = threshold # None for leaf nodes.
+        self.split_idx = split_idx # None for leaf nodes.
         self.value = value # None for decision nodes
         self.left_child = None
         self.right_child = None
@@ -89,6 +90,10 @@ class Tree:
             if node:
                 print(f"Depth: {node.depth}")
                 print(f"Impurity: {node.impurity}")
+                if node.value:
+                    print(f"LEAF WITH VAL: {node.value}")
+                else:
+                    print(f"Decision WITH x{node.split_idx} <= {node.threshold}")
                 queue.append(node.left_child)
                 queue.append(node.right_child)
 

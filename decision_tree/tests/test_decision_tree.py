@@ -1,5 +1,4 @@
 import pandas as pd
-import sys
 from sklearn import tree
 import matplotlib.pyplot as plt
 from decision_tree import DepthTreeBuilder, Tree
