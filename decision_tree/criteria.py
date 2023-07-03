@@ -1,4 +1,5 @@
 # Could proberbly be quicker in Cython
+# TODO: add feature input to criteria throughout
 def gini_index(y):
     """
     Calculates the gini coefficient with the formula gini = 1 - sum(P_i**2) where P_i is the probability of class i E.G. what is 

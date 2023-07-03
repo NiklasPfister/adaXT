@@ -6,7 +6,7 @@ class Splitter():
     """
     Splitter function used to create splits of the data
     """
-    def __init__(self, data: npt.NDArray, criterion: Callable) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable) -> None:
         """
         Parameters
         ----------
@@ -16,8 +16,8 @@ class Splitter():
             Criteria function for calculating information gain,
             if None it uses the specified function in the start of splitter.py
         """
-        self.features = data[:, :-1] # all but the last column for each data input
-        self.outcomes = data[:, -1] # the last column only
+        self.features = X 
+        self.outcomes = Y 
 
         self.n_features = len(self.features[0])
 
@@ -44,6 +44,7 @@ class Splitter():
         list[float]
             the impurity of the left side followed by impurity of the right side
         """        
+        #TODO: add threshold as the mean between the nearest neighbour
         indices = self.indices
         idx_split = [[], []]
         imp = [0, 0]
@@ -62,7 +63,7 @@ class Splitter():
             if n_outcomes == 0:
                 continue
             imp[i] = self.criteria(self.outcomes[idx_split[i]]) # calculate the impurity
-            crit += self.criteria(self.outcomes[idx_split[i]]) * (n_outcomes / len(self.features[indices])) # weight the impurity
+            crit += imp[i] * (n_outcomes / len(self.features[indices])) # weight the impurity
         return crit, idx_split, imp
     
     """ TODO: Currently getting the same splits, however there are differences in the thresholds between our implementation and sklearn.

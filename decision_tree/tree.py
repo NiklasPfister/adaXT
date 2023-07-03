@@ -22,6 +22,8 @@ class Node: # should just be a ctype struct in later implementation
         parent node, by default None
     impurity : float
         impurity of the node
+    n_samples : int
+        number of samples within the node
     threshold : float, optional
         threshold value of a decision node, by default None
     value : float, optional
@@ -31,7 +33,7 @@ class Node: # should just be a ctype struct in later implementation
     right_child : Node
         right child, by default None
     """
-    def __init__(self, indices: list[int], depth: int, impurity: float, parent = None, threshold: float|None = None, split_idx: int|None = None, value: float|None = None) -> None:
+    def __init__(self, indices: list[int], depth: int, is_leaf: bool, impurity: float, n_samples: int, parent = None, threshold: float|None = None, split_idx: int|None = None, value: float|None = None) -> None:
         """
         Parameters
         ----------
@@ -39,6 +41,8 @@ class Node: # should just be a ctype struct in later implementation
             indices within the data, which are apart of the node
         depth : int
             depth of the node
+        is_leaf : bool
+            whether or not the node is a leafnode
         parent : Node, optional
             parent node, by default None
         threshold : float, optional
@@ -50,8 +54,10 @@ class Node: # should just be a ctype struct in later implementation
         """
         self.indices = indices # indices of values within the node
         self.depth = depth
+        self.is_leaf = is_leaf
         self.impurity = impurity
         self.parent = parent
+        self.n_samples = n_samples
         self.threshold = threshold # None for leaf nodes.
         self.split_idx = split_idx # None for leaf nodes.
         self.value = value # None for decision nodes
@@ -76,6 +82,8 @@ class Tree:
             number of observations in the data
         max_depth : int
             maximum depth of the tree
+        list_leaf_nodes : list[Node]
+            list of leaf nodes #TODO not yet implemented
         """
         self.root = root
         self.n_nodes = n_nodes
@@ -91,14 +99,17 @@ class Tree:
             if node:
                 print(f"Depth: {node.depth}")
                 print(f"Impurity: {node.impurity}")
-                if node.value:
+                print(f"samples: {node.n_samples}")
+                if node.is_leaf:
                     print(f"LEAF WITH VAL: {node.value}")
                 else:
                     print(f"Decision WITH x{node.split_idx} <= {node.threshold}")
+                print("") # spacing
                 queue.append(node.left_child)
                 queue.append(node.right_child)
 
-
+    #TODO: prediction of which leaf a new sample would end up in
+    #TODO: Implement NxN matrix which weighs the data in nodes, for example x_ij is true if index i and j are in the same leaf node(theory currently) seperate function.
 
 class queue_obj:
     def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
@@ -126,7 +137,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, data: npt.NDArray, max_depth: int, criterion: Callable | None = None, tol : float = 1e-7) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, max_depth: int, criterion: Callable | None = None, tol : float = 1e-9) -> None:
         """
         Parameters
         ----------
@@ -143,11 +154,12 @@ class DepthTreeBuilder:
             tolerance for impurity of leaf nodes
         """
         self.max_depth = max_depth
-        self.data = data
+        self.features = X
+        self.outcomes = Y
         self.criteria = crit
         if criterion:
             self.criteria = criterion
-        self.splitter = splitter.Splitter(data, self.criteria)
+        self.splitter = splitter.Splitter(X, Y, self.criteria)
         self.tol = tol
     
     def build_tree(self, tree: Tree) -> Tree:
@@ -167,13 +179,12 @@ class DepthTreeBuilder:
         splitter = self.splitter
         max_depth = self.max_depth
         criteria = self.criteria
-        data = self.data
-        outcomes = data[:, -1]
+        outcomes = self.outcomes
         root = None
     
         max_depth_seen = 0
         
-        n_obs = len(data)
+        n_obs = len(outcomes)
         queue = [] # built of lists, where each list is the indices of samples in a given node
         
         all_idx = [*range(n_obs)] # root node contains all indices
@@ -190,7 +201,7 @@ class DepthTreeBuilder:
             if not is_leaf:
                 split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(indices)
                 # Add the decision node to the list of nodes
-                new_node = Node(indices, depth, impurity, parent, best_threshold, best_index)
+                new_node = Node(indices, depth, is_leaf, impurity, len(indices), parent, best_threshold, best_index)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node
                 elif parent:
@@ -202,8 +213,8 @@ class DepthTreeBuilder:
                 # Add the right node to the queue of nodes yet to be computed
                 queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
-                mean_value = np.mean(data[indices][-1]) # calculate the mean outcome value of the nodes in the leaf
-                new_node = Node(indices, depth, impurity, parent, value = mean_value)
+                mean_value = float(np.mean(outcomes[indices])) # calculate the mean outcome value of the nodes in the leaf
+                new_node = Node(indices, depth, is_leaf, impurity, len(indices), parent, value = mean_value)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node
                 elif parent:
