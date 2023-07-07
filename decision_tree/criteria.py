@@ -1,15 +1,22 @@
+import numpy.typing as npt
+import numpy as np
 # Could proberbly be quicker in Cython
 # TODO: add feature input to criteria throughout
-def gini_index(y):
+def gini_index(x: npt.NDArray, y: npt.NDArray) -> float:
     """
-    Calculates the gini coefficient with the formula gini = 1 - sum(P_i**2) where P_i is the probability of class i E.G. what is 
-    the chance that an observation is in the class i out of all the classes we have in y
+    Calculates the gini coefficient given outcomes, y.
 
-    Args:
-        data: A list of the outcomes(y-values)
+    Parameters
+    ----------
+    x : npt.NDArray
+        features, not used in this implementation
+    y : npt.NDArray
+        1-dimensional outcomes
 
-    Returns:
-        returns the gini index of the data (double) 
+    Returns
+    -------
+    float  
+        The gini coefficient
     """
     # Finds unique y values
     class_labels = list(set(y))
@@ -21,3 +28,26 @@ def gini_index(y):
         proportion_cls = n_in_class / y_len
         sum += proportion_cls**2
     return 1 - sum    
+
+def variance(x: npt.NDArray, y:npt.NDArray) -> float:
+    """
+    Calculates the variance 
+
+    Parameters
+    ----------
+    x : npt.NDArray
+        features, not used in this implementation
+    y : npt.NDArray
+        1-dimensional outcomes
+
+    Returns
+    -------
+    float
+        _description_
+    """
+    assert(y.ndim == 1), f'Number of dimensions is not correct it is {y.ndim}'
+    cur_sum = 0
+    mu = np.mean(y)
+    for val in y:
+        cur_sum += (val - mu)**2
+    return cur_sum/len(y)

@@ -68,7 +68,7 @@ class Tree:
     """
     Tree object built by the tree builder class
     """
-    def __init__(self, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_obs: int|None = None, max_depth: int|None = None) -> None:
+    def __init__(self, max_depth: int, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_obs: int|None = None) -> None:
         """
         Parameters
         ----------
@@ -137,7 +137,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, max_depth: int, criterion: Callable | None = None, tol : float = 1e-9) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable | None = None, tol : float = 1e-9) -> None:
         """
         Parameters
         ----------
@@ -153,7 +153,6 @@ class DepthTreeBuilder:
         tol : float
             tolerance for impurity of leaf nodes
         """
-        self.max_depth = max_depth
         self.features = X
         self.outcomes = Y
         self.criteria = crit
@@ -177,8 +176,9 @@ class DepthTreeBuilder:
             the tree object built
         """
         splitter = self.splitter
-        max_depth = self.max_depth
+        max_depth = tree.max_depth
         criteria = self.criteria
+        features  = self.features
         outcomes = self.outcomes
         root = None
     
@@ -188,7 +188,7 @@ class DepthTreeBuilder:
         queue = [] # built of lists, where each list is the indices of samples in a given node
         
         all_idx = [*range(n_obs)] # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria(outcomes[all_idx])))
+        queue.append(queue_obj(all_idx, 0, criteria(features[all_idx], outcomes[all_idx])))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()

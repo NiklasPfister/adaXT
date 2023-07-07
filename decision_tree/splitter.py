@@ -43,18 +43,33 @@ class Splitter():
             first index is the list of indices split to the left, second index is the list of indices split to the right
         list[float]
             the impurity of the left side followed by impurity of the right side
+        float
+            the mean threshold of the split feature and the closest neighbour with a smaller value.
         """        
         #TODO: add threshold as the mean between the nearest neighbour
+        features = self.features
+        outcomes = self.outcomes
+        criteria = self.criteria
         indices = self.indices
+        closets_neighbour = [np.inf, 0]
         idx_split = [[], []]
         imp = [0, 0]
         for idx in indices:
+            closest_dist, _ = closets_neighbour
             # if the value of a given row is below the threshold then add it to the left side
-            if self.features[idx, index] < threshold:
+            other_val = features[idx, index]
+            if other_val < threshold:
+                # Calculate the distance between this and the threshold
+                distance = threshold - other_val
+                if distance < closest_dist:
+                    closets_neighbour = [distance, idx] # store the closest neighbour on the left side
                 idx_split[0].append(idx)
 
             # else to the right side
             else:
+                # distance = other_val - threshold
+                # if distance < closest_dist:
+                #     closets_neighbour = [distance, idx]
                 idx_split[1].append(idx)
         crit = 0
         for i in range(len(idx_split)):
@@ -62,13 +77,13 @@ class Splitter():
             # Make sure not to divide by 0 in criteria function
             if n_outcomes == 0:
                 continue
-            imp[i] = self.criteria(self.outcomes[idx_split[i]]) # calculate the impurity
+            imp[i] = criteria(features[idx_split[i]], outcomes[idx_split[i]]) # calculate the impurity
             crit += imp[i] * (n_outcomes / len(self.features[indices])) # weight the impurity
-        return crit, idx_split, imp
+        _, closest_idx = closets_neighbour
+        mean_thresh = np.mean([threshold, features[closest_idx, index]])
+        return crit, idx_split, imp, mean_thresh
     
-    """ TODO: Currently getting the same splits, however there are differences in the thresholds between our implementation and sklearn.
-        Reason for this is not clear atm
-    """
+
     def get_split(self, indices: list[int]) -> tuple:
         """
         gets the best split given the criteria function
@@ -99,9 +114,9 @@ class Splitter():
 
             # For all samples in the node
             for row in self.features[indices]:
-                crit, t_split, imp = self.test_split(index, row[index]) # test the split
+                crit, t_split, imp, threshold = self.test_split(index, row[index]) # test the split
                 if crit < best_score:
-                    best_index, best_threshold, best_score, best_imp = index, row[index], crit, imp # save the best split
+                    best_index, best_threshold, best_score, best_imp = index, threshold, crit, imp # save the best split
                     split = t_split
         return split, best_threshold, best_index, best_score, best_imp # return the best split
 
