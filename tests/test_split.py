@@ -3,14 +3,21 @@ import sys
 from sklearn import tree
 import matplotlib.pyplot as plt
 
-from decision_tree.splitter import Splitter
+# Needed on my installation to run, comment out for running on Simon
+sys.path.append("decision_tree")
+from splitter import Splitter
+
+# Uncomment on Simon
+#from decision_tree.splitter import Splitter
 
 
-data = pd.read_csv('./tests/data_banknote_authentication.csv')
+data = pd.read_csv('./tests/diabetes_prediction_dataset_short.csv')  
+
+
 #print(data.head(657).describe())
 data = data.to_numpy()
-print(data[data[:, 0] <= 0.32])
-splitter = Splitter(data, 1000, 1000)
+#print(data[data[:, 0] <= 0.32])
+splitter = Splitter(data)
 
 split, best_threshold, best_index, best_score = splitter.get_split(range(len(data)))
 clf = tree.DecisionTreeClassifier(max_depth=2)
