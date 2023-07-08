@@ -1,4 +1,12 @@
-from decision_tree.criteria import *
+import sys
+from typing import List
+
+# On William
+from criteria import *
+
+# On Simon
+#from decision_tree.criteria import *
+
 import numpy as np
 from typing import Callable
 
@@ -14,6 +22,9 @@ class Splitter():
         ----------
         data : np.dtype
             the data used for the tree entire tree generation
+
+            maybe this should be split into features and outcome before hand so we make it explicit what the 
+            features are, and what the outcomes are?
         criterion : Callable, optional
             Criteria function for calculating information gain,
             if None it uses the specified function in the start of splitter.py
@@ -28,8 +39,12 @@ class Splitter():
         else:
             self.criteria = criteria
         self.constant_features = np.empty(len(self.features))
+        '''
+        Todo: make checks on data such that it has the right shape, columns and so on?
+        maybe restrict data to be a pd.df only?
+        '''
     
-    def test_split(self, index: int, threshold: float) -> list[list]:
+    def test_split(self, index: int, threshold: float) -> List[List]:
         """
         Creates a split on the given feature index with the given threshold
 
@@ -69,7 +84,7 @@ class Splitter():
     """ TODO: Currently getting the same splits, however there are differences in the thresholds between our implementation and sklearn.
         Reason for this is not clear atm
     """
-    def get_split(self, indices: list[int]) -> tuple:
+    def get_split(self, indices: List[int]) -> tuple:
         """
         gets the best split given the criteria function
 
