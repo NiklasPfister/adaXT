@@ -1,25 +1,18 @@
 import pandas as pd
-import sys
 from sklearn import tree
 import matplotlib.pyplot as plt
-
-# Needed on my installation to run, comment out for running on Simon
-sys.path.append("decision_tree")
-from splitter import Splitter
-
-# Uncomment on Simon
-#from decision_tree.splitter import Splitter
+from decision_tree.criteria import *
+from decision_tree.splitter import Splitter
 
 
-data = pd.read_csv('./tests/diabetes_prediction_dataset_short.csv')  
-
-
+data = pd.read_csv(r'C:\Users\Simon\Programming\adaXT\decision_tree\data\data_banknote_authentication.csv')
 #print(data.head(657).describe())
 data = data.to_numpy()
-#print(data[data[:, 0] <= 0.32])
-splitter = Splitter(data)
+print(data[data[:, 0] <= 0.32])
+splitter = Splitter(data, gini_index)
 
-split, best_threshold, best_index, best_score = splitter.get_split(range(len(data)))
+all_idx = [*range(len(data))]
+split, best_threshold, best_index, best_score, best_imp = splitter.get_split(all_idx)
 clf = tree.DecisionTreeClassifier(max_depth=2)
 clf.fit(data[:, :-1], data[:, -1])
 
