@@ -68,7 +68,7 @@ class Tree:
     """
     Tree object built by the tree builder class
     """
-    def __init__(self, max_depth: int, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_obs: int|None = None) -> None:
+    def __init__(self, max_depth: int, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_obs: int|None = None, leaf_nodes: list[Node]|None = None) -> None:
         """
         Parameters
         ----------
@@ -83,13 +83,14 @@ class Tree:
         max_depth : int
             maximum depth of the tree
         list_leaf_nodes : list[Node]
-            list of leaf nodes #TODO not yet implemented
+            list of leaf nodes
         """
         self.root = root
         self.n_nodes = n_nodes
         self.n_features = n_features
         self.n_obs = n_obs
         self.max_depth = max_depth
+        self.leaf_nodes = leaf_nodes
     
     def print_tree(self):
         queue = []
@@ -108,8 +109,89 @@ class Tree:
                 queue.append(node.left_child)
                 queue.append(node.right_child)
 
-    #TODO: prediction of which leaf a new sample would end up in
-    #TODO: Implement NxN matrix which weighs the data in nodes, for example x_ij is true if index i and j are in the same leaf node(theory currently) seperate function.
+    def predict(self, X: npt.NDArray, binary: bool = False) -> npt.NDArray|int:
+        #TODO: test it
+        """
+        Predicts a y-value for given X values
+
+        Parameters
+        ----------
+        X : npt.NDArray
+            (N, M) numpy array with features to predict
+        
+        binary : bool
+            whether the predicted values should be binary or not
+
+        Returns
+        -------
+        npt.NDArray|int
+            (N, M+1) numpy array with last column being the predicted y-values
+        """
+        # Check if node exists
+        row, col = X.shape
+        data = np.empty((row, col+1))
+
+        if not self.root: 
+            return -1
+        for i in range(row):
+            cur_node = self.root
+            while not cur_node.is_leaf:
+                if not cur_node: 
+                    return -1
+                if X[i][cur_node.split_idx] < cur_node.threshold:
+                    # Check if left child exists
+                    if not cur_node.left_child:
+                        return -1
+                    cur_node = cur_node.left_child
+                else:
+                    # Check if right child exists
+                    if not cur_node.right_child:
+                        return -1
+                    cur_node = cur_node.right_child
+            data[i, :-1] =  X[i]
+
+            # Check whether or not to give a binary prediction
+            if binary and cur_node.value:
+                if cur_node.value < 0.5:
+                    data[i, -1] = 0
+                else:
+                    data[i, -1] = 1
+            else:
+                data[i, -1] = cur_node.value
+        return data
+    
+    def weight_matrix(self) -> npt.NDArray|int:
+        #TODO: test it
+        """
+        Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
+
+        Returns
+        -------
+        npt.NDArray|int
+            NxN matrix, or -1 if there no observations or leaf_nodes in the tree.
+        """
+        leaf_nodes = self.leaf_nodes
+        n_obs = self.n_obs
+        if (not n_obs) or (not leaf_nodes): # make sure that there are calculated observations
+            return -1
+        
+        data = np.empty((n_obs, n_obs))
+        for x_idx in range(n_obs):
+            # find the leaf node
+            for node in leaf_nodes: 
+                if x_idx in node.indices:
+                    # find all values in the leaf node
+                    for y_idx in range(n_obs):
+                        if x_idx == y_idx: # if it is the same index, then it is always 1
+                            data[x_idx, y_idx] = 1
+                            continue
+                        if y_idx in node.indices: # if the alternative index is in the same leaf
+                            data[x_idx, y_idx] = 1
+                        else:
+                            data[x_idx, y_idx] = 0 # otherwise 0
+        return data
+
+
 
 class queue_obj:
     def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
@@ -182,6 +264,7 @@ class DepthTreeBuilder:
         outcomes = self.outcomes
         root = None
     
+        leaf_node_list = []
         max_depth_seen = 0
         
         n_obs = len(outcomes)
@@ -219,6 +302,7 @@ class DepthTreeBuilder:
                     parent.left_child = new_node
                 elif parent:
                     parent.right_child = new_node
+                leaf_node_list.append(new_node)
             if n_nodes == 0:
                 root = new_node
             n_nodes += 1 # number of nodes increase by 1
@@ -228,6 +312,7 @@ class DepthTreeBuilder:
         tree.n_features = splitter.n_features
         tree.n_obs = n_obs
         tree.root = root
+        tree.leaf_nodes = leaf_node_list
         return tree
 
     

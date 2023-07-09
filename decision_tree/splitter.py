@@ -46,7 +46,6 @@ class Splitter():
         float
             the mean threshold of the split feature and the closest neighbour with a smaller value.
         """        
-        #TODO: add threshold as the mean between the nearest neighbour
         features = self.features
         outcomes = self.outcomes
         criteria = self.criteria
