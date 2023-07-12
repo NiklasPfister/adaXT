@@ -3,13 +3,14 @@
 #from . import splitter
 
 # On William
-import criteria
-import splitter_new
+from . import criteria
+from . import splitter_new
 
 # General
-from typing import Callable, List, Union
+from typing import Callable, List
 import numpy as np
 import numpy.typing as npt
+import sys
 
 
 crit = criteria.gini_index # default criteria function
@@ -70,7 +71,7 @@ class DecisionNode(Node):
         self.parent = parent
 
 class LeafNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, value: float, parent: DecisionNode) -> None:
+    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, value: list[float], parent: DecisionNode) -> None:
         """
         Leaf Node class
 
@@ -84,7 +85,7 @@ class LeafNode(Node):
             _description_
         n_samples : int
             _description_
-        value : float
+        value : list[float]
             mean value of the outcomes in the leaf node
         parent : _type_, optional
             _description_, by default None
@@ -95,37 +96,53 @@ class LeafNode(Node):
 
 
 class Tree:
-    def __init__(self, max_depth: int, root: Node|None = None, n_nodes: int|None = None, n_features: int|None = None, n_classes: int|None = None, n_obs: int|None = None, leaf_nodes: list[LeafNode]|None = None) -> None:
+    """
+    Tree object
+    """
+    def __init__(self, tree_type: str, max_depth: int = sys.maxsize, impurity_tol: float = 1e-20, min_samples: int = 2,
+                root : Node|None = None, n_nodes: int=-1, n_features: int=-1, n_classes: int=-1, n_obs: int=-1,
+                leaf_nodes: list[Node]|None = None) -> None:
         """
-        Tree object built by the tree builder class
-
         Parameters
         ----------
+        tree_type : str
+            Classification or Regression
         max_depth : int
-            maximum depth of the tree
-        root : Node | None, optional
-            root node, by default None
-        n_nodes : int | None, optional
-            number of nodes in the tree, by default None
-        n_features : int | None, optional
-            number of features in the dataset, by default None
-        n_classes : int | None, optional
-            number of classes in the dataset, by default None
-        n_obs : int | None, optional
-            number of observations in the dataset, by default None
-        leaf_nodes : list[Node] | None, optional
-            number of leaf nodes in the tree, by default None
+            maximum depth of the tree, by default int(np.inf)
+        impurity_tol : float
+            the tolerance of impurity in a leaf node, by default 1e-20
+        min_samples : int
+            the minimum amount of samples in a leaf node, by deafult 2
+        root : Node | None
+            root node, by default None, added after fitting
+        n_nodes : int | None
+            number of nodes in the tree, by default -1, added after fitting
+        n_features : int | None
+            number of features in the dataset, by default -1, added after fitting
+        n_classes : int | None
+            number of classes in the dataset, by default -1, added after fitting
+        n_obs : int | None
+            number of observations in the dataset, by default -1, added after fitting
+        leaf_nodes : list[Node] | None
+            number of leaf nodes in the tree, by default None, added after fitting
         """
+        tree_types = ["Classification", "Regression"]
+        assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
+        self.max_depth = max_depth
+        self.impurity_tol = impurity_tol
+        self.min_samples = min_samples
+        self.tree_type = tree_type
+        self.leaf_nodes = leaf_nodes
         self.root = root
         self.n_nodes = n_nodes
         self.n_features = n_features
         self.n_classes = n_classes
         self.n_obs = n_obs
-        self.max_depth = max_depth
-        self.leaf_nodes = leaf_nodes
     
-    def print_tree(self):
-        print("Method has been moved to tree_utils")
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None) -> None:
+        builder = DepthTreeBuilder(X, Y, criteria, splitter, self.impurity_tol)
+        builder.build_tree(self)
+
 
     def predict(self, X: npt.NDArray) -> npt.NDArray|int:
         #TODO: test it
@@ -196,7 +213,7 @@ class Tree:
 
 
 class queue_obj:
-    def __init__(self, indices : list, depth : int, impurity: float, parent: Union[Node, None] = None, is_left : Union[int, None] = None) -> None:
+    def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
         """
         queue object
 
@@ -222,7 +239,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Union[Callable, None] = None, tol : float = 1e-9) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9) -> None:
         """
         Parameters
         ----------
@@ -235,6 +252,8 @@ class DepthTreeBuilder:
         criterion : Callable
             the function to calculate the criteria used for splitting, 
             by default the one specied at the top of the file.
+        Splitter : Splitter
+            optional splitter class, uses standard implementation by default
         tol : float
             tolerance for impurity of leaf nodes
         """
@@ -244,8 +263,23 @@ class DepthTreeBuilder:
         if criterion:
             self.criteria = criterion
         self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
+        if Splitter:
+            self.splitter = Splitter
+        
         self.tol = tol
-    
+    def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
+        if tree.tree_type == "Regression":
+            return [float(np.mean(node_outcomes))]
+        lst = [0.0 for _ in range(n_classes)] # create an empty list for each class type   
+        classes = self.classes
+        for i in range(n_classes):
+            for idx in range(n_samples):
+                if node_outcomes[idx] == classes[i]:
+                    lst[i] += 1 # add 1, if the value is the same as class value
+            lst[i] = lst[i]/n_samples # weight by the number of total samples in the leaf
+        return lst
+
+        
     def build_tree(self, tree: Tree) -> Tree:
         """
         Builds the tree 
@@ -261,10 +295,15 @@ class DepthTreeBuilder:
             the tree object built
         """
         splitter = self.splitter
-        max_depth = tree.max_depth
+        min_samples = tree.min_samples
         criteria = self.criteria
         features  = self.features
         outcomes = self.outcomes
+
+        max_depth = tree.max_depth
+        self.classes = np.unique(outcomes)
+        n_classes = len(self.classes)
+
         root = None
     
         leaf_node_list = []
@@ -279,7 +318,9 @@ class DepthTreeBuilder:
         while len(queue) > 0:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
-            is_leaf = (depth >= max_depth or impurity <= self.tol)
+            n_samples = len(indices)
+            is_leaf = (depth >= max_depth or impurity <= self.tol
+                       or n_samples < min_samples) # bool used to determine wheter a node is a leaf or not, feel free to add or statements
 
             if depth > max_depth_seen: # keep track of the max depth seen
                 max_depth_seen = depth
@@ -287,7 +328,7 @@ class DepthTreeBuilder:
             if not is_leaf:
                 split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(indices)
                 # Add the decision node to the list of nodes
-                new_node = DecisionNode(indices, depth, impurity, len(indices), best_threshold, best_index, parent = parent)
+                new_node = DecisionNode(indices, depth, impurity, n_samples, best_threshold, best_index, parent = parent)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node
                 elif parent:
@@ -299,8 +340,8 @@ class DepthTreeBuilder:
                 # Add the right node to the queue of nodes yet to be computed
                 queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
-                mean_value = float(np.mean(outcomes[indices])) # calculate the mean outcome value of the nodes in the leaf
-                new_node = LeafNode(indices, depth, impurity, len(indices),mean_value, parent=parent)
+                mean_value = self.get_mean(tree, outcomes[indices], n_samples, n_classes)
+                new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node
                 elif parent:

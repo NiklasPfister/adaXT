@@ -1,17 +1,10 @@
-import sys
 from typing import List
-
-# On William
-from criteria import *
-
-# On Simon
-#from decision_tree.criteria import *
 
 from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-class Splitter_new():
+class Splitter_new:
     """
     Splitter function used to create splits of the data
     """
@@ -40,14 +33,14 @@ class Splitter_new():
     '''
     Sorting function to sort a feature, returns a list of the sorted indices
     '''
-    def sort_feature(self, indices: List[int], feature: List[float]) -> List[int]:
+    def sort_feature(self, indices: List[int], feature: npt.NDArray) -> List[int]:
         """
         Parameters
         ----------
         indices : List[int]
             A list of the indices which are to be sorted over
         
-        feature: List[float]
+        feature: npt.NDArray
             A list containing the feature values that are to be sorted over
             
         
@@ -155,8 +148,7 @@ class Splitter_new():
 def main():
     lst = [97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2]
     bin_lst = [0, 0, 1, 0, 1, 0]
-    [0, 1, 3, 5, 2, 4]
-
+    Splitter = Splitter_new(lst, bin_lst, gini_index)
     sorted = Splitter.sort_feature(range(len(bin_lst)), bin_lst)
     x = 2 + 2
 

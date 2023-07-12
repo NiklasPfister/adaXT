@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 import sys
 # Needed on my installation
 sys.path.append("decision_tree")
-from criteria import *
-from splitter_new import Splitter_new
-from splitter import Splitter
+from adaXT.decision_tree.criteria import *
+from adaXT.decision_tree.splitter_new import Splitter_new
+from adaXT.decision_tree.splitter import Splitter
 import time
 
 

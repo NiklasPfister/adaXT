@@ -1,11 +1,4 @@
-import sys
 from typing import List
-
-# On William
-from criteria import *
-
-# On Simon
-#from decision_tree.criteria import *
 
 from typing import Callable
 import numpy as np
@@ -91,7 +84,7 @@ class Splitter():
             imp[i] = criteria(features[idx_split[i]], outcomes[idx_split[i]]) # calculate the impurity
             crit += imp[i] * (n_outcomes / len(self.features[indices])) # weight the impurity
         _, closest_idx = closets_neighbour
-        mean_thresh = np.mean([threshold, features[closest_idx, index]])
+        mean_thresh = (threshold + features[closest_idx, index])/2
         return crit, idx_split, imp, mean_thresh
     
 
