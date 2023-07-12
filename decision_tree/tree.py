@@ -1,6 +1,13 @@
-from . import criteria
-from . import splitter
-from typing import Callable
+# On Simon
+#from . import criteria
+#from . import splitter
+
+# On William
+import criteria
+import splitter_new
+
+# General
+from typing import Callable, List, Union
 import numpy as np
 import numpy.typing as npt
 
@@ -33,7 +40,7 @@ class Node: # should just be a ctype struct in later implementation
     right_child : Node
         right child, by default None
     """
-    def __init__(self, indices: list[int], depth: int, is_leaf: bool, impurity: float, n_samples: int, parent = None, threshold: float|None = None, split_idx: int|None = None, value: float|None = None) -> None:
+    def __init__(self, indices: List[int], depth: int, is_leaf: bool, impurity: float, n_samples: int, parent = None, threshold: Union[float, None] = None, split_idx: Union[int, None] = None, value: Union[float, None] = None) -> None:
         """
         Parameters
         ----------
@@ -93,21 +100,7 @@ class Tree:
         self.leaf_nodes = leaf_nodes
     
     def print_tree(self):
-        queue = []
-        queue.append(self.root)
-        while len(queue) > 0:
-            node = queue.pop()
-            if node:
-                print(f"Depth: {node.depth}")
-                print(f"Impurity: {node.impurity}")
-                print(f"samples: {node.n_samples}")
-                if node.is_leaf:
-                    print(f"LEAF WITH VAL: {node.value}")
-                else:
-                    print(f"Decision WITH x{node.split_idx} <= {node.threshold}")
-                print("") # spacing
-                queue.append(node.left_child)
-                queue.append(node.right_child)
+        print("Method has been moved to tree_utils")
 
     def predict(self, X: npt.NDArray, binary: bool = False) -> npt.NDArray|int:
         #TODO: test it
@@ -194,7 +187,7 @@ class Tree:
 
 
 class queue_obj:
-    def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
+    def __init__(self, indices : list, depth : int, impurity: float, parent: Union[Node, None] = None, is_left : Union[int, None] = None) -> None:
         """
         queue object
 
@@ -215,11 +208,12 @@ class queue_obj:
         self.impurity = impurity
         self.parent = parent
         self.is_left = is_left
+        
 class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable | None = None, tol : float = 1e-9) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Union[Callable, None] = None, tol : float = 1e-9) -> None:
         """
         Parameters
         ----------
@@ -240,7 +234,7 @@ class DepthTreeBuilder:
         self.criteria = crit
         if criterion:
             self.criteria = criterion
-        self.splitter = splitter.Splitter(X, Y, self.criteria)
+        self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
         self.tol = tol
     
     def build_tree(self, tree: Tree) -> Tree:

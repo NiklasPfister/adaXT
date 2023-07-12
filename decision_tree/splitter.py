@@ -1,3 +1,12 @@
+import sys
+from typing import List
+
+# On William
+from criteria import *
+
+# On Simon
+#from decision_tree.criteria import *
+
 from typing import Callable
 import numpy as np
 import numpy.typing as npt
@@ -12,6 +21,9 @@ class Splitter():
         ----------
         data : np.dtype
             the data used for the tree entire tree generation
+
+            maybe this should be split into features and outcome before hand so we make it explicit what the 
+            features are, and what the outcomes are?
         criterion : Callable, optional
             Criteria function for calculating information gain,
             if None it uses the specified function in the start of splitter.py
@@ -83,7 +95,7 @@ class Splitter():
         return crit, idx_split, imp, mean_thresh
     
 
-    def get_split(self, indices: list[int]) -> tuple:
+    def get_split(self, indices: List[int]) -> tuple:
         """
         gets the best split given the criteria function
 
