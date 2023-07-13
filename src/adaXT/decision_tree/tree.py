@@ -36,9 +36,9 @@ class Node: # should just be a ctype struct in later implementation
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
-
+node_types = Node.__subclasses__()
 class DecisionNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: Node|None = None, right_child: Node|None = None, parent: Node|None = None) -> None:
+    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: "DecisionNode|LeafNode|None" = None, right_child: "DecisionNode|LeafNode|None"= None, parent: "DecisionNode|None" = None) -> None:
         """
         Decision node class
 
