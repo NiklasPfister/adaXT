@@ -1,7 +1,7 @@
 from adaXT.decision_tree.tree import *
 from adaXT.decision_tree.criteria import *
 from adaXT.decision_tree.criteria import gini_index
-from adaXT.decision_tree.tree_utils import print_tree
+from adaXT.decision_tree.tree_utils import print_tree, pre_sort
 
 def rec_node(node: LeafNode|DecisionNode|None, depth: int) -> None:
     """
@@ -124,3 +124,42 @@ def test_regression():
 
 if __name__ == '__main__':
     test_regression()
+
+
+def test_pre_sort():
+    X = np.array([[1, -1],
+                [-0.5, -2],
+                [-1, -1],
+                [-0.5, -0.5],
+                [1, 0],
+                [-1, 1],
+                [1, 1],
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    pre_sorted = pre_sort(X)
+    tree = Tree("Classification", pre_sort=pre_sorted)
+    tree.fit(X, Y_cla, gini_index)
+    root = tree.root
+    exp_val = [0.25, -0.75, 0]
+    spl_idx = [0, 0, 1]
+    assert type(root) == LeafNode or type(root) == DecisionNode, f"root is not a node but {type(root)}"
+    queue = [root]
+    i = 0
+    # Loop over all the nodes
+    while len(queue) > 0:
+        cur_node = queue.pop()
+        if type(cur_node) == DecisionNode: # Check threshold and idx of decision node
+            assert cur_node.threshold == exp_val[i], f'Expected threshold {exp_val[i]} on i={i}, got {cur_node.threshold}'
+            assert cur_node.split_idx == spl_idx[i], f'Expected split idx {spl_idx[i]} on i={i}, got {cur_node.split_idx}'
+            if cur_node.left_child:
+                queue.append(cur_node.left_child)
+            if cur_node.right_child:
+                queue.append(cur_node.right_child)
+            i += 1
+        elif type(cur_node) == LeafNode: # Check that the value is of length 2
+            assert len(cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
+        
+    rec_node(root, 0)
+
+if __name__ == "__main__":
+    test_pre_sort()

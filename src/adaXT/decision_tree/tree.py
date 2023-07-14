@@ -101,7 +101,7 @@ class Tree:
     """
     def __init__(self, tree_type: str, max_depth: int = sys.maxsize, impurity_tol: float = 1e-20, min_samples: int = 2,
                 root : Node|None = None, n_nodes: int=-1, n_features: int=-1, n_classes: int=-1, n_obs: int=-1,
-                leaf_nodes: list[Node]|None = None) -> None:
+                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray=None) -> None:
         """
         Parameters
         ----------
@@ -138,9 +138,10 @@ class Tree:
         self.n_features = n_features
         self.n_classes = n_classes
         self.n_obs = n_obs
+        self.pre_sort = pre_sort
     
     def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None) -> None:
-        builder = DepthTreeBuilder(X, Y, criteria, splitter, self.impurity_tol)
+        builder = DepthTreeBuilder(X, Y, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
         builder.build_tree(self)
 
 
@@ -239,7 +240,8 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
+                pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
         ----------
@@ -259,12 +261,17 @@ class DepthTreeBuilder:
         """
         self.features = X
         self.outcomes = Y
-        self.criteria = crit
         if criterion:
             self.criteria = criterion
-        self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
+        else:
+            self.criteria = crit
         if Splitter:
             self.splitter = Splitter
+        else:
+            self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
+        if type(pre_sort) == npt.NDArray:
+            self.splitter.pre_sort = pre_sort
+
         
         self.tol = tol
     def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:

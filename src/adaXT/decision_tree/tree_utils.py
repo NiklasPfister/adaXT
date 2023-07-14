@@ -65,3 +65,20 @@ def print_tree(tree: Tree):
             if type(node) == DecisionNode:
                 queue.append(node.left_child)
                 queue.append(node.right_child)
+
+def pre_sort(X: npt.NDArray) -> npt.NDArray:
+    """
+    Used to pre sort the features given the full dataset
+
+    Returns
+    -------
+    List[List]
+        sorted list per feature
+    """
+    n_samples, n_features = X.shape
+    all_idx = list(range(n_samples))
+    sorted_list = np.empty((n_samples, n_features))
+    for i in range(n_features):
+        features = X[:, i]
+        sorted_list[:, i] = np.array(sorted(all_idx, key=lambda x: features[x]), dtype=int)
+    return sorted_list
