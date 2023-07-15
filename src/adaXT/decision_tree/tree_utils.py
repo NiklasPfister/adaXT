@@ -1,4 +1,4 @@
-from tree import Tree
+from .tree import *
 
 def plot_tree(tree: Tree):
     import matplotlib.pyplot as plt
@@ -15,7 +15,7 @@ def plot_node(ax, node, node_positions):
     position = node_positions[node]
 
     # Draw the node box
-    if node.is_leaf:
+    if type(node) == LeafNode:
         ax.text(position[0], position[1], f"Impurity: {node.impurity:.3f} \n samples: {node.n_samples}\n LEAF WITH VAL: {node.value:.3f}",
             ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black'))
     else:
@@ -23,12 +23,13 @@ def plot_node(ax, node, node_positions):
             ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black'))
 
     # Draw edges and child nodes recursively
-    if node.left_child is not None:
-        ax.plot([position[0], node_positions[node.left_child][0]], [position[1], node_positions[node.left_child][1]], color='black')
-        plot_node(ax, node.left_child, node_positions)
-    if node.right_child is not None:
-        ax.plot([position[0], node_positions[node.right_child][0]], [position[1], node_positions[node.right_child][1]], color='black')
-        plot_node(ax, node.right_child, node_positions)
+    if type(node) == DecisionNode:
+        if node.left_child is not None:
+            ax.plot([position[0], node_positions[node.left_child][0]], [position[1], node_positions[node.left_child][1]], color='black')
+            plot_node(ax, node.left_child, node_positions)
+        if node.right_child is not None:
+            ax.plot([position[0], node_positions[node.right_child][0]], [position[1], node_positions[node.right_child][1]], color='black')
+            plot_node(ax, node.right_child, node_positions)
 
 
 def calculate_node_positions(node, x, y):
@@ -56,10 +57,28 @@ def print_tree(tree: Tree):
             print(f"Depth: {node.depth}")
             print(f"Impurity: {node.impurity}")
             print(f"samples: {node.n_samples}")
-            if node.is_leaf:
+            if type(node) == LeafNode:
                 print(f"LEAF WITH VAL: {node.value}")
             else:
                 print(f"Decision WITH x{node.split_idx} <= {node.threshold}")
             print("") # spacing
-            queue.append(node.left_child)
-            queue.append(node.right_child)
+            if type(node) == DecisionNode:
+                queue.append(node.left_child)
+                queue.append(node.right_child)
+
+def pre_sort(X: npt.NDArray) -> npt.NDArray:
+    """
+    Used to pre sort the features given the full dataset
+
+    Returns
+    -------
+    List[List]
+        sorted list per feature
+    """
+    n_samples, n_features = X.shape
+    all_idx = list(range(n_samples))
+    sorted_list = np.empty((n_samples, n_features))
+    for i in range(n_features):
+        features = X[:, i]
+        sorted_list[:, i] = np.array(sorted(all_idx, key=lambda x: features[x]), dtype=int)
+    return sorted_list

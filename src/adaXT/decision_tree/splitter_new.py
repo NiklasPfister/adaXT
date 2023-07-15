@@ -1,21 +1,16 @@
-import sys
 from typing import List
-
-# On William
-from criteria import *
-
-# On Simon
-#from decision_tree.criteria import *
 
 from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-class Splitter_new():
+from .criteria import gini_index
+
+class Splitter_new:
     """
     Splitter function used to create splits of the data
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable, presort: npt.NDArray|None = None) -> None:
         """
         Parameters
         ----------
@@ -33,32 +28,28 @@ class Splitter_new():
         self.outcomes = Y 
 
         self.n_features = len(self.features[0])
-
         self.criteria = criterion
+        self.pre_sort = presort
         self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
-
-    '''
-    Sorting function to sort a feature, returns a list of the sorted indices
-    '''
-    def sort_feature(self, indices: List[int], feature: List[float]) -> List[int]:
+            
+    def sort_feature(self, indices: List[int], feature: npt.NDArray) -> npt.NDArray:
         """
         Parameters
         ----------
         indices : List[int]
             A list of the indices which are to be sorted over
         
-        feature: List[float]
+        feature: npt.NDArray
             A list containing the feature values that are to be sorted over
             
-        
         Returns 
         -----------
         List[int]
             A list of the sorted indices 
         """
-        return sorted(indices, key=lambda x: feature[x])
+        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=int)
     
-    def test_split(self, left_indices: List[int], right_indices: List[int], feature) -> tuple:
+    def test_split(self, left_indices: npt.NDArray, right_indices: npt.NDArray, feature) -> tuple:
         """
         Evaluates a split on two datasets
 
@@ -127,13 +118,16 @@ class Splitter_new():
             list of 2 elements, impurity of left child followed by right child
         """
         self.indices = indices
-        best_index, best_threshold, best_score, best_imp = np.inf, np.inf, np.inf, [-1, -1]
+        best_feature, best_threshold, best_score, best_imp = np.inf, np.inf, np.inf, [-1, -1]
         split = []
 
         # for all features
         for feature in range(self.n_features):
             current_feature = self.features[:, feature]
-            sorted_index_list_feature = self.sort_feature(self.indices, current_feature)
+            if type(self.pre_sort) != npt.NDArray:
+                sorted_index_list_feature = self.sort_feature(self.indices, current_feature)
+            else:
+                sorted_index_list_feature = self.pre_sort[self.indices, current_feature]
             
             # loop over sorted feature list
             for i in range(len(sorted_index_list_feature) - 1):
@@ -153,11 +147,10 @@ class Splitter_new():
         return split, best_threshold, best_feature, best_score, best_imp # return the best split
 
 def main():
-    lst = [97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2]
-    bin_lst = [0, 0, 1, 0, 1, 0]
-    [0, 1, 3, 5, 2, 4]
-
-    sorted = Splitter.sort_feature(range(len(bin_lst)), bin_lst)
+    lst = np.array([97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2])
+    bin_lst = np.array([0, 0, 1, 0, 1, 0])
+    Splitter = Splitter_new(lst, bin_lst, gini_index)
+    sorted = Splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
     x = 2 + 2
 
     for i in range(len(sorted)):
