@@ -180,8 +180,8 @@ class Tree:
 
         return Y
     
-    def weight_matrix(self) -> npt.NDArray|int:
-        #TODO: test it
+    def weight_matrix(self) -> npt.NDArray:
+
         """
         Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
 
@@ -192,26 +192,14 @@ class Tree:
         """
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
-        if (not n_obs) or (not leaf_nodes): # make sure that there are calculated observations
-            return -1
-        
-        data = np.empty((n_obs, n_obs))
-        for x_idx in range(n_obs):
-            # find the leaf node
-            for node in leaf_nodes: 
-                if x_idx in node.indices:
-                    # find all values in the leaf node
-                    for y_idx in range(n_obs):
-                        if x_idx == y_idx: # if it is the same index, then it is always 1
-                            data[x_idx, y_idx] = 1
-                            continue
-                        if y_idx in node.indices: # if the alternative index is in the same leaf
-                            data[x_idx, y_idx] = 1
-                        else:
-                            data[x_idx, y_idx] = 0 # otherwise 0
+
+        data = np.zeros((n_obs, n_obs))
+        if (not leaf_nodes): # make sure that there are calculated observations
+            return data
+        for node in leaf_nodes: 
+            for x in node.indices:
+                data[x, node.indices] = 1
         return data
-
-
 
 class queue_obj:
     def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
@@ -271,7 +259,6 @@ class DepthTreeBuilder:
             self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
         if type(pre_sort) == npt.NDArray:
             self.splitter.pre_sort = pre_sort
-
         
         self.tol = tol
     def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
@@ -317,7 +304,7 @@ class DepthTreeBuilder:
         max_depth_seen = 0
         
         n_obs = len(outcomes)
-        queue = [] # built of lists, where each list is the indices of samples in a given node
+        queue = [] # queue of elements queue objects that need to be built
         
         all_idx = [*range(n_obs)] # root node contains all indices
         queue.append(queue_obj(all_idx, 0, criteria(features[all_idx], outcomes[all_idx])))
