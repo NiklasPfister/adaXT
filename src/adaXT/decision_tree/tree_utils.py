@@ -16,7 +16,7 @@ def plot_node(ax, node, node_positions):
 
     # Draw the node box
     if type(node) == LeafNode:
-        ax.text(position[0], position[1], f"Impurity: {node.impurity:.3f} \n samples: {node.n_samples}\n LEAF WITH VAL: {node.value:.3f}",
+        ax.text(position[0], position[1], f"Impurity: {node.impurity:.3f} \n samples: {node.n_samples}\n LEAF WITH VAL: {node.value}",
             ha='center', va='center', bbox=dict(facecolor='white', edgecolor='black'))
     else:
         ax.text(position[0], position[1], f"Decision WITH x{node.split_idx} <= {node.threshold:.3f}\n Impurity: {node.impurity:.3f} \n samples: {node.n_samples}",
@@ -38,9 +38,12 @@ def calculate_node_positions(node, x, y):
 
     dx = 1
     dy = 1
-
-    left_positions = calculate_node_positions(node.left_child, 2 * x - dx , y - dy)
-    right_positions = calculate_node_positions(node.right_child, 2 * x + dx, y - dy)
+    if type(node) == DecisionNode:
+        left_positions = calculate_node_positions(node.left_child, 2 * x - dx , y - dy)
+        right_positions = calculate_node_positions(node.right_child, 2 * x + dx, y - dy)
+    else:
+        left_positions = calculate_node_positions(None, 2 * x - dx , y - dy)
+        right_positions = calculate_node_positions(None, 2 * x + dx, y - dy)
 
     position = (x, y)
 
@@ -75,10 +78,5 @@ def pre_sort(X: npt.NDArray) -> npt.NDArray:
     List[List]
         sorted list per feature
     """
-    n_samples, n_features = X.shape
-    all_idx = list(range(n_samples))
-    sorted_list = np.empty((n_samples, n_features))
-    for i in range(n_features):
-        features = X[:, i]
-        sorted_list[:, i] = np.array(sorted(all_idx, key=lambda x: features[x]), dtype=int)
+    sorted_list = np.sort(X, axis=1)
     return sorted_list

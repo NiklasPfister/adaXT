@@ -122,9 +122,6 @@ def test_regression():
             assert len(cur_node.value) == 1, f'Expected {1} mean values, but got: {len(cur_node.value)}'
     rec_node(root, 0)
 
-if __name__ == '__main__':
-    test_regression()
-
 
 def test_pre_sort():
     X = np.array([[1, -1],
@@ -161,5 +158,36 @@ def test_pre_sort():
         
     rec_node(root, 0)
 
+def test_prediction():
+    pass
+
+def test_NxN_matrix():
+    X = np.array([[1, -1],
+                [-0.5, -2],
+                [-1, -1],
+                [-0.5, -0.5],
+                [1, 0],
+                [-1, 1],
+                [1, 1],
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    tree = Tree("Classification")
+    tree.fit(X, Y_cla, gini_index)
+    weight_matrix = tree.weight_matrix()
+    true_weight = np.array([
+        [1, 0, 0, 0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0, 0, 0, 1],
+        [0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 1, 0, 1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 1, 0, 1, 0],
+        [0, 0, 0, 0, 0, 1, 0, 0],
+        [1, 0, 0, 0, 1, 0, 1, 0],
+        [0, 1, 0, 1, 0, 0, 0, 1]
+    ])
+    for i in range(len(true_weight)):
+        for j in range(len(true_weight[0])):
+            assert weight_matrix[i, j] == true_weight[i, j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
+
+
 if __name__ == "__main__":
-    test_pre_sort()
+    test_single_class()

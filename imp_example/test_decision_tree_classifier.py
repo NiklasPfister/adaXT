@@ -1,23 +1,26 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import adaXT
+import numpy as np
 from adaXT.decision_tree.criteria import gini_index
 from adaXT.decision_tree.tree import DepthTreeBuilder, Tree
 from importlib import reload
+from adaXT.decision_tree.tree_utils import plot_tree
 from sklearn import tree
 reload(adaXT)
-
-data = pd.read_csv(r'C:\Users\Simon\Programming\adaXT\decision_tree\data\data_banknote_authentication.csv')
-
-data = data.to_numpy()
-X = data[:, :-1]
-Y = data[:, -1]
-builder = DepthTreeBuilder(X, Y, gini_index)
+X = np.array([[1, -1],
+            [-0.5, -2],
+            [-1, -1],
+            [-0.5, -0.5],
+            [1, 0],
+            [-1, 1],
+            [1, 1],
+            [-0.5, 2]])
+Y= np.array([1, -1, 1, -1, 1, -1, 1, -1])
 our_tree = Tree("Classification")
-our_tree = builder.build_tree(our_tree)
-
-clf = tree.DecisionTreeClassifier(max_depth=3)
-clf.fit(X, Y)
-
-tree.plot_tree(clf, fontsize=10)
+our_tree.fit(X, Y, gini_index)
+plot_tree(our_tree)
 plt.show()
+
+weight_matrix = our_tree.weight_matrix()
+print(weight_matrix)
