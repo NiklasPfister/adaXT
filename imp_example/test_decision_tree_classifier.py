@@ -17,9 +17,8 @@ X = np.array([[1, -1],
             [1, 1],
             [-0.5, 2]])
 Y= np.array([1, -1, 1, -1, 1, -1, 1, -1])
-builder = DepthTreeBuilder(X, Y, gini_index)
 our_tree = Tree("Classification")
-our_tree = builder.build_tree(our_tree)
+our_tree.fit(X, Y, gini_index)
 plot_tree(our_tree)
 plt.show()
 

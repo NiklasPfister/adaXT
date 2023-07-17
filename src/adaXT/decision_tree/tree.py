@@ -140,9 +140,34 @@ class Tree:
         self.n_obs = n_obs
         self.pre_sort = pre_sort
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None) -> None:
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None, 
+            feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
+        """
+        Function used to fit the data on the tree using the DepthTreeBuilder
+
+        Parameters
+        ----------
+        X : npt.NDArray
+            feature values
+        Y : npt.NDArray
+            outcome values
+        criteria : Callable
+            Callable criteria function used to calculate
+        splitter : splitter_new.Splitter_new | None, optional
+            Splitter class if None uses premade Splitter class
+        feature_indices : npt.NDArray | None, optional
+            which features to use from the data X, by default uses all
+        sample_indices : npt.NDArray | None, optional
+            which samples to use from the data X and Y, by default uses all
+        """
+        # TODO: test feature and sample indexing
         builder = DepthTreeBuilder(X, Y, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
-        builder.build_tree(self)
+        row, col = X.shape
+        if not sample_indices:
+            sample_indices = np.arange(row)
+        if not feature_indices:
+            feature_indices = np.arange(col)
+        builder.build_tree(self, sample_indices, feature_indices)
 
 
     def predict(self, X: npt.NDArray) -> npt.NDArray|int:
@@ -274,7 +299,7 @@ class DepthTreeBuilder:
         return lst
 
         
-    def build_tree(self, tree: Tree) -> Tree:
+    def build_tree(self, tree: Tree, sample_indices: npt.NDArray, feature_indices: npt.NDArray) -> Tree:
         """
         Builds the tree 
 
@@ -282,7 +307,10 @@ class DepthTreeBuilder:
         ----------
         tree : Tree
             the tree to build
-
+        sample_indices : npt.NDArray
+            which samples to use from the total dataset
+        feature_indices : npt.NDArray
+            which features to use from the total dataset
         Returns
         -------
         Tree
@@ -291,8 +319,8 @@ class DepthTreeBuilder:
         splitter = self.splitter
         min_samples = tree.min_samples
         criteria = self.criteria
-        features  = self.features
-        outcomes = self.outcomes
+        features  = self.features[np.ix_(sample_indices, feature_indices)] # the numpy.ix_ is used when indexing multiple columns and rows at the same time.
+        outcomes = self.outcomes[sample_indices]
 
         max_depth = tree.max_depth
         self.classes = np.unique(outcomes)
