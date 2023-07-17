@@ -36,7 +36,7 @@ class Node: # should just be a ctype struct in later implementation
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
-node_types = Node.__subclasses__()
+
 class DecisionNode(Node):
     def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: "DecisionNode|LeafNode|None" = None, right_child: "DecisionNode|LeafNode|None"= None, parent: "DecisionNode|None" = None) -> None:
         """
@@ -101,7 +101,7 @@ class Tree:
     """
     def __init__(self, tree_type: str, max_depth: int = sys.maxsize, impurity_tol: float = 1e-20, min_samples: int = 2,
                 root : Node|None = None, n_nodes: int=-1, n_features: int=-1, n_classes: int=-1, n_obs: int=-1,
-                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray=None) -> None:
+                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray=None, classes : npt.NDArray|None =None) -> None:
         """
         Parameters
         ----------
@@ -125,6 +125,8 @@ class Tree:
             number of observations in the dataset, by default -1, added after fitting
         leaf_nodes : list[Node] | None
             number of leaf nodes in the tree, by default None, added after fitting
+        classes : npt.NDArray | None
+            the different classes in outcomes, by default None, added after fitting
         """
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -139,6 +141,7 @@ class Tree:
         self.n_classes = n_classes
         self.n_obs = n_obs
         self.pre_sort = pre_sort
+        self.classes = classes
     
     def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
@@ -161,16 +164,17 @@ class Tree:
             which samples to use from the data X and Y, by default uses all
         """
         # TODO: test feature and sample indexing
-        builder = DepthTreeBuilder(X, Y, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
         row, col = X.shape
-        if not sample_indices:
+        if sample_indices is None:
             sample_indices = np.arange(row)
-        if not feature_indices:
+        if feature_indices is None:
             feature_indices = np.arange(col)
-        builder.build_tree(self, sample_indices, feature_indices)
+    
+        builder = DepthTreeBuilder(X, Y, feature_indices, sample_indices, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
+        builder.build_tree(self)
 
 
-    def predict(self, X: npt.NDArray) -> npt.NDArray|int:
+    def predict(self, X: npt.NDArray) -> npt.NDArray:
         #TODO: test it
         """
         Predicts a y-value for given X values
@@ -179,34 +183,35 @@ class Tree:
         ----------
         X : npt.NDArray
             (N, M) numpy array with features to predict
-        
-        binary : bool
-            whether the predicted values should be binary or not
 
         Returns
         -------
-        npt.NDArray|int
-            (N, M+1) numpy array with last column being the predicted y-values
+        npt.NDArray
+            (N, M+1) numpy array with last column being the predicted y-values, or empty on fail
         """
         # Check if node exists
-        row, col = X.shape
-        Y = np.empty(col)
+        row, _ = X.shape
+        Y = np.empty(row)
 
         if not self.root: 
-            return -1
+            return Y
         for i in range(row):
             cur_node = self.root
             while type(cur_node) == DecisionNode:
-                if X[i][cur_node.split_idx] < cur_node.threshold:
+                if X[i, cur_node.split_idx] < cur_node.threshold:
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = X[i]
+            if type(cur_node) == LeafNode and self.tree_type == "Regression":
+                Y[i] = cur_node.value[0]
+            elif type(cur_node) == LeafNode and self.tree_type == "Classification":
+                idx = np.argmax(cur_node.value)
+                if type(self.classes) == np.ndarray:
+                    Y[i] = self.classes[idx]
 
         return Y
     
     def weight_matrix(self) -> npt.NDArray:
-
         """
         Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
 
@@ -222,8 +227,7 @@ class Tree:
         if (not leaf_nodes): # make sure that there are calculated observations
             return data
         for node in leaf_nodes: 
-            for x in node.indices:
-                data[x, node.indices] = 1
+            data[np.ix_(node.indices, node.indices)] = 1
         return data
 
 class queue_obj:
@@ -253,7 +257,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -272,8 +276,10 @@ class DepthTreeBuilder:
         tol : float
             tolerance for impurity of leaf nodes
         """
-        self.features = X
-        self.outcomes = Y
+        self.features = X[np.ix_(sample_indices, feature_indices)]
+        self.outcomes = Y[sample_indices]
+        self.feature_indices = feature_indices
+        self.sample_indices = sample_indices
         if criterion:
             self.criteria = criterion
         else:
@@ -281,11 +287,11 @@ class DepthTreeBuilder:
         if Splitter:
             self.splitter = Splitter
         else:
-            self.splitter = splitter_new.Splitter_new(X, Y, self.criteria)
-        if type(pre_sort) == npt.NDArray:
+            self.splitter = splitter_new.Splitter_new(self.features, self.outcomes, self.criteria)
+        if type(pre_sort) == np.ndarray:
             self.splitter.pre_sort = pre_sort
-        
         self.tol = tol
+
     def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
         if tree.tree_type == "Regression":
             return [float(np.mean(node_outcomes))]
@@ -299,7 +305,7 @@ class DepthTreeBuilder:
         return lst
 
         
-    def build_tree(self, tree: Tree, sample_indices: npt.NDArray, feature_indices: npt.NDArray) -> Tree:
+    def build_tree(self, tree: Tree) -> Tree:
         """
         Builds the tree 
 
@@ -319,11 +325,13 @@ class DepthTreeBuilder:
         splitter = self.splitter
         min_samples = tree.min_samples
         criteria = self.criteria
-        features  = self.features[np.ix_(sample_indices, feature_indices)] # the numpy.ix_ is used when indexing multiple columns and rows at the same time.
-        outcomes = self.outcomes[sample_indices]
+
+        features = self.features
+        outcomes = self.outcomes
 
         max_depth = tree.max_depth
-        self.classes = np.unique(outcomes)
+        classes = np.unique(outcomes)
+        self.classes = classes
         n_classes = len(self.classes)
 
         root = None
@@ -379,6 +387,8 @@ class DepthTreeBuilder:
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
+        tree.n_classes = n_classes
+        tree.classes = classes
         return tree
 
     
