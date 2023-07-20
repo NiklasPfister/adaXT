@@ -8,7 +8,7 @@ from .criteria import gini_index
 
 class Splitter_new:
     """
-    Splitter function used to create splits of the data
+    Splitter class used to create splits of the data
     """
     def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float], presort: npt.NDArray|None = None) -> None:
         """
@@ -30,7 +30,7 @@ class Splitter_new:
         self.n_features = len(self.features[0])
         self.criteria = criterion
         self.pre_sort = presort
-        self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
+        # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
             
     def sort_feature(self, indices: List[int], feature: npt.NDArray) -> npt.NDArray:
         """
@@ -127,8 +127,8 @@ class Splitter_new:
             if type(self.pre_sort) != npt.NDArray:
                 sorted_index_list_feature = self.sort_feature(self.indices, current_feature)
             else:
-                sorted_index_list_feature = self.pre_sort[self.indices, current_feature]
-            
+                sorted_index_list_feature = self.pre_sort[self.indices, current_feature] #TODO: possible argsort list
+             
             # loop over sorted feature list
             for i in range(len(sorted_index_list_feature) - 1):
                 # Skip one iteration of the loop if the current threshold value is the same as the next in the feature list

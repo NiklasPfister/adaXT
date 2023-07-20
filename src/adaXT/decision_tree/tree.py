@@ -175,7 +175,6 @@ class Tree:
 
 
     def predict(self, X: npt.NDArray) -> npt.NDArray:
-        #TODO: test it
         """
         Predicts a y-value for given X values
 
@@ -351,7 +350,7 @@ class DepthTreeBuilder:
             n_samples = len(indices)
             is_leaf = (depth >= max_depth or impurity <= self.tol
                        or n_samples < min_samples) # bool used to determine wheter a node is a leaf or not, feel free to add or statements
-
+            #TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen: # keep track of the max depth seen
                 max_depth_seen = depth
 
