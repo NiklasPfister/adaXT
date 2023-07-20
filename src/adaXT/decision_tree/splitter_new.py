@@ -10,7 +10,7 @@ class Splitter_new:
     """
     Splitter function used to create splits of the data
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable, presort: npt.NDArray|None = None) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float], presort: npt.NDArray|None = None) -> None:
         """
         Parameters
         ----------
@@ -80,7 +80,7 @@ class Splitter_new:
         criteria = self.criteria
         indices = self.indices
         idx_split = [left_indices, right_indices]
-        imp = [0, 0]
+        imp = [0.0, 0.0]
         crit = 0
 
         for i in range(len(idx_split)):

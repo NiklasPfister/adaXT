@@ -143,7 +143,7 @@ class Tree:
         self.pre_sort = pre_sort
         self.classes = classes
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None, 
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable[[npt.NDArray, npt.NDArray], float], splitter:splitter_new.Splitter_new | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -257,7 +257,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float]|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
