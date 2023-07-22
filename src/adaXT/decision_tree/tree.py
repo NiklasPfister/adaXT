@@ -1,10 +1,5 @@
-# On Simon
-#from . import criteria
-#from . import splitter
-
-# On William
 from . import criteria
-from . import splitter_new
+from . import splitter
 
 # General
 from typing import Callable, List
@@ -101,7 +96,7 @@ class Tree:
     """
     def __init__(self, tree_type: str, max_depth: int = sys.maxsize, impurity_tol: float = 1e-20, min_samples: int = 2,
                 root : Node|None = None, n_nodes: int=-1, n_features: int=-1, n_classes: int=-1, n_obs: int=-1,
-                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray=None, classes : npt.NDArray|None =None) -> None:
+                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray = None, classes : npt.NDArray|None = None) -> None:
         """
         Parameters
         ----------
@@ -125,6 +120,8 @@ class Tree:
             number of observations in the dataset, by default -1, added after fitting
         leaf_nodes : list[Node] | None
             number of leaf nodes in the tree, by default None, added after fitting
+        pre_sort: npt.NDArray | None
+            a sorted index matrix for the dataset
         classes : npt.NDArray | None
             the different classes in outcomes, by default None, added after fitting
         """
@@ -143,7 +140,7 @@ class Tree:
         self.pre_sort = pre_sort
         self.classes = classes
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable[[npt.NDArray, npt.NDArray], float], splitter:splitter_new.Splitter_new | None = None, 
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable[[npt.NDArray, npt.NDArray], float], splitter:splitter.Splitter | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -156,7 +153,7 @@ class Tree:
             outcome values
         criteria : Callable
             Callable criteria function used to calculate
-        splitter : splitter_new.Splitter_new | None, optional
+        splitter : splitter.Splitter | None, optional
             Splitter class if None uses premade Splitter class
         feature_indices : npt.NDArray | None, optional
             which features to use from the data X, by default uses all
@@ -256,7 +253,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float]|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float]|None = None, Splitter: splitter.Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -286,7 +283,7 @@ class DepthTreeBuilder:
         if Splitter:
             self.splitter = Splitter
         else:
-            self.splitter = splitter_new.Splitter_new(self.features, self.outcomes, self.criteria)
+            self.splitter = splitter.Splitter(self.features, self.outcomes, self.criteria)
         if type(pre_sort) == np.ndarray:
             self.splitter.pre_sort = pre_sort
         self.tol = tol

@@ -4,19 +4,22 @@ from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-class Splitter():
+from .criteria import gini_index
+
+class Splitter:
     """
-    Splitter function used to create splits of the data
+    Splitter class used to create splits of the data
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float], presort: npt.NDArray|None = None) -> None:
         """
         Parameters
         ----------
-        data : np.dtype
-            the data used for the tree entire tree generation
+        X : npt.NDArray
+            The input features of the dataset
 
-            maybe this should be split into features and outcome before hand so we make it explicit what the 
-            features are, and what the outcomes are?
+        Y : npt.NDArray
+            The outcomes of the dataset
+
         criterion : Callable, optional
             Criteria function for calculating information gain,
             if None it uses the specified function in the start of splitter.py
@@ -25,20 +28,41 @@ class Splitter():
         self.outcomes = Y 
 
         self.n_features = len(self.features[0])
-
         self.criteria = criterion
-        self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
-    
-    def test_split(self, index: int, threshold: float) -> tuple:
+        self.pre_sort = presort
+        # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
+            
+    def sort_feature(self, indices: List[int], feature: npt.NDArray) -> npt.NDArray:
         """
-        Creates a split on the given feature index with the given threshold
+        Parameters
+        ----------
+        indices : List[int]
+            A list of the indices which are to be sorted over
+        
+        feature: npt.NDArray
+            A list containing the feature values that are to be sorted over
+            
+        Returns 
+        -----------
+        List[int]
+            A list of the sorted indices 
+        """
+        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=int)
+    
+    def test_split(self, left_indices: npt.NDArray, right_indices: npt.NDArray, feature) -> tuple:
+        """
+        Evaluates a split on two datasets
 
         Parameters
         ----------
-        index : int
-            index of the feature to split on
-        threshold : float
-            the threshold value to split on
+        left_indices : List[int]
+            indices of the left dataset
+
+        right_indices : List[int]
+            indices of the right dataset
+
+        feature : int
+            the current feature that is evaluated
 
         Returns
         -------
@@ -55,36 +79,19 @@ class Splitter():
         outcomes = self.outcomes
         criteria = self.criteria
         indices = self.indices
-        closets_neighbour = [np.inf, 0]
-        idx_split = [[], []]
-        imp = [0, 0]
-        for idx in indices:
-            closest_dist, _ = closets_neighbour
-            # if the value of a given row is below the threshold then add it to the left side
-            other_val = features[idx, index]
-            if other_val < threshold:
-                # Calculate the distance between this and the threshold
-                distance = threshold - other_val
-                if distance < closest_dist:
-                    closets_neighbour = [distance, idx] # store the closest neighbour on the left side
-                idx_split[0].append(idx)
-
-            # else to the right side
-            else:
-                # distance = other_val - threshold
-                # if distance < closest_dist:
-                #     closets_neighbour = [distance, idx]
-                idx_split[1].append(idx)
+        idx_split = [left_indices, right_indices]
+        imp = [0.0, 0.0]
         crit = 0
+
         for i in range(len(idx_split)):
             n_outcomes = len(idx_split[i]) # number of outcomes in the given side
             # Make sure not to divide by 0 in criteria function
             if n_outcomes == 0:
                 continue
             imp[i] = criteria(features[idx_split[i]], outcomes[idx_split[i]]) # calculate the impurity
-            crit += imp[i] * (n_outcomes / len(self.features[indices])) # weight the impurity
-        _, closest_idx = closets_neighbour
-        mean_thresh = (threshold + features[closest_idx, index])/2
+            crit += imp[i] * (n_outcomes / len(indices)) # weight the impurity
+        # calculate mean threshold as the mean of the last element in the left dataset and the first element in the right dataset 
+        mean_thresh = np.mean([features[left_indices[-1], feature], features[right_indices[0], feature]])
         return crit, idx_split, imp, mean_thresh
     
 
@@ -111,18 +118,47 @@ class Splitter():
             list of 2 elements, impurity of left child followed by right child
         """
         self.indices = indices
-        best_index, best_threshold, best_score, best_imp = np.inf, np.inf, np.inf, [-1, -1]
+        best_feature, best_threshold, best_score, best_imp = np.inf, np.inf, np.inf, [-1, -1]
         split = []
+
         # for all features
-        for index in range(self.n_features):
+        for feature in range(self.n_features):
+            current_feature = self.features[:, feature]
+            if type(self.pre_sort) != npt.NDArray:
+                sorted_index_list_feature = self.sort_feature(self.indices, current_feature)
+            else:
+                sorted_index_list_feature = self.pre_sort[self.indices, current_feature] #TODO: possible argsort list
+             
+            # loop over sorted feature list
+            for i in range(len(sorted_index_list_feature) - 1):
+                # Skip one iteration of the loop if the current threshold value is the same as the next in the feature list
+                # Is this a speedup worth doing, it gives us a 10x speedup? do we know that splitting in two lists like this [0,0,0] and [1,1,1] is always better than [0,0] and [0,1,1,1]
+                if current_feature[sorted_index_list_feature[i]] == current_feature[sorted_index_list_feature[i + 1]]:
+                    continue 
+                # Split the dataset
+                left_indicies = sorted_index_list_feature[:i + 1]
+                right_indicies = sorted_index_list_feature[i + 1:]
 
-            # For all samples in the node
-            for row in self.features[indices]:
-                crit, t_split, imp, threshold = self.test_split(index, row[index]) # test the split
+                crit, t_split, imp, threshold = self.test_split(left_indicies, right_indicies, feature) # test the split
                 if crit < best_score:
-                    best_index, best_threshold, best_score, best_imp = index, threshold, crit, imp # save the best split
+                    # save the best split
+                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, imp # The index is given as the index of the first element of the right dataset 
                     split = t_split
-        return split, best_threshold, best_index, best_score, best_imp # return the best split
+        return split, best_threshold, best_feature, best_score, best_imp # return the best split
+
+def main():
+    lst = np.array([97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2])
+    bin_lst = np.array([0, 0, 1, 0, 1, 0])
+    Splitter = Splitter_new(lst, bin_lst, gini_index)
+    sorted = Splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
+    x = 2 + 2
+
+    for i in range(len(sorted)):
+        if i < len(sorted) - 1 and bin_lst[sorted[i]] == bin_lst[sorted[i + 1]]:
+            print("continuing from", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]], "and plus one is", bin_lst[sorted[i + 1]])
+            continue 
+        print("using", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]])
 
 
-
+if __name__ == "__main__":
+    main()

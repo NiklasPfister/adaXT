@@ -76,7 +76,7 @@ def pre_sort(X: npt.NDArray) -> npt.NDArray:
     Returns
     -------
     List[List]
-        sorted list per feature
+        sorted index matrix, sorted per feature
     """
-    sorted_list = np.sort(X, axis=1)
+    sorted_list = np.argsort(X, axis=0)
     return sorted_list

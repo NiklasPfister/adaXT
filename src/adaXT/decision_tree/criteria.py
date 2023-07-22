@@ -1,6 +1,6 @@
 import numpy.typing as npt
 import numpy as np
-# Could proberbly be quicker in Cython
+
 def gini_index(x: npt.NDArray, y: npt.NDArray) -> float:
     """
     Calculates the gini coefficient given outcomes, y.
