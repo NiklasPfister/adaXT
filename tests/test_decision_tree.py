@@ -67,7 +67,6 @@ def test_multi_class():
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
     tree.fit(X, Y_multi, gini_index)
-    print_tree(tree)
     root = tree.root
     exp_val = [0.25, -0.75, -0.75] # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure leaf node
     spl_idx = [0, 1, 0] # DIFFERENT FROM SKLEARN THEIRS IS: [0, 1, 1], both give pure leaf node
@@ -104,7 +103,6 @@ def test_regression():
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
-    print_tree(tree)
     assert type(root) == LeafNode or type(root) == DecisionNode, f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
@@ -159,7 +157,21 @@ def test_pre_sort():
     rec_node(root, 0)
 
 def test_prediction():
-    pass
+    X = np.array([[1, -1],
+                [-0.5, -2],
+                [-1, -1],
+                [-0.5, -0.5],
+                [1, 0],
+                [-1, 1],
+                [1, 1],
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    tree = Tree("Classification")
+    tree.fit(X, Y_cla, gini_index)
+    prediction = tree.predict(np.array(X))
+    print(prediction)
+    for i in range(len(Y_cla)):
+        assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 def test_NxN_matrix():
     X = np.array([[1, -1],
@@ -190,4 +202,4 @@ def test_NxN_matrix():
 
 
 if __name__ == "__main__":
-    test_single_class()
+    test_multi_class()

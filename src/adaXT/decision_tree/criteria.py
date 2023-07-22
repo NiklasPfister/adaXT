@@ -1,7 +1,6 @@
 import numpy.typing as npt
 import numpy as np
 # Could proberbly be quicker in Cython
-# TODO: add feature input to criteria throughout
 def gini_index(x: npt.NDArray, y: npt.NDArray) -> float:
     """
     Calculates the gini coefficient given outcomes, y.
@@ -43,7 +42,7 @@ def variance(x: npt.NDArray, y:npt.NDArray) -> float:
     Returns
     -------
     float
-        _description_
+        variance of the y data
     """
     assert(y.ndim == 1), f'Number of dimensions is not correct it is {y.ndim}'
     cur_sum = 0
