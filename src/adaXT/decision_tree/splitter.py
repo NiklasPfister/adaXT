@@ -149,8 +149,8 @@ class Splitter:
 def main():
     lst = np.array([97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2])
     bin_lst = np.array([0, 0, 1, 0, 1, 0])
-    Splitter = Splitter_new(lst, bin_lst, gini_index)
-    sorted = Splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
+    splitter = Splitter(lst, bin_lst, gini_index)
+    sorted = splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
     x = 2 + 2
 
     for i in range(len(sorted)):
