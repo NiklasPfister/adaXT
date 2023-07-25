@@ -147,20 +147,3 @@ class Splitter:
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, imp # The index is given as the index of the first element of the right dataset 
                     split = t_split
         return split, best_threshold, best_feature, best_score, best_imp # return the best split
-
-def main():
-    lst = np.array([97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2])
-    bin_lst = np.array([0, 0, 1, 0, 1, 0])
-    Splitter = Splitter_new(lst, bin_lst, gini_index)
-    sorted = Splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
-    x = 2 + 2
-
-    for i in range(len(sorted)):
-        if i < len(sorted) - 1 and bin_lst[sorted[i]] == bin_lst[sorted[i + 1]]:
-            print("continuing from", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]], "and plus one is", bin_lst[sorted[i + 1]])
-            continue 
-        print("using", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]])
-
-
-if __name__ == "__main__":
-    main()
