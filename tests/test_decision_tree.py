@@ -1,11 +1,12 @@
 from adaXT.decision_tree.tree import *
 from adaXT.decision_tree.criteria import *
 from adaXT.decision_tree.criteria import gini_index
-from adaXT.decision_tree.tree_utils import print_tree, pre_sort
+from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
 import json
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def rec_node(node: LeafNode|DecisionNode|None, depth: int) -> None:
     """
@@ -369,12 +370,17 @@ def update_data_set(type, num_rows, num_features):
 
 
 if __name__ == "__main__":
-    #test_pre_sort()
-    #test_multi_class()
-
-    # remember to create datasets for time testing:
-    update_data_set("Classification", 200, 10)
-    update_data_set("Regression", 200, 10)
-    
-    test_run_time_multiple_tree_classification(num_trees_to_build=50, pre_sorted=False)
-    test_run_time_multiple_tree_classification(num_trees_to_build=50, pre_sorted=True)
+    # remember to create datasets for time testing, if they have not been previously created:
+    #update_data_set("Classification", 10000, 5)
+    #update_data_set("Regression", 200, 10)
+    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
+    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
+    #test_run_time_multiple_tree_regression(num_trees_to_build=50, pre_sorted=False)
+    #test_run_time_multiple_tree_regression(num_trees_to_build=50, pre_sorted=True)
+    test_single_class()
+    test_multi_class()
+    test_regression()
+    test_pre_sort()
+    test_prediction()
+    test_NxN_matrix()
+    #print("All tests passed succesfully")
