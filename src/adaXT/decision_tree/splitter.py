@@ -123,17 +123,19 @@ class Splitter:
 
         # for all features
         for feature in range(self.n_features):
-            current_feature = self.features[:, feature]
-            if type(self.pre_sort) != npt.NDArray:
-                sorted_index_list_feature = self.sort_feature(self.indices, current_feature)
+            current_feature_values = self.features[:, feature]
+            if self.pre_sort is None:
+                sorted_index_list_feature = self.sort_feature(self.indices, current_feature_values)
             else:
-                sorted_index_list_feature = self.pre_sort[self.indices, current_feature] #TODO: possible argsort list
-             
+                # Create mask to only retrieve the indices in the current node from presort
+                mask = np.isin(self.pre_sort[:, feature], self.indices)
+                # Use the mask to retrieve values from presort
+                sorted_index_list_feature = self.pre_sort[:, feature][mask]             
+    
             # loop over sorted feature list
             for i in range(len(sorted_index_list_feature) - 1):
                 # Skip one iteration of the loop if the current threshold value is the same as the next in the feature list
-                # Is this a speedup worth doing, it gives us a 10x speedup? do we know that splitting in two lists like this [0,0,0] and [1,1,1] is always better than [0,0] and [0,1,1,1]
-                if current_feature[sorted_index_list_feature[i]] == current_feature[sorted_index_list_feature[i + 1]]:
+                if current_feature_values[sorted_index_list_feature[i]] == current_feature_values[sorted_index_list_feature[i + 1]]:
                     continue 
                 # Split the dataset
                 left_indicies = sorted_index_list_feature[:i + 1]
@@ -145,20 +147,3 @@ class Splitter:
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, imp # The index is given as the index of the first element of the right dataset 
                     split = t_split
         return split, best_threshold, best_feature, best_score, best_imp # return the best split
-
-def main():
-    lst = np.array([97.3, 28.9, 85.9, 91.9, 20.9, 26.5, 43.1, 88.5, 84.2])
-    bin_lst = np.array([0, 0, 1, 0, 1, 0])
-    Splitter = Splitter_new(lst, bin_lst, gini_index)
-    sorted = Splitter.sort_feature(list(range(len(bin_lst))), bin_lst)
-    x = 2 + 2
-
-    for i in range(len(sorted)):
-        if i < len(sorted) - 1 and bin_lst[sorted[i]] == bin_lst[sorted[i + 1]]:
-            print("continuing from", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]], "and plus one is", bin_lst[sorted[i + 1]])
-            continue 
-        print("using", i, "as bin_lst[sorted[i]] is ", bin_lst[sorted[i]])
-
-
-if __name__ == "__main__":
-    main()
