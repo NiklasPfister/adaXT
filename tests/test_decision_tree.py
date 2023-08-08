@@ -1,6 +1,6 @@
 from adaXT.decision_tree.tree import *
-from adaXT.decision_tree.criteria import *
-from adaXT.decision_tree.criteria import gini_index
+#from adaXT.decision_tree.criteria import *
+from adaXT.decision_tree.criteria_cy import gini_index, variance
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
@@ -213,7 +213,7 @@ def test_run_time_single_tree_classification():
     data = pd.read_csv(r'tests\classification_data.csv')
     data = data.to_numpy()
     X = data[:, :-1]
-    Y = data[:, -1]
+    Y = data[:, -1].astype(np.int_)
     
     start_time = time.perf_counter()
     tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
@@ -371,16 +371,15 @@ def update_data_set(type, num_rows, num_features):
 
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
-    #update_data_set("Classification", 10000, 5)
-    #update_data_set("Regression", 200, 10)
+    #update_data_set("Classification", 1000, 10)
+    #update_data_set("Regression", 1000, 10)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
-    #test_run_time_multiple_tree_regression(num_trees_to_build=50, pre_sorted=False)
-    #test_run_time_multiple_tree_regression(num_trees_to_build=50, pre_sorted=True)
+    #test_run_time_single_tree_regression()
+    #test_run_time_single_tree_classification()
     test_single_class()
     test_multi_class()
     test_regression()
     test_pre_sort()
     test_prediction()
     test_NxN_matrix()
-    #print("All tests passed succesfully")
