@@ -10,7 +10,7 @@ class Splitter:
     """
     Splitter class used to create splits of the data
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float], presort: npt.NDArray|None = None) -> None:
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, criterion: Callable[[npt.NDArray, npt.NDArray], float], presort: npt.NDArray | None = None) -> None:
         """
         Parameters
         ----------

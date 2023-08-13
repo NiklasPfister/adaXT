@@ -2,4 +2,7 @@ install:
 	pip install -e .
 
 clean:
-	rm src/adaXT/decision_tree/*.so src/adaXT/decision_tree/*.c src/adaXT/decision_tree/*.html 
+	rm src/adaXT/decision_tree/*.so src/adaXT/decision_tree/*.html 
+
+clean_c: clean
+	rm src/adaXT/decision_tree/*.c
