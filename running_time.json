@@ -59,6 +59,26 @@
             "num trees": 200,
             "pre sorted": true,
             "run time": 308711.56429999974
+        },
+        {
+            "Date": "2023-08-19 10:14:11",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 20,
+            "pre sorted": false,
+            "run time": 200084.59220000077
+        },
+        {
+            "Date": "2023-08-19 10:17:20",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 20,
+            "pre sorted": true,
+            "run time": 188704.4237999944
         }
     ],
     "regression on multiple trees": [
@@ -173,6 +193,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 38631.828899960965
+        },
+        {
+            "Date": "2023-08-19 10:18:28",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8443.660199991427
         }
     ],
     "classification on a single tree": [
@@ -229,6 +258,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 26897.02159992885
+        },
+        {
+            "Date": "2023-08-19 10:19:10",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 11603.033000021242
         }
     ]
 }
