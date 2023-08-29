@@ -175,3 +175,5 @@ TODO_william.txt
 scrap.py
 scrap.pyx
 .gitignore
+*.c 
+*.pyd
