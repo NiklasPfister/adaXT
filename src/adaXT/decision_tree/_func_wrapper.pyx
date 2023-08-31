@@ -1,5 +1,4 @@
-cimport numpy as cnp
-
+cimport numpy as cn
 cdef class FuncWrapper:
     def __cinit__(self):
        self.func = NULL

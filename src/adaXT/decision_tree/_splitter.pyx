@@ -1,14 +1,16 @@
 import numpy as np
 cimport numpy as cnp
-
+from ._func_wrapper import FuncWrapper
 cnp.import_array()
 
+
+ctypedef cnp.float64_t npFloat
+ctypedef cnp.int_t npInt
 cdef class Splitter:
     """
     Splitter class used to create splits of the data
     """
-
-    def __cinit__(self):
+    def __init__(self, cnp.ndarray[npFloat, ndim=2] X, cnp.ndarray[npFloat, ndim=1] Y, cnp.ndarray[npInt, ndim=2] presort, criterion: FuncWrapper):
         """
         Parameters
         ----------
@@ -21,29 +23,19 @@ cdef class Splitter:
         criterion : Callable, optional
             Criteria function for calculating information gain,
             if None it uses the specified function in the start of splitter.py
+        
+        presort : ndarray 
+            A sorted index list of the features 
         """
-        self.features = None
-        self.outcomes = None
-        self.n_features = None
+        self.features = X 
+        self.outcomes = Y 
 
+        self.n_features = X.shape[0]
+        self.criteria = criterion
+        self.pre_sort = presort
+        # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
 
-    @staticmethod
-    cdef Splitter gen_cla_splitter(cnp.ndarray[cnp.double_t, ndim=2] features, cnp.ndarray[cnp.int64_t, ndim=1] outcomes):
-        cdef Splitter out = Splitter()
-        out.features = features
-        out.outcomes = outcomes
-        out.n_features = features.shape[0]
-        return out
-
-    @staticmethod
-    cdef Splitter gen_reg_splitter(cnp.ndarray[cnp.double_t, ndim=2] features, cnp.ndarray[cnp.double_t, ndim=1] outcomes):
-        cdef Splitter out = Splitter()
-        out.features = features
-        out.outcomes = outcomes
-        out.n_features = features.shape[0]
-        return out
-
-    cdef cnp.ndarray sort_feature(self, list[int] indices, cnp.ndarray[cnp.cdouble_t, ndim=1] feature):
+    cdef cnp.ndarray sort_feature(self, cnp.ndarray[npInt, ndim=1] indices, cnp.ndarray[npFloat, ndim=1] feature):
         """
         Parameters
         ----------
@@ -58,7 +50,7 @@ cdef class Splitter:
         np.ndarray
             A 1 dimensional numpy array containing the indices sorted given the feature values
         """
-        cdef cnp.ndarray[cnp.double_t, ndim=1] sort_list
+        cdef cnp.ndarray[npFloat, ndim=1] sort_list
         sort_list = feature[indices]
         sort_list = np.argsort(sort_list)
 
