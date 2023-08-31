@@ -7,7 +7,7 @@ name = "adaXT"
 version = "0.0.1"
 description = "temp"
 dependencies = [
-  "matplotlib",
+  "matplotlib"
 ]
 
 [tool.setuptools.packages.find]
