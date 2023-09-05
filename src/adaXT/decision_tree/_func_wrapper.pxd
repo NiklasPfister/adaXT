@@ -1,6 +1,6 @@
 cimport numpy as cnp
 
-ctypedef double (*func_ptr)(cnp.ndarray, cnp.ndarray)
+ctypedef double (*func_ptr)(double[:, ::1], double[:])
 
 cdef class FuncWrapper:
     cdef func_ptr func

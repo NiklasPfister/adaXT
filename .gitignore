@@ -177,3 +177,4 @@ scrap.pyx
 .gitignore
 *.c 
 *.pyd
+*.html
