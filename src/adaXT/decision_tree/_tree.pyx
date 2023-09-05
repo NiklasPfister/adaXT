@@ -9,8 +9,8 @@ def testing():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]], dtype=np.cdouble)
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1], dtype=np.int64)
+                [-0.5, 2]])
+    Y_cla = np.array([1.0, -1.0, 1.0, -1.0, 1.0, -1.0, 1.0, -1.0])
     split = Splitter.gen_cla_splitter(X, Y_cla)
     sorted = split.sort_feature(list(range(X.shape[0])), X[0])
     return sorted

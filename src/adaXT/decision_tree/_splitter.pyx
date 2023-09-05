@@ -8,7 +8,7 @@ cdef class Splitter:
     """
     Splitter class used to create splits of the data
     """
-    def __init__(self, cnp.ndarray[npFloat] X, cnp.ndarray[npFloat, ndim = 1] Y, cnp.ndarray[npInt, ndim=2] presort, criterion: FuncWrapper):
+    def __init__(self, cnp.ndarray[npFloat] X, cnp.ndarray[npFloat, ndim = 1] Y, criterion: FuncWrapper, presort: np.ndarray|None):
         self.features = X 
         self.outcomes = Y 
 
@@ -35,10 +35,7 @@ cdef class Splitter:
         features = np.array(self.features)
         outcomes = np.array(self.outcomes)
         func_wrap = self.criteria
-        if func_wrap.func:
-            criteria = func_wrap.func
-        else:
-            raise MemoryError
+        criteria = func_wrap.func
         
         indices = self.indices
         idx_split = [left_indices, right_indices]
