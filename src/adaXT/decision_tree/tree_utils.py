@@ -1,4 +1,7 @@
-from .tree import *
+from .tree import Tree, LeafNode, DecisionNode
+import numpy as np
+import numpy.typing as npt
+
 
 def plot_tree(tree: Tree):
     import matplotlib.pyplot as plt

@@ -1,7 +1,15 @@
+# cython: profile=True
+
 import numpy as np
+from cython cimport boundscheck, wraparound
+
+from func_wrapper cimport FuncWrapper
+
+gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
+variance_wrapped = FuncWrapper.make_from_ptr(variance)
 
 # int for y
-cpdef double gini_index(_, int[:] y):
+cdef double gini_index(double[:, ::1] x, double[:] y):
     """
     Calculates the gini coefficient given outcomes, y.
 
@@ -17,13 +25,13 @@ cpdef double gini_index(_, int[:] y):
     double  
         The gini coefficient
     """
-    cdef int[:] class_labels = np.unique(y)
+    cdef double[:] class_labels = np.unique(y)
     
     cdef double sum = 0.0
     cdef int y_len = y.shape[0]
     cdef int n_in_class
     cdef double proportion_cls 
-    cdef int cls
+    cdef double cls
 
     for cls in class_labels:
         n_in_class = count_class_occ(y, cls)
@@ -31,7 +39,7 @@ cpdef double gini_index(_, int[:] y):
         sum += proportion_cls**2
     return 1 - sum  
 
-cdef int count_class_occ(int[:] lst, int element):
+cdef int count_class_occ(double[:] lst, double element):
     cdef int count, i, length 
     count = 0
     length = lst.shape[0]
@@ -40,7 +48,7 @@ cdef int count_class_occ(int[:] lst, int element):
             count += 1
     return count
 
-cpdef double variance(_, y):
+cdef double variance(double[:, ::1] x, double[:] y):
     """
     Calculates the variance 
 
@@ -56,14 +64,14 @@ cpdef double variance(_, y):
     double
         variance of the y data
     """
-    cdef double[:] y_double = y.astype(np.float64)
     cdef double cur_sum = 0
-    cdef double mu = mean(y_double)
+    cdef double mu = mean(y)
     cdef int i 
     cdef int y_len = y.shape[0]
-    
-    for i in range(y_len):
-        cur_sum += (y_double[i] - mu)**2
+
+    with boundscheck(False), wraparound(False):    
+        for i in range(y_len):
+            cur_sum += (y[i] - mu)**2
 
     return cur_sum / y_len
 
@@ -71,6 +79,8 @@ cdef double mean(double[:] lst):
     cdef double sum = 0.0
     cdef int i 
     cdef int length = lst.shape[0]
-    for i in range(length):
-        sum += lst[i]
+
+    with boundscheck(False), wraparound(False): 
+        for i in range(length):
+            sum += lst[i]
     return sum / length
