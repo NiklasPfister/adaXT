@@ -13,12 +13,15 @@ cdef class test_obj:
 
 cdef class Splitter:
     cdef:
-        double[:] features
+        double[:, ::1] features
         double[:] outcomes
         int n_features
         int[:] pre_sort
         int[:] indices
+        object criteria
 
     cdef cnp.ndarray sort_feature(self, cnp.ndarray[npInt], cnp.ndarray[npFloat])
 
-    cdef int test_split(self, test_obj, int[:], int[:], int)
+    cdef (double, double, double, double) test_split(self, int[:], int[:], int)
+
+    cpdef get_split(self, int[:])

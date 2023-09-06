@@ -3,10 +3,7 @@
 import numpy as np
 from cython cimport boundscheck, wraparound
 
-from func_wrapper cimport FuncWrapper
-
-gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
-variance_wrapped = FuncWrapper.make_from_ptr(variance)
+from ._func_wrapper cimport FuncWrapper
 
 # int for y
 cdef double gini_index(double[:, ::1] x, double[:] y):
@@ -84,3 +81,6 @@ cdef double mean(double[:] lst):
         for i in range(length):
             sum += lst[i]
     return sum / length
+
+gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
+variance_wrapped = FuncWrapper.make_from_ptr(variance)

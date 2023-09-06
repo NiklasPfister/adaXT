@@ -1,5 +1,5 @@
-from adaXT.decision_tree import criteria
-from adaXT.decision_tree import splitter_cy
+#from adaXT.decision_tree import criteria
+from ._splitter import Splitter 
 
 # General
 from typing import Callable, List
@@ -8,8 +8,8 @@ import numpy.typing as npt
 import sys
 
 # Custom
-from adaXT.decision_tree.func_wrapper import FuncWrapper
-from adaXT.decision_tree.criteria_cy import gini_index_wrapped
+from ._func_wrapper import FuncWrapper
+from ._criteria import gini_index_wrapped
 
 
 crit = gini_index_wrapped # default criteria function
@@ -144,7 +144,7 @@ class Tree:
         self.pre_sort = pre_sort
         self.classes = classes
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:splitter_cy.Splitter | None = None, 
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:Splitter | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -257,7 +257,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter: splitter_cy.Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter: Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -288,7 +288,7 @@ class DepthTreeBuilder:
         if Splitter:
             self.splitter = Splitter
         else:
-            self.splitter = splitter_cy.Splitter(self.features, self.outcomes, self.criteria)
+            self.splitter = Splitter(self.features, self.outcomes, self.criteria)
 
         if type(pre_sort) == np.ndarray:
             self.splitter.pre_sort = pre_sort
@@ -344,7 +344,7 @@ class DepthTreeBuilder:
         n_obs = len(outcomes)
         queue = [] # queue of elements queue objects that need to be built
         
-        all_idx = [*range(n_obs)] # root node contains all indices
+        all_idx = np.array([*range(n_obs)]) # root node contains all indices
         queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
         n_nodes = 0
         while len(queue) > 0:
