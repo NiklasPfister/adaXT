@@ -6,10 +6,10 @@ ctypedef cnp.int_t npInt
 
 cdef class test_obj:
     cdef:
-        float crit
+        double crit
         list[:, :] idx_split
-        float[2] imp
-        float split_val
+        double[2] imp
+        double split_val
 
 cdef class Splitter:
     cdef:
