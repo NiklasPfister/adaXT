@@ -1,12 +1,15 @@
 from adaXT.decision_tree.tree import *
-#from adaXT.decision_tree.criteria import *
-from adaXT.decision_tree.criteria_cy import gini_index, variance
+from adaXT.decision_tree.criteria import *
+from adaXT.decision_tree.criteria_cy import variance_wrapped
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+import cProfile
+import line_profiler
+from sklearn.tree import DecisionTreeRegressor
 
 def test_run_time_single_tree_classification():
     max_depth = 5
@@ -28,7 +31,7 @@ def test_run_time_single_tree_classification():
         "num features": data.shape[1],
         "num rows": data.shape[0],
         "max depth": max_depth,
-        "min samples": min_samples,
+        "min samples": min_samples, 
         "num trees": 1,
         "run time": elapsed
     }
@@ -46,7 +49,7 @@ def test_run_time_single_tree_regression():
     
     start_time = time.perf_counter()
     tree = Tree("Regression", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, variance)
+    tree.fit(X, Y, variance_wrapped)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -168,12 +171,41 @@ def update_data_set(type, num_rows, num_features):
         # Save the new array to a CSV file
         np.savetxt("regression_data.csv", data, delimiter=",")
 
+def run_sklearn_regression():
+    max_depth = 5
+    min_samples = 2
+    data = pd.read_csv(r'classification_data.csv')
+    data = data.to_numpy()
+    X = data[:, :-1]
+    Y = data[:, -1].astype(np.int_)
+    
+    start_time = time.perf_counter()
+    tr_cla = DecisionTreeRegressor(max_depth=max_depth, min_samples_split=min_samples)
+    tr_cla.fit(X, Y)
+    end_time = time.perf_counter()
+    elapsed = (end_time - start_time) * 1000 # elapsed time in ms
+
+    return elapsed
+
 
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
     #update_data_set("Classification", 1000, 10)
     #update_data_set("Regression", 1000, 10)
-    test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
-    test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
+    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
+    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
+
+    profiler = cProfile.Profile()
+    profiler.enable()
+    # My own code to run
     test_run_time_single_tree_regression()
-    test_run_time_single_tree_classification()
+    profiler.disable()
+    profiler.print_stats(sort="tottime")
+    
+    #test_run_time_single_tree_classification()
+    #print("Sklearn time:", run_sklearn_regression())
+
+    #Print profiling statistics using the `line_profiler` API
+    #profile = line_profiler.LineProfiler(test_run_time_single_tree_regression)
+    #profile.runcall(test_run_time_single_tree_regression)
+    #profile.print_stats()
