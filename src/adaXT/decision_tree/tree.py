@@ -11,7 +11,6 @@ import sys
 from adaXT.decision_tree.func_wrapper import FuncWrapper
 from adaXT.decision_tree.criteria_cy import gini_index_wrapped
 
-
 crit = gini_index_wrapped # default criteria function
 
 
@@ -345,7 +344,7 @@ class DepthTreeBuilder:
         queue = [] # queue of elements queue objects that need to be built
         
         all_idx = [*range(n_obs)] # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
+        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx], np.array(all_idx))))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
