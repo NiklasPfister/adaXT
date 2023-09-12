@@ -1,4 +1,5 @@
 cimport numpy as cnp
+from ._func_wrapper cimport func_ptr
 cnp.import_array()
 
 ctypedef cnp.float64_t npFloat
@@ -18,9 +19,10 @@ cdef class Splitter:
         int n_features
         int[:] pre_sort
         int[:] indices
+        int n_indices
         object criteria
 
-    cdef cnp.ndarray sort_feature(self, cnp.ndarray[npInt], cnp.ndarray[npFloat])
+    cdef cnp.ndarray sort_feature(self, int[:], double[:])
 
     cdef (double, double, double, double) test_split(self, int[:], int[:], int)
 

@@ -17,3 +17,6 @@ where = ["src"]
 pythonpath = [
   "src",
 ]
+
+[build_ext]
+force=1

@@ -82,5 +82,7 @@ cdef double mean(double[:] lst):
             sum += lst[i]
     return sum / length
 
-gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
+def gini_index_wrapped():
+    return FuncWrapper.make_from_ptr(gini_index)
+#gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
 variance_wrapped = FuncWrapper.make_from_ptr(variance)

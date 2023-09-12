@@ -10,11 +10,7 @@ import sys
 
 # Custom
 from ._func_wrapper import FuncWrapper
-from ._criteria import gini_index_wrapped
 from ._splitter import Splitter
-
-
-crit = gini_index_wrapped # default criteria function
 
 
 class Node: # should just be a ctype struct in later implementation
@@ -250,7 +246,7 @@ class Tree:
         return data
 
 class queue_obj:
-    def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
+    def __init__(self, indices : np.ndarray, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
         """
         queue object
 
@@ -276,7 +272,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, splitter: Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criteria: FuncWrapper, splitter: Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -299,15 +295,12 @@ class DepthTreeBuilder:
         self.outcomes = Y[sample_indices]
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
-        if criterion:
-            self.criteria = criterion
-        else:
-            self.criteria = crit
+        self.criteria = criteria
 
         if splitter:
             self.splitter = splitter
         else:
-            self.splitter = Splitter(self.features, self.outcomes, self.criteria)
+            self.splitter = Splitter(self.features, self.outcomes, criteria)
 
         if type(pre_sort) == np.ndarray:
             self.splitter.pre_sort = pre_sort
@@ -326,7 +319,7 @@ class DepthTreeBuilder:
         return lst
 
         
-    def build_tree(self, tree: Tree) -> Tree:
+    def build_tree(self, tree: Tree):
         """
         Builds the tree 
 
@@ -363,7 +356,7 @@ class DepthTreeBuilder:
         n_obs = len(outcomes)
         queue = [] # queue of elements queue objects that need to be built
         
-        all_idx = [*range(n_obs)] # root node contains all indices
+        all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
         queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
         n_nodes = 0
         while len(queue) > 0:
@@ -388,9 +381,9 @@ class DepthTreeBuilder:
 
                 left, right = split
                 # Add the left node to the queue of nodes yet to be computed
-                queue.append(queue_obj(list(left), depth+1, chil_imp[0], new_node, 1))
+                queue.append(queue_obj(left, depth+1, chil_imp[0], new_node, 1))
                 # Add the right node to the queue of nodes yet to be computed
-                queue.append(queue_obj(list(right), depth+1, chil_imp[1], new_node, 0))
+                queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
                 mean_value = self.get_mean(tree, outcomes[indices], n_samples, n_classes)
                 new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
@@ -411,7 +404,7 @@ class DepthTreeBuilder:
         tree.leaf_nodes = leaf_node_list
         tree.n_classes = n_classes
         tree.classes = classes
-        return tree
+        return 0
 
     
 

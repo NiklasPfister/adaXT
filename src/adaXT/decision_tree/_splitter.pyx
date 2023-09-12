@@ -1,7 +1,6 @@
 import numpy as np
 cimport numpy as cnp
-from ._func_wrapper import FuncWrapper
-cimport cython
+from ._func_wrapper cimport FuncWrapper
 cnp.import_array()
 
 # cython: profile=true
@@ -11,21 +10,22 @@ cdef class Splitter:
     Splitter class used to create splits of the data
     """
 
-    def __init__(self, double[:, ::1] X, double[:] Y, criterion: FuncWrapper, presort: np.ndarray|None = None):
+    def __init__(self, double[:, ::1] X, double[:] Y, criteria: FuncWrapper, presort: np.ndarray|None = None):
         self.features = X 
         self.outcomes = Y 
 
         self.n_features = X.shape[0]
-        self.criteria = criterion
+        self.criteria = criteria
         self.pre_sort = presort
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
 
-    cdef cnp.ndarray sort_feature(self, cnp.ndarray[npInt, ndim=1] indices, cnp.ndarray[npFloat, ndim=1] feature):
-        cdef npFloat[:] sort_list
-        sort_list = feature[indices]
-        sort_list = np.argsort(sort_list)
+    cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
+        cdef double[:] sort_list
+        cdef long[:] argsorted
+        sort_list = feature.base[indices]
+        argsorted = np.argsort(sort_list)
 
-        return indices[sort_list]
+        return indices.base[argsorted]
 
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         cdef:
@@ -33,12 +33,12 @@ cdef class Splitter:
             int[:] indices 
             double crit, mean_thresh
             int n_total, n_curr, i
-            double[:] x, y, curr
+            double[:, ::1] x, curr
+            double[:] y
 
+        criteria = self.criteria
         features = self.features.base
         outcomes = self.outcomes.base
-        func_wrap = self.criteria
-        criteria = func_wrap.func
         
         indices = self.indices
         idx_split = [left_indices, right_indices]
@@ -51,7 +51,7 @@ cdef class Splitter:
                 continue
             x = features[curr]
             y = outcomes[curr]
-            imp[i] = criteria(x, y) # Calculate the impurity of current child
+            imp[i] = criteria.func(x, y) # Calculate the impurity of current child
             crit += imp[i] * (n_curr / n_total) # Weight by the amount of datapoints in child
 
         mean_thresh = np.mean([features[left_indices[-1], feature], features[right_indices[0], feature]])
@@ -74,7 +74,7 @@ cdef class Splitter:
         cdef int N_i = self.n_indices - 1
 
         features = self.features.base
-        outcomes = self.features.base
+        outcomes = self.outcomes.base
         n_features = self.n_features
         # for all features
         for feature in range(n_features):
