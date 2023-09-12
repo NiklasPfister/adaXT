@@ -3,7 +3,7 @@ cdef class FuncWrapper:
     def __cinit__(self):
        self.func = NULL
     
-    def crit_func(self, x, y):
+    cpdef crit_func(self, x, y):
         return self.func(x, y)
 
     @staticmethod

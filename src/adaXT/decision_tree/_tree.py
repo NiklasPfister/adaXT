@@ -14,7 +14,7 @@ from ._splitter import Splitter
 
 
 class Node: # should just be a ctype struct in later implementation
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int) -> None:
+    def __init__(self, indices: np.ndarray, depth: int, impurity: float, n_samples: int) -> None:
         """
         Node parent class
 
@@ -35,7 +35,7 @@ class Node: # should just be a ctype struct in later implementation
         self.n_samples = n_samples
 
 class DecisionNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: "DecisionNode|LeafNode|None" = None, right_child: "DecisionNode|LeafNode|None"= None, parent: "DecisionNode|None" = None) -> None:
+    def __init__(self, indices: np.ndarray, depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: "DecisionNode|LeafNode|None" = None, right_child: "DecisionNode|LeafNode|None"= None, parent: "DecisionNode|None" = None) -> None:
         """
         Decision node class
 
@@ -68,7 +68,7 @@ class DecisionNode(Node):
         self.parent = parent
 
 class LeafNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, value: list[float], parent: DecisionNode) -> None:
+    def __init__(self, indices: np.ndarray, depth: int, impurity: float, n_samples: int, value: list[float], parent: DecisionNode) -> None:
         """
         Leaf Node class
 
@@ -357,7 +357,8 @@ class DepthTreeBuilder:
         queue = [] # queue of elements queue objects that need to be built
         
         all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
+        #queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
+        queue.append(queue_obj(all_idx, 0, 0))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
@@ -398,7 +399,7 @@ class DepthTreeBuilder:
 
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = splitter.n_features
+        tree.n_features = features.shape[0]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list

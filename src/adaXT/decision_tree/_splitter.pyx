@@ -1,6 +1,6 @@
 import numpy as np
 cimport numpy as cnp
-from ._func_wrapper cimport FuncWrapper
+from ._func_wrapper import FuncWrapper
 cnp.import_array()
 
 # cython: profile=true
@@ -29,34 +29,34 @@ cdef class Splitter:
 
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         cdef:
-            double[2] imp
-            int[:] indices 
             double crit, mean_thresh
-            int n_total, n_curr, i
-            double[:, ::1] x, curr
-            double[:] y
+            int n_outcomes
 
-        criteria = self.criteria
         features = self.features.base
         outcomes = self.outcomes.base
         
-        indices = self.indices
-        idx_split = [left_indices, right_indices]
+        n_outcomes = len(left_indices)
 
-        n_total = len(indices)
-        for i in range(2): # Left and right side
-            curr = idx_split[i]
-            n_curr = len(curr)
-            if n_curr == 0:
-                continue
-            x = features[curr]
-            y = outcomes[curr]
-            imp[i] = criteria.func(x, y) # Calculate the impurity of current child
-            crit += imp[i] * (n_curr / n_total) # Weight by the amount of datapoints in child
+        # calculate on the left dataset
+        if n_outcomes == 0:
+            left_imp = 0.0
+        else:
+            left_imp = self.criteria.func(features[left_indices], outcomes[left_indices])
+            crit += left_imp * (n_outcomes / self.n_indices)
+        
+        # calculate in the right dataset
+        n_outcomes = right_indices.shape[0]
+        if n_outcomes == 0:
+            right_imp = 0.0
+        else:
+            right_imp = self.criteria.func(features[right_indices], outcomes[right_indices])
+            crit += right_imp * (n_outcomes / self.n_indices)
+        
+        mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
 
         mean_thresh = np.mean([features[left_indices[-1], feature], features[right_indices[0], feature]])
         
-        return (crit, imp[0], imp[1], mean_thresh)
+        return (crit, left_imp, right_imp, mean_thresh)
 
     cpdef get_split(self, int[:] indices):
         self.indices = indices

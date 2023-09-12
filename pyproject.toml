@@ -6,9 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "adaXT"
 version = "0.0.1"
 description = "temp"
-dependencies = [
-  "matplotlib"
-]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -17,6 +14,3 @@ where = ["src"]
 pythonpath = [
   "src",
 ]
-
-[build_ext]
-force=1

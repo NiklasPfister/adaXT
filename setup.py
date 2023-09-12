@@ -23,6 +23,5 @@ extensions += [Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/
 
 setup(
     name='adaXT',
-    ext_modules=extensions,
-    gdb_debug=True
+    ext_modules=extensions
 )
