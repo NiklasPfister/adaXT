@@ -185,7 +185,6 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
-    
         builder = DepthTreeBuilder(X, Y, feature_indices, sample_indices, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
         builder.build_tree(self)
 
@@ -303,7 +302,9 @@ class DepthTreeBuilder:
             self.splitter = Splitter(self.features, self.outcomes, criteria)
 
         if type(pre_sort) == np.ndarray:
-            self.splitter.pre_sort = pre_sort
+            if pre_sort.dtype != np.int32:
+                pre_sort = np.ascontiguousarray(pre_sort, np.int32)
+            self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
     def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:

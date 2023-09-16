@@ -1,5 +1,7 @@
 import numpy as np
+from numpy import float64 as DOUBLE
 cimport numpy as cnp
+from numpy.math cimport INFINITY
 from ._func_wrapper import FuncWrapper
 cnp.import_array()
 
@@ -10,14 +12,18 @@ cdef class Splitter:
     Splitter class used to create splits of the data
     """
 
-    def __init__(self, double[:, ::1] X, double[:] Y, criteria: FuncWrapper, presort: np.ndarray|None = None):
+    def __init__(self, double[:, ::1] X, double[:] Y, criteria: FuncWrapper):
+        
         self.features = X 
         self.outcomes = Y 
 
         self.n_features = X.shape[0]
         self.criteria = criteria
-        self.pre_sort = presort
+        self.pre_sort = None
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
+
+    def set_pre_sort(self, pre_sort: np.ndarray):
+        self.pre_sort = pre_sort
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
         cdef double[:] sort_list
@@ -63,8 +69,8 @@ cdef class Splitter:
         self.n_indices = len(indices)
         cdef:
             int best_feature = -1
-            double best_threshold = 1000000.0
-            double best_score = 1000000.0
+            double best_threshold = INFINITY
+            double best_score = INFINITY
         
         best_imp = []
         split = []  
@@ -74,7 +80,6 @@ cdef class Splitter:
         cdef int N_i = self.n_indices - 1
 
         features = self.features.base
-        outcomes = self.outcomes.base
         n_features = self.n_features
         # for all features
         for feature in range(n_features):

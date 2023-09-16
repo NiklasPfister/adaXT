@@ -1,6 +1,6 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree._tree import *
 #from adaXT.decision_tree.criteria import *
-from adaXT.decision_tree.criteria_cy import gini_index_wrapped, variance_wrapped
+from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
@@ -32,11 +32,11 @@ def test_single_class():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]]).astype(np.double)
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1]).astype(np.double)
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index_wrapped)
+    tree.fit(X, Y_cla, gini_index_wrapped())
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -67,8 +67,8 @@ def test_multi_class():
             [1, 0],
             [-1, 1],
             [1, 1],
-            [-0.5, 2]]).astype(np.double)
-    Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0]).astype(np.double)
+            [-0.5, 2]])
+    Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
     tree.fit(X, Y_multi, gini_index_wrapped)
@@ -101,8 +101,8 @@ def test_regression():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]]).astype(np.double)
-    Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3]).astype(np.double)
+                [-0.5, 2]])
+    Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
     tree = Tree("Regression")
     tree.fit(X, Y_reg, variance_wrapped)
     root = tree.root
@@ -134,11 +134,10 @@ def test_pre_sort():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]]).astype(np.double)
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1]).astype(np.double)
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
     tree = Tree("Classification", pre_sort=pre_sorted)
-    print(pre_sorted)
     tree.fit(X, Y_cla, gini_index_wrapped)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -170,11 +169,11 @@ def test_prediction():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]]).astype(np.double)
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1]).astype(np.double)
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
     tree.fit(X, Y_cla, gini_index_wrapped)
-    prediction = tree.predict(np.array(X))
+    prediction = tree.predict(X)
     print(prediction)
     for i in range(len(Y_cla)):
         assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
@@ -187,8 +186,8 @@ def test_NxN_matrix():
                 [1, 0],
                 [-1, 1],
                 [1, 1],
-                [-0.5, 2]]).astype(np.double)
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1]).astype(np.double)
+                [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
     tree.fit(X, Y_cla, gini_index_wrapped)
     weight_matrix = tree.weight_matrix()

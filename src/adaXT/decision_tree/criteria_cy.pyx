@@ -7,43 +7,32 @@ from ._func_wrapper cimport FuncWrapper
 
 # int for y
 cdef double gini_index(double[:, ::1] x, double[:] y):
-    """
-    Calculates the gini coefficient given outcomes, y.
+    cdef:
+        double sum = 0.0
+        int y_len = y.shape[0]
+        int n_len = 0
+        double[::1] class_labels
+        double[::1] n_in_class
+        double proportion_cls 
+        double epsilon = 2e-30
+        int seen
 
-    Parameters
-    ----------
-    x : npt.NDArray
-        features, not used in this implementation
-    y : npt.NDArray
-        1-dimensional outcomes
+    for i in range(y_len):
+        seen = 0
+        for j in range(n_len):
+            if (class_labels[j] - y[i]) < epsilon:
+                n_in_class[i] += 1
+                seen = 1
+                break
+        if (seen == 1):
+            class_labels[n_len] = y[i]
+            n_len += 1
 
-    Returns
-    -------
-    double  
-        The gini coefficient
-    """
-    cdef double[:] class_labels = np.unique(y)
-    
-    cdef double sum = 0.0
-    cdef int y_len = y.shape[0]
-    cdef int n_in_class
-    cdef double proportion_cls 
-    cdef double cls
 
-    for cls in class_labels:
-        n_in_class = count_class_occ(y, cls)
-        proportion_cls = n_in_class / y_len
+    for i in range(n_len):
+        proportion_cls = n_in_class[i] / y_len
         sum += proportion_cls**2
     return 1 - sum  
-
-cdef int count_class_occ(double[:] lst, double element):
-    cdef int count, i, length 
-    count = 0
-    length = lst.shape[0]
-    for i in range(length):
-        if lst[i] == element:
-            count += 1
-    return count
 
 cdef double variance(double[:, ::1] x, double[:] y):
     """
@@ -84,5 +73,11 @@ cdef double mean(double[:] lst):
 
 def gini_index_wrapped():
     return FuncWrapper.make_from_ptr(gini_index)
+    
 #gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
-variance_wrapped = FuncWrapper.make_from_ptr(variance)
+def variance_wrapped():
+    return FuncWrapper.make_from_ptr(variance)
+
+
+def call_criteria_wrapped(crit: FuncWrapper, x: np.ndarray, y: np.ndarray):
+    return crit.func(x, y)
