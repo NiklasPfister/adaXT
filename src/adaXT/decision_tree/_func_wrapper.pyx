@@ -3,8 +3,8 @@ cdef class FuncWrapper:
     def __cinit__(self):
        self.func = NULL
     
-    def crit_func(self, x, y, indices):
-        return self.func(x, y, indices)
+    def crit_func(self, x, y):
+        return self.func(x, y)
 
     @staticmethod
     cdef FuncWrapper make_from_ptr(func_ptr f):

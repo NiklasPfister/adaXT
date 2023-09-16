@@ -35,8 +35,7 @@ cdef class Splitter:
 
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         cdef:
-            double crit, mean_thresh
-            int n_outcomes
+            double mean_thresh
             FuncWrapper criteria
             double left_imp = 0.0
             double right_imp = 0.0
@@ -64,8 +63,6 @@ cdef class Splitter:
             crit += right_imp * (n_outcomes / self.n_indices)
         
         mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
-
-        mean_thresh = ([features[left_indices[-1], feature], features[right_indices[0], feature]])/2
         
         return (crit, left_imp, right_imp, mean_thresh)
 
