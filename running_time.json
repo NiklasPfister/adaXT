@@ -1,0 +1,668 @@
+{
+    "classification on multiple trees": [
+        {
+            "Date": "2023-07-22 10:43:11",
+            "num features": 10,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": false,
+            "run time": 75148.88960006647
+        },
+        {
+            "Date": "2023-07-22 10:44:07",
+            "num features": 10,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": true,
+            "run time": 56385.57389995549
+        },
+        {
+            "Date": "2023-07-25 07:48:56",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": false,
+            "run time": 61806.818199926056
+        },
+        {
+            "Date": "2023-07-25 07:49:59",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": true,
+            "run time": 63382.7680000104
+        },
+        {
+            "Date": "2023-07-25 08:00:45",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 200,
+            "pre sorted": false,
+            "run time": 240113.39800001588
+        },
+        {
+            "Date": "2023-07-25 08:05:53",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 200,
+            "pre sorted": true,
+            "run time": 308711.56429999974
+        },
+        {
+            "Date": "2023-08-19 10:14:11",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 20,
+            "pre sorted": false,
+            "run time": 200084.59220000077
+        },
+        {
+            "Date": "2023-08-19 10:17:20",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 20,
+            "pre sorted": true,
+            "run time": 188704.4237999944
+        }
+    ],
+    "regression on multiple trees": [
+        {
+            "Date": "2023-07-25 07:51:32",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": false,
+            "run time": 92406.49950003717
+        },
+        {
+            "Date": "2023-07-25 07:53:10",
+            "num features": 11,
+            "num rows": 199,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 50,
+            "pre sorted": true,
+            "run time": 98661.96600010153
+        }
+    ],
+    "regression on a single tree": [
+        {
+            "Date": "2023-07-31 11:32:03",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 28655.489600030705
+        },
+        {
+            "Date": "2023-07-31 12:29:41",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9079.53190000012
+        },
+        {
+            "Date": "2023-08-07 09:06:36",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8381.602399982512
+        },
+        {
+            "Date": "2023-08-07 09:14:25",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7424.125100020319
+        },
+        {
+            "Date": "2023-08-07 12:59:18",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7338.202400016598
+        },
+        {
+            "Date": "2023-08-08 07:05:56",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8960.516300052404
+        },
+        {
+            "Date": "2023-08-08 07:11:51",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9907.496600062586
+        },
+        {
+            "Date": "2023-08-08 07:13:31",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9110.448300023563
+        },
+        {
+            "Date": "2023-08-08 07:14:32",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8534.140900010243
+        },
+        {
+            "Date": "2023-08-08 07:16:05",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 38631.828899960965
+        },
+        {
+            "Date": "2023-08-19 10:18:28",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8443.660199991427
+        },
+        {
+            "Date": "2023-08-23 11:24:49",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7123.143299977528
+        },
+        {
+            "Date": "2023-08-27 10:20:35",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 4238.450399949215
+        },
+        {
+            "Date": "2023-08-27 10:29:20",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8966.890800045803
+        },
+        {
+            "Date": "2023-08-27 10:31:09",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8388.933999929577
+        },
+        {
+            "Date": "2023-08-27 10:36:17",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7903.334900038317
+        },
+        {
+            "Date": "2023-08-27 10:59:03",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5660.705800051801
+        },
+        {
+            "Date": "2023-08-27 11:00:36",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9685.233899974264
+        },
+        {
+            "Date": "2023-08-27 11:06:21",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6638.858900056221
+        },
+        {
+            "Date": "2023-08-27 11:07:21",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5974.6937999734655
+        },
+        {
+            "Date": "2023-08-27 11:13:16",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 248216.56259999145
+        },
+        {
+            "Date": "2023-08-27 11:15:31",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 11661.040000035428
+        },
+        {
+            "Date": "2023-08-27 11:19:58",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6998.613500036299
+        },
+        {
+            "Date": "2023-08-27 11:22:32",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6873.59249999281
+        },
+        {
+            "Date": "2023-08-27 11:24:35",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6647.999800043181
+        },
+        {
+            "Date": "2023-08-27 14:42:51",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6834.559499984607
+        },
+        {
+            "Date": "2023-08-27 14:45:01",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6543.0354999843985
+        },
+        {
+            "Date": "2023-08-27 14:50:32",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6304.236899944954
+        },
+        {
+            "Date": "2023-08-29 15:48:47",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 4127.93039996177
+        },
+        {
+            "Date": "2023-08-29 15:52:13",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 4421.800500014797
+        },
+        {
+            "Date": "2023-08-29 15:54:56",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 4249.636299908161
+        },
+        {
+            "Date": "2023-08-30 11:29:31",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8667.227900004946
+        },
+        {
+            "Date": "2023-08-30 11:38:01",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9771.009600022808
+        },
+        {
+            "Date": "2023-09-02 10:44:48",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5940.052400110289
+        },
+        {
+            "Date": "2023-09-02 10:53:21",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9910.07690015249
+        },
+        {
+            "Date": "2023-09-02 10:54:15",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9729.606700129807
+        },
+        {
+            "Date": "2023-09-02 11:38:51",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 11671.446300111711
+        },
+        {
+            "Date": "2023-09-02 11:45:43",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9077.21669995226
+        },
+        {
+            "Date": "2023-09-02 11:46:41",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 9422.905000159517
+        },
+        {
+            "Date": "2023-09-02 11:49:14",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 10128.1989000272
+        },
+        {
+            "Date": "2023-09-04 06:56:24",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 16276.287800166756
+        },
+        {
+            "Date": "2023-09-04 07:42:17",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 17953.55900004506
+        },
+        {
+            "Date": "2023-09-04 07:49:05",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 14618.777099996805
+        },
+        {
+            "Date": "2023-09-04 07:50:02",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 15038.918199948967
+        },
+        {
+            "Date": "2023-09-04 08:01:05",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6789.507600013167
+        },
+        {
+            "Date": "2023-09-04 08:17:03",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8319.987999973819
+        },
+        {
+            "Date": "2023-09-04 08:17:56",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6545.552300056443
+        },
+        {
+            "Date": "2023-09-04 16:00:35",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 16186.226499965414
+        },
+        {
+            "Date": "2023-09-05 07:27:24",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5187.176700215787
+        },
+        {
+            "Date": "2023-09-05 07:28:38",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5329.506300156936
+        },
+        {
+            "Date": "2023-09-05 07:54:08",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8923.410800052807
+        },
+        {
+            "Date": "2023-09-05 08:29:31",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7489.107099827379
+        },
+        {
+            "Date": "2023-09-05 08:44:58",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 8204.315299866721
+        },
+        {
+            "Date": "2023-09-05 08:48:42",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 6621.654500020668
+        },
+        {
+            "Date": "2023-09-05 15:58:17",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 5550.9795000000395
+        }
+    ],
+    "classification on a single tree": [
+        {
+            "Date": "2023-07-31 11:32:30",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 27860.353900003247
+        },
+        {
+            "Date": "2023-08-07 09:13:59",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 4578.6474999040365
+        },
+        {
+            "Date": "2023-08-07 09:14:25",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 7.5249000219628215
+        },
+        {
+            "Date": "2023-08-07 12:59:18",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 2.8381000738590956
+        },
+        {
+            "Date": "2023-08-08 07:14:52",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 10615.64490001183
+        },
+        {
+            "Date": "2023-08-08 07:16:32",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 26897.02159992885
+        },
+        {
+            "Date": "2023-08-19 10:19:10",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 11603.033000021242
+        }
+    ]
+}

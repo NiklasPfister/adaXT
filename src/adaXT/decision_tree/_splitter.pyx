@@ -2,7 +2,7 @@ import numpy as np
 from numpy import float64 as DOUBLE
 cimport numpy as cnp
 from numpy.math cimport INFINITY
-from ._func_wrapper import FuncWrapper
+from ._func_wrapper cimport FuncWrapper
 cnp.import_array()
 
 # cython: profile=true
@@ -37,17 +37,22 @@ cdef class Splitter:
         cdef:
             double crit, mean_thresh
             int n_outcomes
+            FuncWrapper criteria
+            double left_imp = 0.0
+            double right_imp = 0.0
+            double crit = 0.0
 
+        criteria = self.criteria
         features = self.features.base
         outcomes = self.outcomes.base
-        
-        n_outcomes = len(left_indices)
+
+        cdef int n_outcomes = left_indices.shape[0]
 
         # calculate on the left dataset
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = self.criteria.func(features[left_indices], outcomes[left_indices])
+            left_imp = criteria.func(features[left_indices], outcomes[left_indices])
             crit += left_imp * (n_outcomes / self.n_indices)
         
         # calculate in the right dataset
@@ -55,12 +60,12 @@ cdef class Splitter:
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = self.criteria.func(features[right_indices], outcomes[right_indices])
+            right_imp = criteria.func(features[right_indices], outcomes[right_indices])
             crit += right_imp * (n_outcomes / self.n_indices)
         
         mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
 
-        mean_thresh = np.mean([features[left_indices[-1], feature], features[right_indices[0], feature]])
+        mean_thresh = ([features[left_indices[-1], feature], features[right_indices[0], feature]])/2
         
         return (crit, left_imp, right_imp, mean_thresh)
 

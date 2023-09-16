@@ -2,6 +2,9 @@
 
 import numpy as np
 from cython cimport boundscheck, wraparound
+cimport numpy as cnp
+cnp.import_array()
+from cpython cimport set, list
 
 from ._func_wrapper cimport FuncWrapper
 
@@ -51,24 +54,25 @@ cdef double variance(double[:, ::1] x, double[:] y):
         variance of the y data
     """
     cdef double cur_sum = 0
-    cdef double mu = mean(y)
+    cdef double mu = mean(y, indices)
     cdef int i 
     cdef int y_len = y.shape[0]
+    cdef int n_indices = indices.shape[0]
 
     with boundscheck(False), wraparound(False):    
-        for i in range(y_len):
-            cur_sum += (y[i] - mu)**2
+        for i in range(n_indices):
+            cur_sum += (y[indices[i]] - mu) * (y[indices[i]] - mu)
 
     return cur_sum / y_len
 
-cdef double mean(double[:] lst):
+cdef double mean(double[:] lst, int[:] indices):
     cdef double sum = 0.0
     cdef int i 
-    cdef int length = lst.shape[0]
+    cdef int length = indices.shape[0]
 
     with boundscheck(False), wraparound(False): 
         for i in range(length):
-            sum += lst[i]
+            sum += lst[indices[i]]
     return sum / length
 
 def gini_index_wrapped():

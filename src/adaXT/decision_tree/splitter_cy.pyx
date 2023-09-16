@@ -5,14 +5,13 @@ from typing import List
 from typing import Callable
 import numpy as np
 cimport numpy as cnp
+cnp.import_array()
 import numpy.typing as npt
-
-from adaXT.decision_tree.criteria_cy import gini_index_wrapped
-
+from cython cimport boundscheck, wraparound, profile
 
 # my imports
-from adaXT.decision_tree.func_wrapper cimport FuncWrapper
-from array import array
+from ._func_wrapper cimport FuncWrapper
+from array import array    
 
 cdef class Splitter:
     cdef:
@@ -48,7 +47,6 @@ cdef class Splitter:
         self.pre_sort = presort
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
     
-
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         """
         Evaluates a split on two datasets
@@ -88,7 +86,7 @@ cdef class Splitter:
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(self.features.base[left_indices], self.outcomes.base[left_indices])
+            left_imp = criteria.func(self.features, self.outcomes, left_indices)
             crit += left_imp * (n_outcomes / self.n_indices)
         
         # calculate in the right dataset
@@ -96,13 +94,13 @@ cdef class Splitter:
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = criteria.func(self.features.base[right_indices], self.outcomes.base[right_indices])
+            right_imp = criteria.func(self.features, self.outcomes, right_indices)
             crit += right_imp * (n_outcomes / self.n_indices)
         
         cdef double mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
         
         return (crit, left_imp, right_imp, mean_thresh)
-        
+
     def sort_feature(self, indices: List[int], feature: npt.NDArray) -> npt.NDArray:
         """
         Parameters
@@ -153,6 +151,9 @@ cdef class Splitter:
         best_imp = []
         split = []  
         cdef double[:] current_feature_values
+        cdef double[:, ::1] x = self.features.base
+        cdef double[::1] y = self.outcomes.base
+        cdef int one_int = 0
         # declare variables for loop
         cdef int i
         cdef int N_i = self.n_indices - 1
