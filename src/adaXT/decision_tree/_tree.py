@@ -358,8 +358,7 @@ class DepthTreeBuilder:
         queue = [] # queue of elements queue objects that need to be built
         
         all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
-        #queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx])))
-        queue.append(queue_obj(all_idx, 0, 0))
+        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx], n_classes)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()

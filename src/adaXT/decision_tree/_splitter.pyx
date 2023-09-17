@@ -17,21 +17,19 @@ cdef class Splitter:
         self.features = X 
         self.outcomes = Y 
 
-        self.n_features = X.shape[0]
+        self.n_features = X.shape[1]
         self.criteria = criteria
         self.pre_sort = None
+        self.n_class = len(np.unique(Y))
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
 
     def set_pre_sort(self, pre_sort: np.ndarray):
         self.pre_sort = pre_sort
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
-        cdef double[:] sort_list
-        cdef long[:] argsorted
-        sort_list = feature.base[indices]
-        argsorted = np.argsort(sort_list)
+        cdef int x
 
-        return indices.base[argsorted]
+        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=np.int32) 
 
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         cdef:
@@ -46,12 +44,13 @@ cdef class Splitter:
         outcomes = self.outcomes.base
 
         cdef int n_outcomes = left_indices.shape[0]
-
+        cdef int n_class = self.n_class
+        
         # calculate on the left dataset
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features[left_indices], outcomes[left_indices])
+            left_imp = criteria.func(features[left_indices], outcomes[left_indices], n_class)
             crit += left_imp * (n_outcomes / self.n_indices)
         
         # calculate in the right dataset
@@ -59,7 +58,7 @@ cdef class Splitter:
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = criteria.func(features[right_indices], outcomes[right_indices])
+            right_imp = criteria.func(features[right_indices], outcomes[right_indices], n_class)
             crit += right_imp * (n_outcomes / self.n_indices)
         
         mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
@@ -80,7 +79,6 @@ cdef class Splitter:
         # declare variables for loop
         cdef int i
         cdef int N_i = self.n_indices - 1
-
         features = self.features.base
         n_features = self.n_features
         # for all features

@@ -47,7 +47,7 @@ def test_single_class():
     while len(queue) > 0:
         cur_node = queue.pop()
         if type(cur_node) == DecisionNode: # Check threshold and idx of decision node
-            assert cur_node.threshold == exp_val[i], f'Expected threshold {exp_val[i]} on i={i}, got {cur_node.threshold}'
+            assert cur_node.threshold == exp_val[i], f'Expected threshold {exp_val[i]} on node={i}, got {cur_node.threshold} on split_idx {cur_node.split_idx} exp: {spl_idx[i]}'
             assert cur_node.split_idx == spl_idx[i], f'Expected split idx {spl_idx[i]} on i={i}, got {cur_node.split_idx}'
             if cur_node.left_child:
                 queue.append(cur_node.left_child)
@@ -71,7 +71,7 @@ def test_multi_class():
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
-    tree.fit(X, Y_multi, gini_index_wrapped)
+    tree.fit(X, Y_multi, gini_index_wrapped())
     root = tree.root
     exp_val = [0.25, -0.75, -0.75] # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure leaf node
     spl_idx = [0, 1, 0] # DIFFERENT FROM SKLEARN THEIRS IS: [0, 1, 1], both give pure leaf node
@@ -104,7 +104,7 @@ def test_regression():
                 [-0.5, 2]])
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
     tree = Tree("Regression")
-    tree.fit(X, Y_reg, variance_wrapped)
+    tree.fit(X, Y_reg, variance_wrapped())
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
@@ -138,7 +138,7 @@ def test_pre_sort():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
     tree = Tree("Classification", pre_sort=pre_sorted)
-    tree.fit(X, Y_cla, gini_index_wrapped)
+    tree.fit(X, Y_cla, gini_index_wrapped())
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -172,7 +172,7 @@ def test_prediction():
                 [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index_wrapped)
+    tree.fit(X, Y_cla, gini_index_wrapped())
     prediction = tree.predict(X)
     print(prediction)
     for i in range(len(Y_cla)):
@@ -189,7 +189,7 @@ def test_NxN_matrix():
                 [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index_wrapped)
+    tree.fit(X, Y_cla, gini_index_wrapped())
     weight_matrix = tree.weight_matrix()
     true_weight = np.array([
         [1, 0, 0, 0, 1, 0, 1, 0],
@@ -210,9 +210,9 @@ def test_NxN_matrix():
 
 if __name__ == "__main__":
     test_single_class()
-    test_multi_class()
-    test_regression()
-    test_pre_sort()
-    test_prediction()
-    test_NxN_matrix()
-    print("done")
+    # test_multi_class()
+    # test_regression()
+    # test_pre_sort()
+    # test_prediction()
+    # test_NxN_matrix()
+    # print("done")
