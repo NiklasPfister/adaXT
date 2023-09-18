@@ -50,7 +50,7 @@ cdef class Splitter:
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features[left_indices], outcomes[left_indices], n_class)
+            left_imp = criteria.func(features, outcomes, left_indices, n_class)
             crit += left_imp * (n_outcomes / self.n_indices)
         
         # calculate in the right dataset
@@ -58,7 +58,7 @@ cdef class Splitter:
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = criteria.func(features[right_indices], outcomes[right_indices], n_class)
+            right_imp = criteria.func(features, outcomes, right_indices, n_class)
             crit += right_imp * (n_outcomes / self.n_indices)
         
         mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2

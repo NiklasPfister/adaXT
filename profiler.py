@@ -1,13 +1,14 @@
 import pstats, cProfile
 import time
 import numpy as np
-from adaXT.decision_tree._criteria import gini_index_wrapped
+from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree._tree import Tree
 from sklearn.tree import DecisionTreeClassifier as DTC
 
-X = np.random.randint(0, 100, (1000, 6))
-Y = np.random.randint(0, 40, 1000)
 
+X = np.random.uniform(0, 250, (1000, 6))
+Y = np.random.randint(0, 40, 1000)
+print(X[0:10])
 sk_tree = DTC(criterion="gini")
 tree = Tree("Classification")
 gini = gini_index_wrapped()
