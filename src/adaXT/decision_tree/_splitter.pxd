@@ -22,6 +22,8 @@ cdef class Splitter:
         int n_indices
         object criteria
         int n_class
+        double* class_labels
+        int* n_in_class
 
     cdef cnp.ndarray sort_feature(self, int[:], double[:])
 

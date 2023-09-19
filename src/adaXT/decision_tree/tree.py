@@ -257,7 +257,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter: Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, split: Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -285,10 +285,10 @@ class DepthTreeBuilder:
         else:
             self.criteria = crit
 
-        if Splitter:
-            self.splitter = Splitter
-        else:
+        if split is None:
             self.splitter = Splitter(self.features, self.outcomes, self.criteria)
+        else:
+            self.splitter = split
 
         if type(pre_sort) == np.ndarray:
             self.splitter.pre_sort = pre_sort

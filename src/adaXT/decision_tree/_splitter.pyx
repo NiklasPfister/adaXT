@@ -3,10 +3,9 @@ from numpy import float64 as DOUBLE
 cimport numpy as cnp
 from numpy.math cimport INFINITY
 from ._func_wrapper cimport FuncWrapper
+from libc.stdlib cimport malloc, free
 cnp.import_array()
-
-# cython: profile=true
-
+# cython: profile=True
 cdef class Splitter:
     """
     Splitter class used to create splits of the data
@@ -21,7 +20,13 @@ cdef class Splitter:
         self.criteria = criteria
         self.pre_sort = None
         self.n_class = len(np.unique(Y))
+        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
+        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
+
+    def free_c_lists(self):
+        free(self.class_labels)
+        free(self.n_in_class)
 
     def set_pre_sort(self, pre_sort: np.ndarray):
         self.pre_sort = pre_sort
@@ -44,13 +49,12 @@ cdef class Splitter:
         outcomes = self.outcomes.base
 
         cdef int n_outcomes = left_indices.shape[0]
-        cdef int n_class = self.n_class
         
         # calculate on the left dataset
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features, outcomes, left_indices, n_class)
+            left_imp = criteria.func(features, outcomes, left_indices, self.class_labels, self.n_in_class)
             crit += left_imp * (n_outcomes / self.n_indices)
         
         # calculate in the right dataset
@@ -58,7 +62,7 @@ cdef class Splitter:
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = criteria.func(features, outcomes, right_indices, n_class)
+            right_imp = criteria.func(features, outcomes, right_indices, self.class_labels, self.n_in_class)
             crit += right_imp * (n_outcomes / self.n_indices)
         
         mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2

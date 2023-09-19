@@ -209,8 +209,8 @@ def test_NxN_matrix():
 
 
 if __name__ == "__main__":
-    test_single_class()
-    # test_multi_class()
+    # test_single_class()
+    test_multi_class()
     # test_regression()
     # test_pre_sort()
     # test_prediction()

@@ -1,3 +1,4 @@
+# distutils: define_macros=CYTHON_TRACE=1
 import os
 import numpy as np
 from setuptools import setup, find_packages, Extension
@@ -18,7 +19,8 @@ extensions = [
 
 if USE_CYTHON:
     from Cython.Build import cythonize
-    extensions = cythonize(extensions) #TODO: Annotate should be false upon release, it creates the html file, where you can see what is in python
+    with_debug = False
+    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=True) #TODO: Annotate should be false upon release, it creates the html file, where you can see what is in python
 extensions += [Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/_tree.py"])]
 
 setup(

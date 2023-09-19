@@ -1,44 +1,37 @@
-
-
-import numpy as np
 from cython cimport boundscheck, wraparound
 from libc.math cimport fabs as cabs
 cimport numpy as cnp
 cnp.import_array()
-from libc.stdlib cimport malloc, free
 
 from ._func_wrapper cimport FuncWrapper
 
+
 # int for y
-cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, int n_tot_class) nogil:
+cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class) nogil:
     cdef:
         double sum = 0.0
         int n_obs = indices.shape[0]
         int n_classes = 0
-        double* class_labels = <double *> malloc(sizeof(double) * n_tot_class)
-        int* n_in_class = <int *> malloc(sizeof(int) * n_tot_class)
         double proportion_cls 
-        double epsilon = 2e-30
         int seen
-    for i in range(n_obs):
-        seen = 0
-        for j in range(n_classes):
-            if cabs(class_labels[j] - y[indices[i]]) < epsilon:
-                n_in_class[j] = n_in_class[j] + 1
-                seen = 1
-                break
-        if (seen == 0):
-            class_labels[n_classes] = y[indices[i]]
-            n_in_class[n_classes] = 1
-            n_classes += 1
-    for i in range(n_classes):
-        proportion_cls = n_in_class[i] / n_obs
-        sum += proportion_cls**2
-    free(class_labels)
-    free(n_in_class)
+    with boundscheck(False), wraparound(False):
+        for i in range(n_obs):
+            seen = 0
+            for j in range(n_classes):
+                if class_labels[j] == y[indices[i]]:
+                    n_in_class[j] = n_in_class[j] + 1
+                    seen = 1
+                    break
+            if (seen == 0):
+                class_labels[n_classes] = y[indices[i]]
+                n_in_class[n_classes] = 1
+                n_classes += 1
+        for i in range(n_classes):
+            proportion_cls = n_in_class[i] / n_obs
+            sum += proportion_cls**2
     return 1 - sum  
 
-cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, int n_tot_class) nogil:
+cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class) nogil:
     """
     Calculates the variance 
 
