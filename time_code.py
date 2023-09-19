@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import cProfile
 import line_profiler
-from sklearn.tree import DecisionTreeRegressor
+from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
 def test_run_time_single_tree_classification():
     max_depth = 5
@@ -173,13 +173,29 @@ def update_data_set(type, num_rows, num_features):
 def run_sklearn_regression():
     max_depth = 5
     min_samples = 2
-    data = pd.read_csv(r'classification_data.csv')
+    data = pd.read_csv(r'regression_data.csv')
     data = data.to_numpy()
     X = data[:, :-1]
-    Y = data[:, -1].astype(np.int_)
+    Y = data[:, -1]
     
     start_time = time.perf_counter()
     tr_cla = DecisionTreeRegressor(max_depth=max_depth, min_samples_split=min_samples)
+    tr_cla.fit(X, Y)
+    end_time = time.perf_counter()
+    elapsed = (end_time - start_time) * 1000 # elapsed time in ms
+
+    return elapsed
+
+def run_sklearn_classification():
+    max_depth = 5
+    min_samples = 2
+    data = pd.read_csv(r'classification_data.csv')
+    data = data.to_numpy()
+    X = data[:, :-1]
+    Y = data[:, -1]
+    
+    start_time = time.perf_counter()
+    tr_cla = DecisionTreeClassifier(max_depth=max_depth, min_samples_split=min_samples)
     tr_cla.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
@@ -197,13 +213,14 @@ if __name__ == "__main__":
     profiler = cProfile.Profile()
     profiler.enable()
     # My own code to run
-    #test_run_time_single_tree_regression()
-    test_run_time_single_tree_classification()
+    test_run_time_single_tree_regression()
+    #test_run_time_single_tree_classification()
     profiler.disable()
     profiler.print_stats(sort="tottime")
     
     #test_run_time_single_tree_classification()
-    #print("Sklearn time:", run_sklearn_regression())
+    #print("Sklearn time regression:", run_sklearn_regression())
+    #print("Sklearn time classification:", run_sklearn_classification())
 
     #Print profiling statistics using the `line_profiler` API
     #profile = line_profiler.LineProfiler(test_run_time_single_tree_regression)

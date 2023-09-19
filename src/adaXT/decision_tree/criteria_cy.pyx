@@ -19,7 +19,7 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices):
         int N = indices.shape[0]
         int i, j
         double p_i 
-        cnp.ndarray seen_already = np.empty(N, dtype=np.double)  
+        double[:] seen_already = np.empty(N, dtype=np.double)  
         int n_seen = 0 
         int num_seen = 0
         bint skip_y_i = 0
