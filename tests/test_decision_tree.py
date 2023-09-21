@@ -40,6 +40,7 @@ def test_single_class():
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
+    print_tree(tree)
     assert type(root) == LeafNode or type(root) == DecisionNode, f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
@@ -209,8 +210,8 @@ def test_NxN_matrix():
 
 
 if __name__ == "__main__":
-    # test_single_class()
-    test_multi_class()
+    test_single_class()
+    # test_multi_class()
     # test_regression()
     # test_pre_sort()
     # test_prediction()
