@@ -1,3 +1,5 @@
+# cython: profile=True
+cimport cython
 import numpy as np
 from numpy import float64 as DOUBLE
 cimport numpy as cnp
@@ -5,7 +7,6 @@ from numpy.math cimport INFINITY
 from ._func_wrapper cimport FuncWrapper
 from libc.stdlib cimport malloc, free
 cnp.import_array()
-# cython: profile=True
 cdef class Splitter:
     """
     Splitter class used to create splits of the data
@@ -32,9 +33,11 @@ cdef class Splitter:
         self.pre_sort = pre_sort
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
-        cdef int x
-
-        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=np.int32) 
+        cdef:
+            int x
+            double[:] temp
+        temp = feature.base[indices] 
+        return np.array(indices.base[np.argsort(temp)], dtype=np.int32) 
 
     cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
         cdef:
@@ -45,8 +48,8 @@ cdef class Splitter:
             double crit = 0.0
 
         criteria = self.criteria
-        features = self.features.base
-        outcomes = self.outcomes.base
+        features = self.features
+        outcomes = self.outcomes
 
         cdef int n_outcomes = left_indices.shape[0]
         

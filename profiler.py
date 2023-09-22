@@ -3,21 +3,24 @@ import time
 import numpy as np
 from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree._tree import Tree
+from adaXT.decision_tree.tree_utils import plot_tree
+import matplotlib.pyplot as plt
 from sklearn.tree import DecisionTreeClassifier as DTC
 from sklearn.tree import DecisionTreeRegressor as DTR
 
 n = 1000
 X = np.random.uniform(0, 2500, (n, 6))
-Y_cla = np.random.randint(0, 3, n)
+Y_cla = np.random.randint(0, 5, n)
 Y_reg = np.random.uniform(0, 1000, n)
 sk_tree = DTC(criterion="gini")
 tree = Tree("Classification")
 gini = gini_index_wrapped()
-# profiler = cProfile.Profile()
-# profiler.enable()
-# tree.fit(X, Y_cla, gini)
-# profiler.disable()
-# profiler.print_stats(sort="tottime")
+profiler = cProfile.Profile()
+profiler.enable()
+tree.fit(X, Y_cla, gini)
+profiler.disable()
+profiler.print_stats(sort="tottime")
+
 print("Classification")
 st = time.time()
 tree.fit(X,Y_cla, gini)
