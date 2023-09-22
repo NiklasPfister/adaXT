@@ -2,7 +2,6 @@
 
 from typing import List
 
-from typing import Callable
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
@@ -151,12 +150,10 @@ cdef class Splitter:
         best_imp = []
         split = []  
         cdef double[:] current_feature_values
-        cdef double[:, ::1] x = self.features.base
-        cdef double[::1] y = self.outcomes.base
-        cdef int one_int = 0
         # declare variables for loop
         cdef int i
         cdef int N_i = self.n_indices - 1
+        cdef int[:] sorted_index_list_feature
         # for all features
         for feature in range(self.n_features):
             current_feature_values = self.features[:, feature]
