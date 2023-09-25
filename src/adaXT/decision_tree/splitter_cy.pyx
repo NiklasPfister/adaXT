@@ -45,7 +45,7 @@ cdef class Splitter:
         self.pre_sort = presort
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
     
-    cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
+    cdef (double, double, double, double) test_split(self, int[::1] left_indices, int[::1] right_indices, int feature):
         """
         Evaluates a split on two datasets
 
@@ -87,7 +87,7 @@ cdef class Splitter:
             left_imp = criteria.func(self.features, self.outcomes, left_indices)
             crit += left_imp * (n_outcomes / self.n_indices)
         
-        # calculate in the right dataset
+        # calculate on the right dataset
         n_outcomes = right_indices.shape[0]
         if n_outcomes == 0:
             right_imp = 0.0
@@ -162,8 +162,7 @@ cdef class Splitter:
                 # Create mask to only retrieve the indices in the current node from presort
                 mask = np.isin(self.pre_sort[:, feature], self.indices)
                 # Use the mask to retrieve values from presort
-                sorted_index_list_feature = np.asarray(self.pre_sort[:, feature])[mask]       
-
+                sorted_index_list_feature = np.asarray(self.pre_sort[:, feature])[mask]
             
             # loop over sorted feature list
             for i in range(N_i):
