@@ -34,7 +34,6 @@ cdef class Splitter:
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
         cdef:
-            int x
             double[:] temp
         temp = feature.base[indices] 
         return np.array(indices.base[np.argsort(temp)], dtype=np.int32) 
@@ -46,10 +45,14 @@ cdef class Splitter:
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
+            double* class_labels
+            int* n_in_class
 
         criteria = self.criteria
         features = self.features
         outcomes = self.outcomes
+        class_labels = self.class_labels
+        n_in_class = self.n_in_class
 
         cdef int n_outcomes = left_indices.shape[0]
         
@@ -57,18 +60,17 @@ cdef class Splitter:
         if n_outcomes == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features, outcomes, left_indices, self.class_labels, self.n_in_class)
-            crit += left_imp * (n_outcomes / self.n_indices)
+            left_imp = criteria.func(features, outcomes, left_indices, class_labels, n_in_class)
         
         # calculate in the right dataset
         n_outcomes = right_indices.shape[0]
         if n_outcomes == 0:
             right_imp = 0.0
         else:
-            right_imp = criteria.func(features, outcomes, right_indices, self.class_labels, self.n_in_class)
-            crit += right_imp * (n_outcomes / self.n_indices)
+            right_imp = criteria.func(features, outcomes, right_indices, class_labels, n_in_class)
         
-        mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
+        crit = (left_imp + right_imp) * (n_outcomes/self.n_indices)
+        mean_thresh = (features[left_indices[-1], feature] + features[right_indices[0], feature]) / 2
         
         return (crit, left_imp, right_imp, mean_thresh)
 
