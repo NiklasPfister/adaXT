@@ -337,18 +337,23 @@ class DepthTreeBuilder:
         Tree
             the tree object built
         """
+        features = self.features
+        outcomes = self.outcomes
         splitter = self.splitter
+
+        if tree.tree_type == "Classification":
+            classes = np.unique(outcomes)
+            self.classes = classes
+            n_classes = len(self.classes)
+
+            tree.n_classes = n_classes
+            tree.classes = classes
+            # Initialize c lists in splitter class
+            splitter.make_c_lists(n_classes)
         min_samples = tree.min_samples
         criteria = self.criteria
 
-        features = self.features
-        outcomes = self.outcomes
-
         max_depth = tree.max_depth
-        classes = np.unique(outcomes)
-        self.classes = classes
-        n_classes = len(self.classes)
-
         root = None
     
         leaf_node_list = []
@@ -397,15 +402,15 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1 # number of nodes increase by 1
 
-        splitter.free_c_lists()
+        # Free the last calculated nodes lists
+        if tree.tree_type == "Classification":
+            splitter.free_c_lists()  # Free the last calculated nodes lists
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = features.shape[0]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.n_classes = n_classes
-        tree.classes = classes
         return 0
 
     

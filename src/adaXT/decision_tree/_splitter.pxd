@@ -1,9 +1,4 @@
 cimport numpy as cnp
-from ._func_wrapper cimport func_ptr
-cnp.import_array()
-
-ctypedef cnp.float64_t npFloat
-ctypedef cnp.int_t npInt
 
 cdef class test_obj:
     cdef:
@@ -27,6 +22,11 @@ cdef class Splitter:
 
     cdef cnp.ndarray sort_feature(self, int[:], double[:])
 
+
     cdef (double, double, double, double) test_split(self, int[:], int[:], int)
 
     cpdef get_split(self, int[:])
+    
+    cpdef void make_c_lists(self, int)
+
+    cpdef void free_c_lists(self)

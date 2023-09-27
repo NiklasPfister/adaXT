@@ -1,4 +1,5 @@
-# cython: profile=True
+#cython: profile=True
+
 cimport cython
 import numpy as np
 from numpy import float64 as DOUBLE
@@ -21,11 +22,13 @@ cdef class Splitter:
         self.criteria = criteria
         self.pre_sort = None
         self.n_class = len(np.unique(Y))
-        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
-        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
 
-    def free_c_lists(self):
+    cpdef void make_c_lists(self, int n_class):
+        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
+        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
+
+    cpdef void free_c_lists(self):
         free(self.class_labels)
         free(self.n_in_class)
 
@@ -47,21 +50,20 @@ cdef class Splitter:
             double crit = 0.0
             double* class_labels
             int* n_in_class
+            int n_outcomes = left_indices.shape[0] # initial
 
         criteria = self.criteria
         features = self.features
         outcomes = self.outcomes
         class_labels = self.class_labels
         n_in_class = self.n_in_class
-
-        cdef int n_outcomes = left_indices.shape[0]
         
         # calculate on the left dataset
         if n_outcomes == 0:
             left_imp = 0.0
         else:
             left_imp = criteria.func(features, outcomes, left_indices, class_labels, n_in_class)
-        
+            crit = left_imp * (n_outcomes/self.n_indices)
         # calculate in the right dataset
         n_outcomes = right_indices.shape[0]
         if n_outcomes == 0:
@@ -69,25 +71,31 @@ cdef class Splitter:
         else:
             right_imp = criteria.func(features, outcomes, right_indices, class_labels, n_in_class)
         
-        crit = (left_imp + right_imp) * (n_outcomes/self.n_indices)
+        crit += (right_imp) * (n_outcomes/self.n_indices)
         mean_thresh = (features[left_indices[-1], feature] + features[right_indices[0], feature]) / 2
         
         return (crit, left_imp, right_imp, mean_thresh)
 
+    # Gets split given the indices in the given node
     cpdef get_split(self, int[:] indices):
         self.indices = indices
         self.n_indices = len(indices)
         cdef:
-            int best_feature = -1
+            int N_i = self.n_indices - 1 # number of indices to loop over. Skips last
             double best_threshold = INFINITY
             double best_score = INFINITY
+            double[:] current_feature_values
+            int i # variable for inner loop
         
+        # If the classes list is not null, then we have a classification tree
+        # This bit makes each node a c list, such that the wasted amount of memory is not as bad.
+        if self.class_labels != NULL:
+            self.free_c_lists()
+            classes = np.unique(self.outcomes.base[indices])
+            self.make_c_lists(len(classes))
+
         best_imp = []
         split = []  
-        cdef double[:] current_feature_values
-        # declare variables for loop
-        cdef int i
-        cdef int N_i = self.n_indices - 1
         features = self.features.base
         n_features = self.n_features
         # for all features

@@ -1,4 +1,4 @@
-# cython: profile=True
+# cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
 cimport cython
 from libc.math cimport fabs as cabs
 cimport numpy as cnp
@@ -8,9 +8,6 @@ from ._func_wrapper cimport FuncWrapper
 
 
 # int for y
-@cython.boundscheck(False)
-@cython.wraparound(False)
-@cython.profile(False)
 cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     cdef:
         double sum = 0.0
@@ -30,12 +27,10 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
             n_in_class[n_classes] = 1
             n_classes += 1
     for i in range(n_classes):
-        proportion_cls = n_in_class[i] / n_obs
+        proportion_cls =  (<double> n_in_class[i]) / (<double> n_obs)
         sum += proportion_cls*proportion_cls
     return 1 - sum  
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class) nogil:
     """
     Calculates the variance 
@@ -60,10 +55,8 @@ cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* clas
     for i in range(n_indices):
         cur_sum += (y[indices[i]] - mu) * (y[indices[i]]- mu)
 
-    return cur_sum / n_indices
+    return cur_sum / (<double> n_indices )
 
-@cython.boundscheck(False)
-@cython.wraparound(False)
 cdef double mean(double[:] y, int[:] indices) nogil:
     cdef double sum = 0.0
     cdef int i 
@@ -71,7 +64,7 @@ cdef double mean(double[:] y, int[:] indices) nogil:
 
     for i in range(length):
         sum += y[indices[i]]
-    return sum / length
+    return sum / (<double> length)
 
 def gini_index_wrapped():
     return FuncWrapper.make_from_ptr(gini_index)

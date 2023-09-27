@@ -10,16 +10,16 @@ from sklearn.tree import DecisionTreeRegressor as DTR
 
 n = 1000
 X = np.random.uniform(0, 2500, (n, 6))
-Y_cla = np.random.randint(0, 5, n)
+Y_cla = np.random.randint(0, 2, n)
 Y_reg = np.random.uniform(0, 1000, n)
 sk_tree = DTC(criterion="gini")
 tree = Tree("Classification")
 gini = gini_index_wrapped()
-profiler = cProfile.Profile()
-profiler.enable()
-tree.fit(X, Y_cla, gini)
-profiler.disable()
-profiler.print_stats(sort="tottime")
+# profiler = cProfile.Profile()
+# profiler.enable()
+# tree.fit(X, Y_cla, gini)
+# profiler.disable()
+# profiler.print_stats(sort="tottime")
 
 print("Classification")
 st = time.time()
@@ -51,4 +51,4 @@ print("sklearn runtime: ", sk)
 print("fraction: ", our/sk)
 
 
-# print("datapoints: ", len(Y))
+print("datapoints: ", n)
