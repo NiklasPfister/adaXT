@@ -1057,6 +1057,33 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 132.30159999966418
+        },
+        {
+            "Date": "2023-09-28 12:56:20",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 149.9491999984457
+        },
+        {
+            "Date": "2023-09-28 13:04:51",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 125.52140000116196
+        },
+        {
+            "Date": "2023-09-28 13:06:39",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 126.37209999957122
         }
     ],
     "classification on a single tree": [
@@ -1590,6 +1617,33 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 214.73259999947913
+        },
+        {
+            "Date": "2023-09-28 12:13:17",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 180.91249999997672
+        },
+        {
+            "Date": "2023-09-28 12:34:34",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 191.56739999925776
+        },
+        {
+            "Date": "2023-09-28 12:54:14",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 178.25970000012603
         }
     ],
     "classification on a single tree with presort": [
@@ -1610,6 +1664,24 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 1589.495199965313
+        },
+        {
+            "Date": "2023-09-28 13:06:59",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 236.0742000000755
+        },
+        {
+            "Date": "2023-09-28 13:07:47",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 215.41550000074494
         }
     ]
 }

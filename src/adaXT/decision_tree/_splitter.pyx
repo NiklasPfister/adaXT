@@ -36,10 +36,12 @@ cdef class Splitter:
         self.criteria = criterion
         self.pre_sort = presort
         self.n_class = len(np.unique(Y))
-        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
-        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
     
+    cpdef void make_c_lists(self, int n_class):
+        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
+        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
+
     def free_c_lists(self):
         free(self.class_labels)
         free(self.n_in_class)
@@ -98,48 +100,6 @@ cdef class Splitter:
         
         return (crit, left_imp, right_imp, mean_thresh)
     
-    '''
-    cdef int[::1] sort_feature(self, int[:] indices, double[:] feature):
-        """
-        Parameters
-        ----------
-        indices : np.NDArray
-            A memoryview of the indices which are to be sorted over
-        
-        feature: np.NDArray
-            A memoryview of feature values that are to be sorted
-            
-        Returns 
-        -----------
-        np.NDArray
-            A memoryview of the sorted indices 
-        """
-
-        cdef:
-            int x
-            double[:] temp
-
-        temp = np.asarray(feature)[indices]
-        return np.array(indices.base[np.argsort(temp)], dtype=np.int32) 
-    
-    cdef int[:] sort_feature(self, int[:] indices, double[:] feature):
-        """
-        Parameters
-        ----------
-        indices : List[int]
-            A list of the indices which are to be sorted over
-        
-        feature: npt.NDArray
-            A list containing the feature values that are to be sorted over
-            
-        Returns 
-        -----------
-        List[int]
-            A list of the sorted indices 
-        """
-        return np.array(sorted(indices.base, key=lambda x: feature[x]), dtype=int)   
-    '''
-    
     cdef int[::1] sort_feature(self, int[:] indices, double[:] feature):
         """
         Parameters
@@ -189,6 +149,13 @@ cdef class Splitter:
             int best_feature = -1
             double best_threshold = INFINITY
             double best_score = INFINITY
+
+        # If the classes list is not null, then we have a classification tree
+        # This bit makes each node a c list, such that the wasted amount of memory is not as bad.
+        if self.class_labels != NULL:
+            self.free_c_lists()
+            classes = np.unique(self.outcomes.base[indices])
+            self.make_c_lists(len(classes))
         
         best_imp = []
         split = []  

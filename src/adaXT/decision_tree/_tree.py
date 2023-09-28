@@ -3,12 +3,13 @@ from typing import Callable, List
 import numpy as np
 import numpy.typing as npt
 import sys
-import time
+from scipy.sparse import issparse
+from numpy import float64 as DOUBLE
 
 # Custom
 from ._func_wrapper import FuncWrapper
 from ._criteria import gini_index_wrapped
-from . import _splitter
+from ._splitter import Splitter
 
 crit = gini_index_wrapped # default criteria function
 
@@ -142,7 +143,23 @@ class Tree:
         self.pre_sort = pre_sort
         self.classes = classes
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:_splitter.Splitter | None = None, 
+    def check_input(self, X: object, Y: object):
+        if issparse(X):
+            X = X.tocsc()
+            X.sort_indices()
+
+            if X.data.dtype != DOUBLE:
+                X.data = np.ascontiguousarray(X, dtype=DOUBLE)
+
+        elif X.dtype != DOUBLE:
+            X = np.asfortranarray(X, dtype=DOUBLE)
+        
+        if Y.dtype != DOUBLE:
+            Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+    
+        return X, Y
+    
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:Splitter | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -163,6 +180,7 @@ class Tree:
             which samples to use from the data X and Y, by default uses all
         """
         # TODO: test feature and sample indexing
+        X, Y = self.check_input(X, Y)
         row, col = X.shape
         if sample_indices is None:
             sample_indices = np.arange(row)
@@ -255,7 +273,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter:_splitter.Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criteria: FuncWrapper|None = None, splitter: Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -278,15 +296,15 @@ class DepthTreeBuilder:
         self.outcomes = Y[sample_indices]
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
-        if criterion:
-            self.criteria = criterion
+        if criteria:
+            self.criteria = criteria
         else:
             self.criteria = crit()
 
-        if Splitter:
-            self.splitter = Splitter
+        if splitter:
+            self.splitter = splitter
         else:
-            self.splitter =_splitter.Splitter(self.features, self.outcomes, criterion)
+            self.splitter = Splitter(self.features, self.outcomes, criteria)
 
         if type(pre_sort) == np.ndarray:
             if pre_sort.dtype != np.int32:
@@ -324,17 +342,21 @@ class DepthTreeBuilder:
         Tree
             the tree object built
         """
+        features = self.features
+        outcomes = self.outcomes
         splitter = self.splitter
         min_samples = tree.min_samples
         criteria = self.criteria
-
-        features = self.features
-        outcomes = self.outcomes
-
         max_depth = tree.max_depth
         classes = np.unique(outcomes)
         self.classes = classes
         n_classes = len(self.classes)
+        tree.n_classes = n_classes
+        tree.classes = classes
+        
+        if tree.tree_type == "Classification":
+            # Initialize c lists in splitter class
+            splitter.make_c_lists(n_classes)
 
         root = None
     
@@ -387,14 +409,10 @@ class DepthTreeBuilder:
         splitter.free_c_lists()
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = splitter.n_features
+        tree.n_features = features.shape[0]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
         tree.n_classes = n_classes
         tree.classes = classes
         return tree
-
-    
-
-    

@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree._tree import *
 from adaXT.decision_tree._criteria import variance_wrapped, gini_index_wrapped
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
@@ -241,8 +241,8 @@ if __name__ == "__main__":
     profiler.enable()
     # Code to run
     #test_run_time_single_tree_regression()
-    #test_run_time_single_tree_classification_presort()
-    test_run_time_single_tree_classification()
+    test_run_time_single_tree_classification_presort()
+    #test_run_time_single_tree_classification()
     profiler.disable()
     stats = Stats(profiler)
     stats.sort_stats('tottime').print_stats(20)

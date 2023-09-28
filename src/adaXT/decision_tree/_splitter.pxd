@@ -16,7 +16,7 @@ cdef class Splitter:
     cdef:
         double[:, ::1] features
         double[::1] outcomes
-        readonly int n_features
+        int n_features
         int[:, ::1] pre_sort
         int[::1] indices
         int n_indices
@@ -30,3 +30,5 @@ cdef class Splitter:
     cdef (double, double, double, double) test_split(self, int[::1], int[::1], int)
 
     cpdef get_split(self, int[::1])
+    
+    cpdef void make_c_lists(self, int)
