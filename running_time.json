@@ -1682,6 +1682,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 215.41550000074494
+        },
+        {
+            "Date": "2023-09-28 13:10:58",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 210.3506000003108
         }
     ]
 }
