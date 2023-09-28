@@ -87,11 +87,11 @@ cdef class Splitter:
             int N_i = self.n_indices - 1 # number of indices to loop over. Skips last
             double best_threshold = INFINITY
             double best_score = INFINITY
+            int best_feature = 0
             double[:] current_feature_values
             int i # variable for inner loop
         
-        # If the classes list is not null, then we have a classification tree
-        # This bit makes each node a c list, such that the wasted amount of memory is not as bad.
+        # If the classes list is not null, then we have a classification tree, as such allocate memory for lists
         if self.class_labels != NULL:
             self.free_c_lists()
             classes = np.unique(self.outcomes.base[indices])
@@ -104,7 +104,7 @@ cdef class Splitter:
         # for all features
         for feature in range(n_features):
             current_feature_values = features[:, feature]
-            if self.pre_sort is None:
+            if self.pre_sort is not None:
                 sorted_index_list_feature = self.sort_feature(indices, current_feature_values)
             else:
                 pre_sort = self.pre_sort.base
