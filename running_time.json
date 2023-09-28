@@ -1581,6 +1581,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 207.30439999988448
+        },
+        {
+            "Date": "2023-09-28 12:01:30",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 214.73259999947913
         }
     ],
     "classification on a single tree with presort": [

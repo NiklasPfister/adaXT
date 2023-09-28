@@ -1,6 +1,3 @@
-from adaXT.decision_tree import criteria
-from . import _splitter
-
 # General
 from typing import Callable, List
 import numpy as np
@@ -11,6 +8,7 @@ import time
 # Custom
 from ._func_wrapper import FuncWrapper
 from ._criteria import gini_index_wrapped
+from . import _splitter
 
 crit = gini_index_wrapped # default criteria function
 
