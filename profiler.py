@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeRegressor as DTR
 
 n = 1000
 X = np.random.uniform(0, 2500, (n, 6))
-Y_cla = np.random.randint(0, 2, n)
+Y_cla = np.random.randint(0, 5, n)
 Y_reg = np.random.uniform(0, 1000, n)
 sk_tree = DTC(criterion="gini")
 tree = Tree("Classification")
