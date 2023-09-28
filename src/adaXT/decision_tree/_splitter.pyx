@@ -7,26 +7,11 @@ cimport numpy as cnp
 cnp.import_array()
 import numpy.typing as npt
 from cython cimport boundscheck, wraparound, profile
-
-# my imports
-from adaXT.decision_tree.func_wrapper cimport FuncWrapper
+from ._func_wrapper cimport FuncWrapper
 from libc.stdlib cimport malloc, free
+from numpy.math cimport INFINITY
 
-cdef class Splitter:
-    cdef:
-        FuncWrapper criteria
-        double[:, ::1] features
-        double[::1] outcomes
-        list indices
-        int n_indices
-        int n_class 
-        double* class_labels
-        int* n_in_class
-
-    cdef readonly int n_features
-    cdef public int[:, ::1] pre_sort
-    
-
+cdef class Splitter:   
     """
     Splitter class used to create splits of the data
     """
@@ -112,8 +97,32 @@ cdef class Splitter:
         cdef double mean_thresh = (self.features[left_indices[-1], feature] + self.features[right_indices[0], feature]) / 2
         
         return (crit, left_imp, right_imp, mean_thresh)
+    
+    '''
+    cdef int[::1] sort_feature(self, int[:] indices, double[:] feature):
+        """
+        Parameters
+        ----------
+        indices : np.NDArray
+            A memoryview of the indices which are to be sorted over
+        
+        feature: np.NDArray
+            A memoryview of feature values that are to be sorted
+            
+        Returns 
+        -----------
+        np.NDArray
+            A memoryview of the sorted indices 
+        """
 
-    def sort_feature(self, indices: List[int], feature: npt.NDArray) -> npt.NDArray:
+        cdef:
+            int x
+            double[:] temp
+
+        temp = np.asarray(feature)[indices]
+        return np.array(indices.base[np.argsort(temp)], dtype=np.int32) 
+    
+    cdef int[:] sort_feature(self, int[:] indices, double[:] feature):
         """
         Parameters
         ----------
@@ -128,10 +137,31 @@ cdef class Splitter:
         List[int]
             A list of the sorted indices 
         """
-        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=int)    
-
+        return np.array(sorted(indices.base, key=lambda x: feature[x]), dtype=int)   
+    '''
     
-    cpdef get_split(self, list indices):
+    cdef int[::1] sort_feature(self, int[:] indices, double[:] feature):
+        """
+        Parameters
+        ----------
+        indices : List[int]
+            A list of the indices which are to be sorted over
+        
+        feature: npt.NDArray
+            A list containing the feature values that are to be sorted over
+            
+        Returns 
+        -----------
+        List[int]
+            A list of the sorted indices 
+        """
+        return np.array(sorted(indices, key=lambda x: feature[x]), dtype=int) 
+    
+
+    def set_pre_sort(self, pre_sort: np.ndarray):
+        self.pre_sort = pre_sort
+    
+    cpdef get_split(self, int[::1] indices):
         """
         gets the best split given the criteria function
 
@@ -157,8 +187,8 @@ cdef class Splitter:
         self.n_indices = len(indices)
         cdef:
             int best_feature = -1
-            double best_threshold = 1000000.0
-            double best_score = 1000000.0
+            double best_threshold = INFINITY
+            double best_score = INFINITY
         
         best_imp = []
         split = []  

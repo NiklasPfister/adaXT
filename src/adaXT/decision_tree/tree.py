@@ -1,15 +1,16 @@
 from adaXT.decision_tree import criteria
-from adaXT.decision_tree import splitter_cy
+from . import _splitter
 
 # General
 from typing import Callable, List
 import numpy as np
 import numpy.typing as npt
 import sys
+import time
 
 # Custom
-from adaXT.decision_tree.func_wrapper import FuncWrapper
-from adaXT.decision_tree.criteria_cy import gini_index_wrapped
+from ._func_wrapper import FuncWrapper
+from ._criteria import gini_index_wrapped
 
 crit = gini_index_wrapped # default criteria function
 
@@ -143,7 +144,7 @@ class Tree:
         self.pre_sort = pre_sort
         self.classes = classes
     
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:splitter_cy.Splitter | None = None, 
+    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria: FuncWrapper, splitter:_splitter.Splitter | None = None, 
             feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -256,7 +257,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter: splitter_cy.Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: FuncWrapper|None = None, Splitter:_splitter.Splitter|None = None, tol : float = 1e-9,
                 pre_sort:npt.NDArray|None = None) -> None:
         """
         Parameters
@@ -282,15 +283,17 @@ class DepthTreeBuilder:
         if criterion:
             self.criteria = criterion
         else:
-            self.criteria = crit
+            self.criteria = crit()
 
         if Splitter:
             self.splitter = Splitter
         else:
-            self.splitter = splitter_cy.Splitter(self.features, self.outcomes, self.criteria)
+            self.splitter =_splitter.Splitter(self.features, self.outcomes, criterion)
 
         if type(pre_sort) == np.ndarray:
-            self.splitter.pre_sort = pre_sort
+            if pre_sort.dtype != np.int32:
+                pre_sort = np.ascontiguousarray(pre_sort, np.int32)
+            self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
     def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
@@ -343,7 +346,7 @@ class DepthTreeBuilder:
         n_obs = len(outcomes)
         queue = [] # queue of elements queue objects that need to be built
         
-        all_idx = [*range(n_obs)] # root node contains all indices
+        all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
         queue.append(queue_obj(all_idx, 0, criteria.crit_func(features[all_idx], outcomes[all_idx], np.array(all_idx))))
         n_nodes = 0
         while len(queue) > 0:
@@ -368,9 +371,9 @@ class DepthTreeBuilder:
 
                 left, right = split
                 # Add the left node to the queue of nodes yet to be computed
-                queue.append(queue_obj(list(left), depth+1, chil_imp[0], new_node, 1))
+                queue.append(queue_obj(left, depth+1, chil_imp[0], new_node, 1))
                 # Add the right node to the queue of nodes yet to be computed
-                queue.append(queue_obj(list(right), depth+1, chil_imp[1], new_node, 0))
+                queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
                 mean_value = self.get_mean(tree, outcomes[indices], n_samples, n_classes)
                 new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
@@ -383,6 +386,7 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1 # number of nodes increase by 1
 
+        splitter.free_c_lists()
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = splitter.n_features
