@@ -1,6 +1,6 @@
 from adaXT.decision_tree.tree import *
 #from adaXT.decision_tree.criteria import *
-from adaXT.decision_tree.criteria_cy import gini_index_wrapped, variance_wrapped
+from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
