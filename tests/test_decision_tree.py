@@ -1,5 +1,7 @@
 from adaXT.decision_tree._tree import *
+from adaXT.decision_tree._tree import *
 #from adaXT.decision_tree.criteria import *
+from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree._criteria import gini_index_wrapped, variance_wrapped
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
@@ -7,6 +9,7 @@ import time
 import json
 import pandas as pd
 import matplotlib.pyplot as plt
+import cProfile
 
 def rec_node(node: LeafNode|DecisionNode|None, depth: int) -> None:
     """

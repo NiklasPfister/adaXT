@@ -4,11 +4,14 @@ cimport cython
 import numpy as np
 from numpy import float64 as DOUBLE
 cimport numpy as cnp
-from numpy.math cimport INFINITY
+cnp.import_array()
+import numpy.typing as npt
+from cython cimport boundscheck, wraparound, profile
 from ._func_wrapper cimport FuncWrapper
 from libc.stdlib cimport malloc, free
-cnp.import_array()
-cdef class Splitter:
+from numpy.math cimport INFINITY
+
+cdef class Splitter:   
     """
     Splitter class used to create splits of the data
     """

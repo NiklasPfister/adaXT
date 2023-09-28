@@ -1,4 +1,9 @@
 cimport numpy as cnp
+from ._func_wrapper cimport FuncWrapper
+cnp.import_array()
+
+ctypedef cnp.float64_t npFloat
+ctypedef cnp.int_t npInt
 
 cdef class test_obj:
     cdef:

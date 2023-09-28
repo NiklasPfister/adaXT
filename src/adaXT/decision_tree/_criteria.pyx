@@ -1,13 +1,9 @@
 # cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
-cimport cython
+
 from libc.math cimport fabs as cabs
-cimport numpy as cnp
-cnp.import_array()
 
 from ._func_wrapper cimport FuncWrapper
 
-
-# int for y
 cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     cdef:
         double sum = 0.0
@@ -27,11 +23,11 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
             n_in_class[n_classes] = 1
             n_classes += 1
     for i in range(n_classes):
-        proportion_cls =  (<double> n_in_class[i]) / (<double> n_obs)
+        proportion_cls = (<double> n_in_class[i]) / (<double> n_obs)
         sum += proportion_cls*proportion_cls
     return 1 - sum  
 
-cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class) nogil:
+cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     """
     Calculates the variance 
 
@@ -50,26 +46,25 @@ cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* clas
     cdef double cur_sum = 0
     cdef double mu = mean(y, indices)
     cdef int i 
+    cdef int y_len = y.shape[0]
     cdef int n_indices = indices.shape[0]
 
     for i in range(n_indices):
-        cur_sum += (y[indices[i]] - mu) * (y[indices[i]]- mu)
+        cur_sum += (y[indices[i]] - mu) * (y[indices[i]] - mu)
 
-    return cur_sum / (<double> n_indices )
+    return (<double> cur_sum) / (<double> y_len)   
 
-cdef double mean(double[:] y, int[:] indices) nogil:
+cdef double mean(double[:] lst, int[:] indices):
     cdef double sum = 0.0
     cdef int i 
     cdef int length = indices.shape[0]
 
     for i in range(length):
-        sum += y[indices[i]]
-    return sum / (<double> length)
+        sum += lst[indices[i]]
+    return (<double> sum) / (<double> length)
 
 def gini_index_wrapped():
     return FuncWrapper.make_from_ptr(gini_index)
-    
-#gini_index_wrapped = FuncWrapper.make_from_ptr(gini_index)
+
 def variance_wrapped():
     return FuncWrapper.make_from_ptr(variance)
-
