@@ -1,4 +1,4 @@
-from .tree import Tree, LeafNode, DecisionNode
+from ._tree import Tree, LeafNode, DecisionNode
 import numpy as np
 import numpy.typing as npt
 
