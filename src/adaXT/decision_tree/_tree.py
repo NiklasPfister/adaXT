@@ -307,12 +307,12 @@ class DepthTreeBuilder:
             self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
-    def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
+    def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int) -> list[float]:
         if tree.tree_type == "Regression":
             return [float(np.mean(node_outcomes))]
-        lst = [0.0 for _ in range(n_classes)] # create an empty list for each class type   
+        lst = [0.0 for _ in range(tree.n_classes)] # create an empty list for each class type   
         classes = self.classes
-        for i in range(n_classes):
+        for i in range(tree.n_classes):
             for idx in range(n_samples):
                 if node_outcomes[idx] == classes[i]:
                     lst[i] += 1 # add 1, if the value is the same as class value
@@ -391,7 +391,7 @@ class DepthTreeBuilder:
                 # Add the right node to the queue of nodes yet to be computed
                 queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
-                mean_value = self.get_mean(tree, outcomes[indices], n_samples, n_classes)
+                mean_value = self.get_mean(tree, outcomes[indices], n_samples)
                 new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node

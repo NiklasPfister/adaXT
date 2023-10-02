@@ -1084,6 +1084,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 126.37209999957122
+        },
+        {
+            "Date": "2023-10-02 14:39:01",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 211.2096999771893
         }
     ],
     "classification on a single tree": [
@@ -1682,6 +1691,15 @@
             "min samples": 2,
             "num trees": 1,
             "run time": 215.41550000074494
+        },
+        {
+            "Date": "2023-10-02 14:34:51",
+            "num features": 11,
+            "num rows": 999,
+            "max depth": 5,
+            "min samples": 2,
+            "num trees": 1,
+            "run time": 559.5647000009194
         }
     ]
 }

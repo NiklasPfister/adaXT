@@ -5,23 +5,57 @@ from libc.math cimport fabs as cabs
 from ._func_wrapper cimport FuncWrapper
 
 cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
+    """
+    Function that calculates the gini index of a dataset
+        ----------
+
+        Parameters
+        ----------
+        x : memoryview of NDArray
+            The feature values of the dataset
+        
+        y : memoryview of NDArray
+            The outcomes of the dataset
+        
+        indices : memoryview of NDArray
+            The indices to calculate the gini index for
+        
+        class_labels : double pointer
+            A pointer to a double array for the class_labels 
+
+        n_in_class : int pointer
+            A pointer to an int array for the number of elements seen of each class
+            
+    Returns 
+        -----------
+        double
+            The value of the gini coeficcient
+    """
+
     cdef:
         double sum = 0.0
         int n_obs = indices.shape[0]
         int n_classes = 0
         double proportion_cls 
         int seen
+    
+    # Loop over all the observations to caluclate the gini index for
     for i in range(n_obs):
         seen = 0
+        # loop over all the classes we have seen so far
         for j in range(n_classes):
+            # If the current element is one we have already seen, increase it's counter
             if class_labels[j] == y[indices[i]]:
                 n_in_class[j] = n_in_class[j] + 1
                 seen = 1
                 break
+        # If the current element has not been seen already add it to the elements seen already an start it's count.
         if (seen == 0):
             class_labels[n_classes] = y[indices[i]]
             n_in_class[n_classes] = 1
             n_classes += 1
+    # loop over all the seen classes and calculate gini coefficient using: gini_index = 1 - Sum(p_i^2) where p_i is the
+    # probability that an element is in a given class.
     for i in range(n_classes):
         proportion_cls = (<double> n_in_class[i]) / (<double> n_obs)
         sum += proportion_cls*proportion_cls
@@ -29,32 +63,61 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
 
 cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     """
-    Calculates the variance 
+    Function that calculates the variance of a dataset
+        ----------
 
-    Parameters
-    ----------
-    x : npt.NDArray
-        features, not used in this implementation
-    y : npt.NDArray
-        1-dimensional outcomes
+        Parameters
+        ----------
+        x : memoryview of NDArray
+            The feature values of the dataset
+        
+        y : memoryview of NDArray
+            The outcomes of the dataset
+        
+        indices : memoryview of NDArray
+            The indices to calculate the gini index for
+        
+        class_labels : double pointer
+            A pointer to a double array for the class_labels 
 
-    Returns
-    -------
-    double
-        variance of the y data
+        n_in_class : int pointer
+            A pointer to an int array for the number of elements seen of each class
+
+        Returns
+        -------
+        double
+            variance of the y data
     """
     cdef double cur_sum = 0
-    cdef double mu = mean(y, indices)
+    cdef double mu = mean(y, indices) # set mu to be the mean of the dataset
     cdef int i 
     cdef int y_len = y.shape[0]
     cdef int n_indices = indices.shape[0]
 
+    # Calculate the variance using: variance = sum((x_i - mu)^2)
     for i in range(n_indices):
         cur_sum += (y[indices[i]] - mu) * (y[indices[i]] - mu)
 
     return (<double> cur_sum) / (<double> y_len)   
 
 cdef double mean(double[:] lst, int[:] indices):
+    '''
+    Function that calculates the mean of a dataset
+        ----------
+
+        Parameters
+        ----------
+        lst : memoryview of NDArray
+            The values to calculate the mean for
+
+        indices : memoryview of NDArray
+            The indices to calculate the mean at
+        
+        Returns
+        -------
+        double
+            mean of the data
+    '''
     cdef double sum = 0.0
     cdef int i 
     cdef int length = indices.shape[0]
@@ -63,8 +126,10 @@ cdef double mean(double[:] lst, int[:] indices):
         sum += lst[indices[i]]
     return (<double> sum) / (<double> length)
 
+# Wrap gini_index using a FuncWrapper object
 def gini_index_wrapped():
     return FuncWrapper.make_from_ptr(gini_index)
 
+# Wrap variance using a FuncWrapper object
 def variance_wrapped():
     return FuncWrapper.make_from_ptr(variance)

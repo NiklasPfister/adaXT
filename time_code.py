@@ -228,7 +228,8 @@ def test_run_time_single_tree_classification_presort():
         "run time": elapsed
     }
 
-    add_time_entry(new_time_entry, "classification on a single tree with presort")
+    #add_time_entry(new_time_entry, "classification on a single tree with presort")
+    return elapsed
 
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
@@ -237,15 +238,28 @@ if __name__ == "__main__":
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
 
+    #profiler = cProfile.Profile()
+    #profiler.enable()
+    # Code to run
+    #test_run_time_single_tree_regression()
+    #lst = []
+    #for i in range(10):
+    #    lst.append(test_run_time_single_tree_classification_presort()) 
+    #print(sum(lst) / len(lst))
+    #test_run_time_single_tree_classification()
+    #profiler.disable()
+    #stats = Stats(profiler)
+    #stats.sort_stats('tottime').print_stats(20)
+
     profiler = cProfile.Profile()
     profiler.enable()
     # Code to run
-    #test_run_time_single_tree_regression()
-    test_run_time_single_tree_classification_presort()
+    test_run_time_single_tree_regression()
     #test_run_time_single_tree_classification()
     profiler.disable()
     stats = Stats(profiler)
-    stats.sort_stats('tottime').print_stats(20)
+    stats.sort_stats('tottime').print_stats(10)
+
     
     #test_run_time_single_tree_classification()
     #print("Sklearn time regression:", run_sklearn_regression())
