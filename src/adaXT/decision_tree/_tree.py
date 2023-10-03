@@ -305,7 +305,7 @@ class DepthTreeBuilder:
             self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
-    def get_mean(self, tree: Tree, node_outcomes: np.ndarray, n_samples: int, n_classes: int) -> list[float]:
+    def get_mean(self, tree: Tree, node_outcomes: np.ndarray, n_samples: int) -> list[float]:
         """
         Calculates the mean of a leafnode
 
