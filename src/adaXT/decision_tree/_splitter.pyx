@@ -28,17 +28,21 @@ cdef class Splitter:
         # self.constant_features = np.empty(len(self.features)) #TODO: not yet implemented
 
     cpdef void make_c_lists(self, int n_class):
+        # C lists which are used for more efficient criteria function in case of Classification tree.
         self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
         self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
 
     cpdef void free_c_lists(self):
+        # if make_c_lists is called once by caller, this should be called once to.
         free(self.class_labels)
         free(self.n_in_class)
 
     def set_pre_sort(self, pre_sort: np.ndarray):
+        #Set the pre_sort value.
         self.pre_sort = pre_sort
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
+        # Sort the indicies given a list of feature values
         cdef:
             double[:] temp
         temp = feature.base[indices] 
@@ -67,6 +71,7 @@ cdef class Splitter:
         else:
             left_imp = criteria.func(features, outcomes, left_indices, class_labels, n_in_class)
             crit = left_imp * (n_outcomes/self.n_indices)
+
         # calculate in the right dataset
         n_outcomes = right_indices.shape[0]
         if n_outcomes == 0:
@@ -89,7 +94,9 @@ cdef class Splitter:
             double best_score = INFINITY
             int best_feature = 0
             double[:] current_feature_values
-            int i # variable for inner loop
+            int i, feature # variables for loop
+            int[:] left_indices, right_indices
+            cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
         
         # If the classes list is not null, then we have a classification tree, as such allocate memory for lists
         if self.class_labels != NULL:
@@ -104,7 +111,7 @@ cdef class Splitter:
         # for all features
         for feature in range(n_features):
             current_feature_values = features[:, feature]
-            if self.pre_sort is not None:
+            if self.pre_sort is None:
                 sorted_index_list_feature = self.sort_feature(indices, current_feature_values)
             else:
                 pre_sort = self.pre_sort.base

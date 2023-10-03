@@ -1,11 +1,8 @@
 
 # General
-from typing import Callable, List
 from scipy.sparse import issparse
-from scipy.sparse import csr_matrix
 import numpy as np
 from numpy import float64 as DOUBLE
-import numpy.typing as npt
 import sys
 
 # Custom
@@ -201,7 +198,6 @@ class Tree:
         # Check if node exists
         row, _ = X.shape
         Y = np.empty(row)
-
         if not self.root: 
             return Y
         for i in range(row):
@@ -214,7 +210,8 @@ class Tree:
             if type(cur_node) == LeafNode and self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif type(cur_node) == LeafNode and self.tree_type == "Classification":
-                idx = np.argmax(cur_node.value)
+                values = np.array(cur_node.value)
+                idx = np.argmax(values)
                 if type(self.classes) == np.ndarray:
                     Y[i] = self.classes[idx]
 
@@ -226,7 +223,7 @@ class Tree:
 
         Returns
         -------
-        npt.ndarray
+        np.ndarray
             NxN matrix
         """
         leaf_nodes = self.leaf_nodes
@@ -356,14 +353,16 @@ class DepthTreeBuilder:
         features = self.features
         outcomes = self.outcomes
         splitter = self.splitter
-        n_classes = len(self.classes)
+        n_classes = 0
         if tree.tree_type == "Classification":
             classes = np.unique(outcomes)
             self.classes = classes
-            tree.n_classes = n_classes
+            tree.classes = classes
+            n_classes = len(classes)
 
             # Initialize c lists in splitter class
             splitter.make_c_lists(n_classes)
+        tree.n_classes = n_classes
         min_samples = tree.min_samples
         criteria = self.criteria
 
