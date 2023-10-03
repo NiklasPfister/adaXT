@@ -20,7 +20,7 @@ extensions += [Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/
 
 if USE_CYTHON:
     from Cython.Build import cythonize
-    with_debug = True
+    with_debug = False
     extensions = cythonize(extensions, gdb_debug=with_debug, annotate=True) #TODO: Annotate should be false upon release, it creates the html file, where you can see what is in python
 
 setup(
