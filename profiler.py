@@ -10,7 +10,7 @@ from sklearn.tree import DecisionTreeRegressor as DTR
 
 n = 1000
 X = np.random.uniform(0, 2500, (n, 6))
-Y_cla = np.random.randint(0, 5, n)
+Y_cla = np.random.randint(0, 3, n)
 Y_reg = np.random.uniform(0, 1000, n)
 sk_tree = DTC(criterion="gini")
 tree = Tree("Classification")
@@ -50,5 +50,18 @@ sk = et-st
 print("sklearn runtime: ", sk)
 print("fraction: ", our/sk)
 
+X = np.array([[1, -1],
+            [-0.5, -2],
+            [-1, -1],
+            [-0.5, -0.5],
+            [1, 0],
+            [-1, 1],
+            [1, 1],
+            [-0.5, 2]])
+Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
+tree = Tree("Classification")
+tree.fit(X, Y_cla, gini_index_wrapped())
+plot_tree(tree)
+plt.show()
 print("datapoints: ", n)

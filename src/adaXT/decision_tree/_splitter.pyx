@@ -162,13 +162,13 @@ cdef class Splitter:
             int N_i = self.n_indices - 1 # number of indices to loop over. Skips last
             double best_threshold = INFINITY
             double best_score = INFINITY
+            int best_feature = 0
             double[:] current_feature_values
-            int i # variable for inner loop
-            list best_imp = []
-            list split = []
+            int i, feature # variables for loop
+            int[:] left_indices, right_indices
+            cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
         
-        # If the classes list is not null, then we have a classification tree
-        # This bit makes each node a c list, such that the wasted amount of memory is not as bad.
+        # If the classes list is not null, then we have a classification tree, as such allocate memory for lists
         if self.class_labels != NULL:
             self.free_c_lists()
             classes = np.unique(self.outcomes.base[indices])
