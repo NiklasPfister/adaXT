@@ -259,7 +259,6 @@ if __name__ == "__main__":
     profiler.disable()
     stats = Stats(profiler)
     stats.sort_stats('tottime').print_stats(10)
-
     
     #test_run_time_single_tree_classification()
     #print("Sklearn time regression:", run_sklearn_regression())
