@@ -94,7 +94,7 @@ cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* clas
     cdef int y_len = y.shape[0]
     cdef int n_indices = indices.shape[0]
 
-    # Calculate the variance using: variance = sum((x_i - mu)^2)
+    # Calculate the variance using: variance = sum((y_i - mu)^2)/y_len
     for i in range(n_indices):
         cur_sum += (y[indices[i]] - mu) * (y[indices[i]] - mu)
 
