@@ -15,7 +15,7 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
             The feature values of the dataset
         
         y : memoryview of NDArray
-            The outcomes of the dataset
+            The response values of the dataset
         
         indices : memoryview of NDArray
             The indices to calculate the gini index for
@@ -29,7 +29,7 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
     Returns 
         -----------
         double
-            The value of the gini coeficcient
+            The value of the gini index
     """
 
     cdef:
@@ -39,22 +39,22 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
         double proportion_cls 
         int seen
     
-    # Loop over all the observations to caluclate the gini index for
+    # Loop over all the observations to calculate the gini index for
     for i in range(n_obs):
         seen = 0
-        # loop over all the classes we have seen so far
+        # Loop over all the classes we have seen so far
         for j in range(n_classes):
             # If the current element is one we have already seen, increase it's counter
             if class_labels[j] == y[indices[i]]:
                 n_in_class[j] = n_in_class[j] + 1
                 seen = 1
                 break
-        # If the current element has not been seen already add it to the elements seen already an start it's count.
+        # If the current element has not been seen already add it to the elements seen already and start it's count.
         if (seen == 0):
             class_labels[n_classes] = y[indices[i]]
             n_in_class[n_classes] = 1
             n_classes += 1
-    # loop over all the seen classes and calculate gini coefficient using: gini_index = 1 - Sum(p_i^2) where p_i is the
+    # Loop over all the seen classes and calculate the gini index using: gini_index = 1 - sum(p_i^2) where p_i is the
     # probability that an element is in a given class.
     for i in range(n_classes):
         proportion_cls = (<double> n_in_class[i]) / (<double> n_obs)
@@ -72,7 +72,7 @@ cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* clas
             The feature values of the dataset
         
         y : memoryview of NDArray
-            The outcomes of the dataset
+            The response values of the dataset
         
         indices : memoryview of NDArray
             The indices to calculate the gini index for
@@ -86,7 +86,7 @@ cdef double variance(double[:, ::1] x, double[:] y, int[:] indices, double* clas
         Returns
         -------
         double
-            variance of the y data
+            The variance of the response y
     """
     cdef double cur_sum = 0
     cdef double mu = mean(y, indices) # set mu to be the mean of the dataset
@@ -116,7 +116,7 @@ cdef double mean(double[:] lst, int[:] indices):
         Returns
         -------
         double
-            mean of the data
+            mean of lst
     '''
     cdef double sum = 0.0
     cdef int i 
