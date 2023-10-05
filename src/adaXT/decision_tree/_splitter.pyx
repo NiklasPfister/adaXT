@@ -23,7 +23,7 @@ cdef class Splitter:
                 The feature values of the dataset
             
             y: memoryview of NDArray
-                The outcome values of the dataset
+                The response values of the dataset
             
             criteria: FuncWrapper object
                 A FuncWrapper object containing the criteria function
@@ -38,7 +38,7 @@ cdef class Splitter:
 
     cpdef void make_c_lists(self, int n_class):
         '''
-        Function to allocate memory for the classes of the outcomes
+        Function to allocate memory for the classes of the response
         ----------------
         Parameters
             ----------
@@ -50,7 +50,7 @@ cdef class Splitter:
 
     cpdef void free_c_lists(self):
         '''
-        Function to deallocate memory for the classes of the outcomes
+        Function to deallocate memory for the classes of the response
         '''
         free(self.class_labels)
         free(self.n_in_class)
@@ -153,8 +153,8 @@ cdef class Splitter:
         Returns 
         -----------
         (list, double, int, double, double)
-            Returns the best split of the dataset, with the values being: a list containing the left and right indices, the best
-            threshold for doing the splits, what feature to split on, the best criteria score, and the best impurity 
+            Returns the best split of the dataset, with the values being: (1) a list containing the left and right indices, (2) the best
+            threshold for doing the splits, (3) what feature to split on, (4) the best criteria score, and (5) the best impurity 
         """
         self.indices = indices
         self.n_indices = indices.shape[0]
@@ -168,7 +168,7 @@ cdef class Splitter:
             int[:] left_indices, right_indices
             cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
         
-        # If the classes list is not null, then we have a classification tree, as such allocate memory for lists
+        # If the classes list is not null, then we have a classification tree, in that case allocate memory for lists
         if self.class_labels != NULL:
             self.free_c_lists()
             classes = np.unique(self.outcomes.base[indices])
@@ -176,7 +176,7 @@ cdef class Splitter:
  
         features = self.features.base
         n_features = self.n_features
-        # for all features
+        # For all features
         for feature in range(n_features):
             current_feature_values = features[:, feature]
             if self.pre_sort is None:
@@ -189,7 +189,7 @@ cdef class Splitter:
                 sorted_index_list_feature = np.asarray(pre_sort[:, feature])[mask]       
 
             
-            # loop over sorted feature list
+            # Loop over sorted feature list
             for i in range(N_i):
                 # Skip one iteration of the loop if the current threshold value is the same as the next in the feature list
                 if current_feature_values[sorted_index_list_feature[i]] == current_feature_values[sorted_index_list_feature[i + 1]]:
@@ -200,7 +200,8 @@ cdef class Splitter:
                 crit, left_imp, right_imp, threshold = self.test_split(left_indices, right_indices, feature) # test the split
 
                 if crit < best_score:
-                    # save the best split
+                    # Save the best split
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] # The index is given as the index of the first element of the right dataset 
                     split = [left_indices, right_indices]
-        return split, best_threshold, best_feature, best_score, best_imp # return the best split
+        # Return the best split
+        return split, best_threshold, best_feature, best_score, best_imp
