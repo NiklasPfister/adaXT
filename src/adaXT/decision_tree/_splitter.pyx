@@ -8,6 +8,7 @@ from ._func_wrapper cimport FuncWrapper
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
 
+
 cdef class Splitter:   
     """
     Splitter class used to create splits of the data
@@ -29,7 +30,7 @@ cdef class Splitter:
                 A FuncWrapper object containing the criteria function
         '''
         self.features = X 
-        self.outcomes = Y 
+        self.response = Y 
 
         self.n_features = X.shape[1]
         self.criteria = criteria
@@ -38,7 +39,7 @@ cdef class Splitter:
 
     cpdef void make_c_lists(self, int n_class):
         '''
-        Function to allocate memory for the classes of the outcomes
+        Function to allocate memory for the classes of the response
         ----------------
         Parameters
             ----------
@@ -50,7 +51,7 @@ cdef class Splitter:
 
     cpdef void free_c_lists(self):
         '''
-        Function to deallocate memory for the classes of the outcomes
+        Function to deallocate memory for the classes of the response
         '''
         free(self.class_labels)
         free(self.n_in_class)
@@ -87,9 +88,9 @@ cdef class Splitter:
         temp = feature.base[indices] 
         return np.array(indices.base[np.argsort(temp)], dtype=np.int32)  
 
-    cdef (double, double, double, double) test_split(self, int[:] left_indices, int[:] right_indices, int feature):
+    cdef (double, double, double, double) evaluate_split(self, int[:] left_indices, int[:] right_indices, int feature):
         """
-        Function to test how good a split is
+        Function to evaluate how good a split is
         ----------
 
         Parameters
@@ -117,24 +118,24 @@ cdef class Splitter:
             double crit = 0.0
             double* class_labels = self.class_labels
             int* n_in_class = self.n_in_class
-            int n_outcomes = left_indices.shape[0] # initial
+            int n_response = left_indices.shape[0] # initial
             double[:, ::1] features = self.features
-            double[:] outcomes = self.outcomes
+            double[:] response = self.response
         
         # calculate criteria value on the left dataset
-        if n_outcomes == 0:
+        if n_response == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features, outcomes, left_indices, class_labels, n_in_class)
-            crit = left_imp * (n_outcomes/self.n_indices)
+            left_imp = criteria.func(features, response, left_indices, class_labels, n_in_class)
+            crit = left_imp * (n_response/self.n_indices)
         # calculate criteria value on the right dataset
-        n_outcomes = right_indices.shape[0]
-        if n_outcomes == 0:
+        n_response = right_indices.shape[0]
+        if n_response == 0:
             right_imp = 0.0
         else:
-            right_imp += criteria.func(features, outcomes, right_indices, class_labels, n_in_class)
+            right_imp += criteria.func(features, response, right_indices, class_labels, n_in_class)
         
-        crit += (right_imp) * (n_outcomes/self.n_indices)
+        crit += (right_imp) * (n_response/self.n_indices)
         mean_thresh = (features[left_indices[-1], feature] + features[right_indices[0], feature]) / 2
         
         return (crit, left_imp, right_imp, mean_thresh)
@@ -171,7 +172,7 @@ cdef class Splitter:
         # If the classes list is not null, then we have a classification tree, as such allocate memory for lists
         if self.class_labels != NULL:
             self.free_c_lists()
-            classes = np.unique(self.outcomes.base[indices])
+            classes = np.unique(self.response.base[indices])
             self.make_c_lists(len(classes))
  
         features = self.features.base
@@ -197,7 +198,7 @@ cdef class Splitter:
                 # Split the dataset
                 left_indices = sorted_index_list_feature[:i + 1]
                 right_indices = sorted_index_list_feature[i + 1:]
-                crit, left_imp, right_imp, threshold = self.test_split(left_indices, right_indices, feature) # test the split
+                crit, left_imp, right_imp, threshold = self.evaluate_split(left_indices, right_indices, feature) # test the split
 
                 if crit < best_score:
                     # save the best split

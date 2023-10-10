@@ -14,7 +14,6 @@ extensions = [
     Extension("adaXT.decision_tree._func_wrapper", ["src/adaXT/decision_tree/_func_wrapper"+ext], include_dirs=[include_dirs]),
     Extension("adaXT.decision_tree._criteria", ["src/adaXT/decision_tree/_criteria"+ext], include_dirs=[include_dirs]),
     Extension("adaXT.decision_tree._splitter", ["src/adaXT/decision_tree/_splitter"+ext], include_dirs=[include_dirs])
-    #Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/_tree"+ext], include_dirs=[include_dirs])
     ]
 extensions += [Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/_tree.py"]), Extension("adaXT.decision_tree.tree_utils", ["src/adaXT/decision_tree/tree_utils.py"])]
 
