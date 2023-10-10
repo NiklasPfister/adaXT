@@ -116,7 +116,7 @@ class Tree:
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
         classes : np.ndarray | None
-            the different classes in outcomes, by default None, added after fitting
+            the different classes in response, by default None, added after fitting
         """
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -274,7 +274,7 @@ class DepthTreeBuilder:
         X : np.ndarray
             The feature values
         Y : np.ndarray
-            The outcomes values
+            The response values
         feature_indices : np.ndarray
             Which features to use
         sample_indices : np.ndarray
@@ -289,7 +289,7 @@ class DepthTreeBuilder:
             Pre_sorted indicies in regards to features, by default None
         """
         self.features = X[np.ix_(sample_indices, feature_indices)]
-        self.outcomes = Y[sample_indices]
+        self.response = Y[sample_indices]
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
         self.criteria = criteria
@@ -297,7 +297,7 @@ class DepthTreeBuilder:
         if splitter:
             self.splitter = splitter
         else:
-            self.splitter = Splitter(self.features, self.outcomes, criteria)
+            self.splitter = Splitter(self.features, self.response, criteria)
 
         if type(pre_sort) == np.ndarray:
             if pre_sort.dtype != np.int32:
@@ -305,7 +305,7 @@ class DepthTreeBuilder:
             self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
-    def get_mean(self, tree: Tree, node_outcomes: np.ndarray, n_samples: int) -> list[float]:
+    def get_mean(self, tree: Tree, node_response: np.ndarray, n_samples: int) -> list[float]:
         """
         Calculates the mean of a leafnode
 
@@ -313,7 +313,7 @@ class DepthTreeBuilder:
         ----------
         tree : Tree
             The fille tree object
-        node_outcomes : np.ndarray
+        node_response : np.ndarray
             outcome values in the node
         n_samples : int
             number of samples in the node
@@ -326,12 +326,12 @@ class DepthTreeBuilder:
             A list of mean values for each class in the node
         """
         if tree.tree_type == "Regression":
-            return [float(np.mean(node_outcomes))]
+            return [float(np.mean(node_response))]
         lst = [0.0 for _ in range(tree.n_classes)] # create an empty list for each class type   
         classes = self.classes
         for i in range(tree.n_classes):
             for idx in range(n_samples):
-                if node_outcomes[idx] == classes[i]:
+                if node_response[idx] == classes[i]:
                     lst[i] += 1 # add 1, if the value is the same as class value
             lst[i] = lst[i]/n_samples # weight by the number of total samples in the leaf
         return lst
@@ -351,11 +351,11 @@ class DepthTreeBuilder:
             returns 0 on succes
         """
         features = self.features
-        outcomes = self.outcomes
+        response = self.response
         splitter = self.splitter
         n_classes = 0
         if tree.tree_type == "Classification":
-            classes = np.unique(outcomes)
+            classes = np.unique(response)
             self.classes = classes
             tree.classes = classes
             n_classes = len(classes)
@@ -372,11 +372,11 @@ class DepthTreeBuilder:
         leaf_node_list = []
         max_depth_seen = 0
         
-        n_obs = len(outcomes)
+        n_obs = len(response)
         queue = [] # queue of elements queue objects that need to be built
         
         all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features, outcomes, all_idx)))
+        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features, response, all_idx)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
@@ -404,7 +404,7 @@ class DepthTreeBuilder:
                 # Add the right node to the queue of nodes yet to be computed
                 queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
             else:
-                mean_value = self.get_mean(tree, outcomes[indices], n_samples)
+                mean_value = self.get_mean(tree, response[indices], n_samples)
                 new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
                 if is_left and parent: # if there is a parent
                     parent.left_child = new_node

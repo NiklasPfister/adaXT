@@ -37,20 +37,20 @@ cdef double gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* cl
         int n_obs = indices.shape[0]
         int n_classes = 0
         double proportion_cls 
-        int seen
+        bint seen
     
     # Loop over all the observations to calculate the gini index for
     for i in range(n_obs):
-        seen = 0
-        # Loop over all the classes we have seen so far
+        seen = False
+        # loop over all the classes we have seen so far
         for j in range(n_classes):
             # If the current element is one we have already seen, increase it's counter
             if class_labels[j] == y[indices[i]]:
-                n_in_class[j] = n_in_class[j] + 1
-                seen = 1
+                n_in_class[j] += 1
+                seen = True
                 break
-        # If the current element has not been seen already add it to the elements seen already and start it's count.
-        if (seen == 0):
+        # If the current element has not been seen already add it to the elements seen already an start it's count.
+        if (not seen):
             class_labels[n_classes] = y[indices[i]]
             n_in_class[n_classes] = 1
             n_classes += 1
