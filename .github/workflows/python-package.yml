@@ -45,5 +45,4 @@ jobs:
       
     - name: Test with pytest
       run: |
-        python setup.py build_ext --inplace
-        pytest tests/
+        python -m pytest tests/
