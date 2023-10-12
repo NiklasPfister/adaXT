@@ -1,10 +1,6 @@
 # distutils: define_macros=CYTHON_TRACE=1
-import os
 import numpy as np
-from setuptools import setup, find_packages, Extension
-
-
-packages = find_packages(where='src')
+from setuptools import setup, Extension
 
 USE_CYTHON = True #TODO: get commandline input, such that a user can choose whether to compile with cython always when installing, or just the already compiled c files
 
