@@ -43,6 +43,15 @@ jobs:
       run: |
         env
       
+    - name: List Modules of a Package
+      run: |
+        python list_modules.py
+      working-directory: ${{ github.workspace }}
+
+    - name: List Installed Packages
+      run: |
+        pip list
+      
     - name: Test with pytest
       run: |
         python -m pytest tests/
