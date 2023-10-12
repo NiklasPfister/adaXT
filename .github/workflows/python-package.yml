@@ -7,7 +7,7 @@ on:
   push:
     branches: [ "main", "Development", "simon_prototyping"]
   pull_request:
-    branches: [ "main", "Development", , "simon_prototyping"]
+    branches: [ "main", "Development", "simon_prototyping"]
   workflow_dispatch:
   
 jobs:
