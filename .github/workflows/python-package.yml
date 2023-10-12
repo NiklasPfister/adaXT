@@ -45,7 +45,7 @@ jobs:
       
     - name: List Modules of a Package
       run: |
-        pip install pydoc
+        pip install pkgutil
         python list_modules.py
       working-directory: ${{ github.workspace }}
 
