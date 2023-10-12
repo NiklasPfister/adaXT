@@ -5,9 +5,9 @@ name: Python package
 
 on:
   push:
-    branches: ["simon_prototyping"]
+    branches: ["main", "Development"]
   pull_request:
-    branches: ["simon_prototyping"]
+    branches: ["main", "Development"]
   workflow_dispatch:
   
 jobs:
@@ -42,11 +42,6 @@ jobs:
     - name: Print GitHub Actions Environment
       run: |
         env
-      
-    - name: List Modules of a Package
-      run: |
-        python list_modules.py
-      working-directory: ${{ github.workspace }}
 
     - name: List Installed Packages
       run: |
