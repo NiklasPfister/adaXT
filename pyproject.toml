@@ -10,13 +10,10 @@ requires-python = ">=3.10"
 
 dependencies = [
   "scipy",
-  "matplotlib"
+  "matplotlib",
+  "Cython",
+  "numpy"
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
-
-[tool.pytest.ini_options]
-pythonpath = [
-  "src",
-]
