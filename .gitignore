@@ -7,6 +7,9 @@ timing.ipynb
 # Ignore vscode setup
 .vscode/
 
+# Ignore .github
+.github/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 #*.py[cod]
