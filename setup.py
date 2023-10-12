@@ -15,7 +15,7 @@ extensions = [
 if USE_CYTHON:
     from Cython.Build import cythonize
     with_debug = False
-    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=True) #TODO: Annotate should be false upon release, it creates the html file, where you can see what is in python
+    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False) #TODO: Annotate should be false upon release, it creates the html file, where you can see what is in python
 
 extensions += [Extension("adaXT.decision_tree._tree", ["src/adaXT/decision_tree/_tree.py"]), Extension("adaXT.decision_tree.tree_utils", ["src/adaXT/decision_tree/tree_utils.py"])]
 
