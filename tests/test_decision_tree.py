@@ -1,5 +1,5 @@
-from adaXT.decision_tree._tree import *
-from adaXT.decision_tree._criteria import gini_index, squared_error
+from adaXT.decision_tree.tree import *
+from adaXT.decision_tree.criteria import gini_index, squared_error
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort
 
 def rec_node(node: LeafNode|DecisionNode|None, depth: int) -> None:

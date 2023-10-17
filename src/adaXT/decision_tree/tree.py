@@ -6,8 +6,8 @@ from numpy import float64 as DOUBLE
 import sys
 
 # Custom
-from ._func_wrapper import FuncWrapper
-from ._splitter import Splitter
+from .func_wrapper import FuncWrapper
+from .splitter import Splitter
 
 
 class Node: # should just be a ctype struct in later implementation
