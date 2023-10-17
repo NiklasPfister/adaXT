@@ -4,7 +4,8 @@ cdef class FuncWrapper:
     def __cinit__(self):
        self.func = NULL
     
-    def crit_func(self, x, y, indices):
+    # Function to calculate the criteria value from a python file
+    def crit_func(self, x: np.ndarray, y: np.ndarray, indices: np.ndarray):
         n_tot_class = len(np.unique(y))
         cdef:
             double* class_labels = <double *> malloc(sizeof(double)*n_tot_class)
@@ -14,9 +15,9 @@ cdef class FuncWrapper:
         free(n_in_class)
         return res
 
+    # Set the function value of a FuncWrapper object to a given function
     @staticmethod
     cdef FuncWrapper make_from_ptr(func_ptr f):
-        # TODO do error checking on input function
         cdef FuncWrapper out = FuncWrapper()
         out.func = f
         return out

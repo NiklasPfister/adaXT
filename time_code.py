@@ -35,7 +35,8 @@ def test_run_time_single_tree_classification():
         "run time": elapsed
     }
 
-    add_time_entry(new_time_entry, "classification on a single tree")
+    #add_time_entry(new_time_entry, "classification on a single tree")
+    return elapsed
 
 def test_run_time_single_tree_regression():
     max_depth = 5
@@ -62,7 +63,8 @@ def test_run_time_single_tree_regression():
         "run time": elapsed
     }
 
-    add_time_entry(new_time_entry, "regression on a single tree")
+    #add_time_entry(new_time_entry, "regression on a single tree")
+    return elapsed
 
 def test_run_time_multiple_tree_classification(num_trees_to_build, pre_sorted):
     max_depth = 5
@@ -155,10 +157,10 @@ def add_time_entry(new_time_entry, key_to_write_to):
     with open("running_time.json", "w") as file:
         json.dump(existing_json_data, file, indent=4)
 
-def update_data_set(type, num_rows, num_features):
+def update_data_set(type, num_rows, num_features, num_classes):
     if type == "Classification":
         X = np.random.normal(loc=10, scale=5, size=(num_rows, num_features))
-        Y = np.random.randint(2, size=num_rows)
+        Y = np.random.randint(num_classes, size=num_rows)
         data = np.hstack((X, Y.reshape(-1, 1)))
         # Save the new array to a CSV file
         np.savetxt("classification_data.csv", data, delimiter=",")
@@ -228,28 +230,110 @@ def test_run_time_single_tree_classification_presort():
         "run time": elapsed
     }
 
-    add_time_entry(new_time_entry, "classification on a single tree with presort")
+    #add_time_entry(new_time_entry, "classification on a single tree with presort")
+    return elapsed
 
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
-    #update_data_set("Classification", 1000, 10)
-    #update_data_set("Regression", 1000, 10)
+    #update_data_set("Classification", 1000, 10, 3)
+    update_data_set("Regression", 1500, 10, -1)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
+
+    #profiler = cProfile.Profile()
+    #profiler.enable()
+    # Code to run
+    #test_run_time_single_tree_regression()
+    #lst = []
+    #for i in range(10):
+    #    lst.append(test_run_time_single_tree_classification_presort()) 
+    #print(sum(lst) / len(lst))
+    #test_run_time_single_tree_classification()
+    #profiler.disable()
+    #stats = Stats(profiler)
+    #stats.sort_stats('tottime').print_stats(20)
 
     profiler = cProfile.Profile()
     profiler.enable()
     # Code to run
-    #test_run_time_single_tree_regression()
-    test_run_time_single_tree_classification_presort()
+    test_run_time_single_tree_regression()
     #test_run_time_single_tree_classification()
     profiler.disable()
     stats = Stats(profiler)
-    stats.sort_stats('tottime').print_stats(20)
+    stats.sort_stats('tottime').print_stats(10)
+
     
     #test_run_time_single_tree_classification()
-    #print("Sklearn time regression:", run_sklearn_regression())
+    # print("Sklearn time regression:", run_sklearn_regression())
     #print("Sklearn time classification:", run_sklearn_classification())
+
+    d = [5, 15, 25]
+    n = [100, 1000, 2500]
+
+    # For regression
+    '''for d_el in d:
+        for n_el in n:
+            update_data_set("Regression", n_el, d_el, -1)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_regression())
+                ada_list.append(test_run_time_single_tree_regression())
+            
+            print("With", n_el, "rows and", d_el, "features:")
+            sk_time = sum(sk_list) / len(sk_list)
+            print("sklearn runtime:", sk_time)
+
+            ada_time = sum(ada_list) / len(ada_list)
+            print("our runtime:", ada_time)
+
+            print("They are", ada_time / sk_time, "times faster than us.\n\n")'''
+        
+    # For classification
+    '''for d_el in d:
+        for n_el in n:
+            update_data_set("Classification", n_el, d_el, 3)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_classification())
+                ada_list.append(test_run_time_single_tree_classification())
+            
+            print("With", n_el, "rows and", d_el, "features:")
+            sk_time = sum(sk_list) / len(sk_list)
+            print("sklearn runtime:", sk_time)
+
+            ada_time = sum(ada_list) / len(ada_list)
+            print("our runtime:", ada_time)
+
+            print("They are", ada_time / sk_time, "times faster than us.\n\n")
+    
+    # Classification with changing num classes
+    n = [1000, 2000]
+    number_of_classes = [5, 7, 10, 13]
+
+    for n_el in n:
+        for n_class in number_of_classes:
+            update_data_set("Classification", n_el, 15, n_class)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_classification())
+                ada_list.append(test_run_time_single_tree_classification())
+            
+            print("With", n_el, "rows and", 15, "features, and", n_class, "classes:")
+            sk_time = sum(sk_list) / len(sk_list)
+            print("sklearn runtime:", sk_time)
+
+            ada_time = sum(ada_list) / len(ada_list)
+            print("our runtime:", ada_time)
+
+            print("They are", ada_time / sk_time, "times faster than us.\n\n")'''
+
+
 
     #lst = []
     #for i in range(25):

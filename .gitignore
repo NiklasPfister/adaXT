@@ -4,6 +4,9 @@ timing.ipynb
 # Ignore the csv testing files
 *.csv
 
+# Ignore github files
+.github/
+
 # Ignore vscode setup
 .vscode/
 

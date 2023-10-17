@@ -15,20 +15,23 @@ cdef class test_obj:
 cdef class Splitter:
     cdef:
         double[:, ::1] features
-        double[::1] outcomes
+        double[:] response
         int n_features
         int[:, ::1] pre_sort
-        int[::1] indices
+        int[:] indices
         int n_indices
-        FuncWrapper criteria
+        object criteria
         int n_class
         double* class_labels
         int* n_in_class
 
-    cdef int[::1] sort_feature(self, int[:], double[:])
+    cdef cnp.ndarray sort_feature(self, int[:], double[:])
 
-    cdef (double, double, double, double) test_split(self, int[::1], int[::1], int)
 
-    cpdef get_split(self, int[::1])
+    cdef (double, double, double, double) evaluate_split(self, int[:], int[:], int)
+
+    cpdef get_split(self, int[:])
     
     cpdef void make_c_lists(self, int)
+
+    cpdef void free_c_lists(self)

@@ -1,9 +1,24 @@
 from ._tree import Tree, LeafNode, DecisionNode
 import numpy as np
-import numpy.typing as npt
 
-
+# Plot an entire tree
 def plot_tree(tree: Tree):
+    """
+    Generates the tree as a subplot of plt. To show the plot,
+    the user needs to call mathplotlib.pyplot.show().
+
+    Parameters
+    ----------
+    tree : Tree
+        The tree to plot    
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        the figure of the subplot
+    matplotlib.axes.Axes
+        the axes of the subplot
+    """
     import matplotlib.pyplot as plt
     fig, ax = plt.subplots(figsize=(8, 6))
     node_positions = calculate_node_positions(tree.root, x=0, y=0)
@@ -11,7 +26,20 @@ def plot_tree(tree: Tree):
     ax.axis('off')
     return fig, ax
 
-def plot_node(ax, node, node_positions):
+# Plot a node
+def plot_node(ax, node: LeafNode|DecisionNode, node_positions: tuple):
+    """
+    helper function used to plot each node of a Tree
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Axes to plot on
+    node : Node
+        Node type of a tree
+    node_positions : tuple
+        (left_child position, right_child position, nodes own position)
+    """
     if node is None:
         return
 
@@ -34,8 +62,8 @@ def plot_node(ax, node, node_positions):
             ax.plot([position[0], node_positions[node.right_child][0]], [position[1], node_positions[node.right_child][1]], color='black')
             plot_node(ax, node.right_child, node_positions)
 
-
-def calculate_node_positions(node, x, y):
+# Calculate where to add nodes when plotting a tree
+def calculate_node_positions(node: LeafNode|DecisionNode, x:float, y:float):
     if node is None:
         return {}
 
@@ -54,6 +82,7 @@ def calculate_node_positions(node, x, y):
 
     return node_positions
 
+# Function to print the information of a tree
 def print_tree(tree: Tree):
     queue = []
     queue.append(tree.root)
@@ -72,7 +101,7 @@ def print_tree(tree: Tree):
                 queue.append(node.left_child)
                 queue.append(node.right_child)
 
-def pre_sort(X: npt.NDArray) -> npt.NDArray:
+def pre_sort(X: np.ndarray) -> np.ndarray:
     """
     Used to pre sort the features given the full dataset
 
