@@ -1,5 +1,5 @@
 cimport numpy as cnp
-from ._func_wrapper cimport FuncWrapper
+from .func_wrapper cimport FuncWrapper
 cnp.import_array()
 
 ctypedef cnp.float64_t npFloat

@@ -2,7 +2,7 @@ import numpy as np
 from numpy import float64 as DOUBLE
 cimport numpy as cnp
 cnp.import_array()
-from ._func_wrapper cimport FuncWrapper
+from .func_wrapper cimport FuncWrapper
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
 

@@ -1,9 +1,10 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True
+# cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
 
 from libc.math cimport fabs as cabs
 
-from ._func_wrapper cimport FuncWrapper
+from .func_wrapper cimport FuncWrapper
 from .crit_helpers cimport *
+
 cdef double _gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     """
     Function that calculates the gini index of a dataset
