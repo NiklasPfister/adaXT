@@ -1,5 +1,3 @@
-#cython: profile=True
-
 import numpy as np
 from numpy import float64 as DOUBLE
 cimport numpy as cnp

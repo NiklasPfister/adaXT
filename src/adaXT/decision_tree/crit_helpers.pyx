@@ -1,3 +1,4 @@
+# cython: boundscheck=False, wraparound=False, cdivision=True
 
 cdef int fill_class_lists(double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     cdef:
