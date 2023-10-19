@@ -1,6 +1,7 @@
 # cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
 
 from libc.math cimport fabs as cabs
+from libc.stdlib cimport hash, malloc, free
 
 from .func_wrapper cimport FuncWrapper
 from .crit_helpers cimport *
@@ -32,7 +33,7 @@ cdef double _gini_index(double[:, ::1] x, double[:] y, int[:] indices, double* c
         double
             The value of the gini index
     """
-
+    
     cdef:
         double sum = 0.0
         int n_obs = indices.shape[0]
@@ -90,6 +91,32 @@ cdef double _squared_error(double[:, ::1] x, double[:] y, int[:] indices, double
 def gini_index():
     return FuncWrapper.make_from_ptr(_gini_index)
 
+def gini_index_new():
+    return FuncWrapper.make_from_ptr(_gini_index_new)
+
 # Wrap variance using a FuncWrapper object
 def squared_error():
     return FuncWrapper.make_from_ptr(_squared_error)
+
+
+cdef double _gini_index_new(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
+    cdef double* labels = <double *> malloc(sizeof(double) * 5)
+    cdef int* num_in_class = <int *> malloc(sizeof(int) * 5)
+
+    cdef:
+        double sum = 0.0
+        int n_obs = indices.shape[0]
+        int n_classes = 0
+        double proportion_cls 
+        int i
+
+    n_classes = fill_class_lists(y, indices, labels, num_in_class)
+
+    for i in range(n_classes):
+        proportion_cls = (<double> num_in_class[i]) / (<double> n_obs)
+        sum += proportion_cls*proportion_cls
+
+    free(labels)
+    free(num_in_class)
+
+    return 1 - sum   

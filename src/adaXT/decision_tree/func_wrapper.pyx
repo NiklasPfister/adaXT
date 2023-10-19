@@ -1,9 +1,6 @@
 import numpy as np
 from libc.stdlib cimport malloc, free
-cdef class FuncWrapper:
-    def __cinit__(self):
-       self.func = NULL
-    
+cdef class FuncWrapper:   
     # Function to calculate the criteria value from a python file
     def crit_func(self, x: np.ndarray, y: np.ndarray, indices: np.ndarray):
         n_tot_class = len(np.unique(y))
