@@ -1,6 +1,6 @@
 # cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
 
-from libc.math cimport fabs as cabs
+from libc.math cimport log2
 
 from ._func_wrapper cimport FuncWrapper
 from .crit_helpers cimport *
@@ -85,6 +85,20 @@ cdef double _squared_error(double[:, ::1] x, double[:] y, int[:] indices, double
 
     return (<double> cur_sum) / (<double> y_len)   
 
+cdef double _entropy(double[:, ::1] x, double[:] y, int[:] indices, double* class_labels, int* n_in_class):
+    cdef:
+        int i
+        double sum  = 0
+        int n_obs = indices.shape[0]
+        double pi
+     
+    n_classes = fill_class_lists(y, indices, class_labels, n_in_class)
+    for i in range(n_classes):
+        pp = (<double> n_in_class[i])/(<double> n_obs)
+        sum += - (pp) * log2(pp)
+    return sum
+        
+
 # Wrap gini_index using a FuncWrapper object
 def gini_index():
     return FuncWrapper.make_from_ptr(_gini_index)
@@ -92,3 +106,6 @@ def gini_index():
 # Wrap variance using a FuncWrapper object
 def squared_error():
     return FuncWrapper.make_from_ptr(_squared_error)
+
+def entropy():
+    return FuncWrapper.make_from_ptr(_entropy)
