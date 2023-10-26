@@ -62,6 +62,7 @@ def test_gini_single():
 
     rec_node(root, 0)
 
+
 def test_gini_multi():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -226,18 +227,19 @@ def test_NxN_matrix():
     ])
     for i in range(len(true_weight)):
         for j in range(len(true_weight[0])):
-            assert weight_matrix[i, j] == true_weight[i, j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
+            assert weight_matrix[i, j] == true_weight[i,
+                                                      j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
 
 
 def test_entropy_single():
     X = np.array([[1, -1],
-                [-0.5, -2],
-                [-1, -1],
-                [-0.5, -0.5],
-                [1, 0],
-                [-1, 1],
-                [1, 1],
-                [-0.5, 2]])
+                  [-0.5, -2],
+                  [-1, -1],
+                  [-0.5, -0.5],
+                  [1, 0],
+                  [-1, 1],
+                  [1, 1],
+                  [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
     tree = Tree("Classification")
@@ -245,58 +247,74 @@ def test_entropy_single():
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
-    assert type(root) == LeafNode or type(root) == DecisionNode, f"root is not a node but {type(root)}"
+    assert isinstance(root, LeafNode) or isinstance(
+        root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
     # Loop over all the nodes
     while len(queue) > 0:
         cur_node = queue.pop()
-        if type(cur_node) == DecisionNode: # Check threshold and idx of decision node
-            assert cur_node.threshold == exp_val[i], f'Expected threshold {exp_val[i]} on node={i}, got {cur_node.threshold} on split_idx {cur_node.split_idx} exp: {spl_idx[i]}'
-            assert cur_node.split_idx == spl_idx[i], f'Expected split idx {spl_idx[i]} on i={i}, got {cur_node.split_idx}'
+        if isinstance(
+                cur_node,
+                DecisionNode):  # Check threshold and idx of decision node
+            assert cur_node.threshold == exp_val[
+                i], f'Expected threshold {exp_val[i]} on node={i}, got {cur_node.threshold} on split_idx {cur_node.split_idx} exp: {spl_idx[i]}'
+            assert cur_node.split_idx == spl_idx[
+                i], f'Expected split idx {spl_idx[i]} on i={i}, got {cur_node.split_idx}'
             if cur_node.left_child:
                 queue.append(cur_node.left_child)
             if cur_node.right_child:
                 queue.append(cur_node.right_child)
             i += 1
-        elif type(cur_node) == LeafNode: # Check that the value is of length 2
-            assert len(cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
-        
+        elif isinstance(cur_node, LeafNode):  # Check that the value is of length 2
+            assert len(
+                cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
+
     rec_node(root, 0)
+
 
 def test_entropy_multi():
     X = np.array([[1, -1],
-            [-0.5, -2],
-            [-1, -1],
-            [-0.5, -0.5],
-            [1, 0],
-            [-1, 1],
-            [1, 1],
-            [-0.5, 2]])
+                  [-0.5, -2],
+                  [-1, -1],
+                  [-0.5, -0.5],
+                  [1, 0],
+                  [-1, 1],
+                  [1, 1],
+                  [-0.5, 2]])
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
     tree.fit(X, Y_multi, gini_index())
     root = tree.root
-    exp_val = [0.25, -0.75, -0.75] # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure leaf node
-    spl_idx = [0, 1, 0] # DIFFERENT FROM SKLEARN THEIRS IS: [0, 1, 1], both give pure leaf node
-    assert type(root) == LeafNode or type(root) == DecisionNode, f"root is not a node but {type(root)}"
+    # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
+    # leaf node
+    exp_val = [0.25, -0.75, -0.75]
+    # DIFFERENT FROM SKLEARN THEIRS IS: [0, 1, 1], both give pure leaf node
+    spl_idx = [0, 1, 0]
+    assert isinstance(root, LeafNode) or isinstance(
+        root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
     while len(queue) > 0:
         cur_node = queue.pop()
-        if type(cur_node) == DecisionNode:
-            assert cur_node.threshold == exp_val[i], f'Expected threshold {exp_val[i]}, got {cur_node.threshold}'
-            assert cur_node.split_idx == spl_idx[i], f'Expected split idx {spl_idx[i]}, got {cur_node.split_idx}'
+        if isinstance(cur_node, DecisionNode):
+            assert cur_node.threshold == exp_val[
+                i], f'Expected threshold {exp_val[i]}, got {cur_node.threshold}'
+            assert cur_node.split_idx == spl_idx[
+                i], f'Expected split idx {spl_idx[i]}, got {cur_node.split_idx}'
             if cur_node.left_child:
                 queue.append(cur_node.left_child)
             if cur_node.right_child:
                 queue.append(cur_node.right_child)
             i += 1
-        elif type(cur_node) == LeafNode:
-            assert len(cur_node.value) == Y_unique, f'Expected {Y_unique} mean values, one for each class, but got: {len(cur_node.value)}'
-            
+        elif isinstance(cur_node, LeafNode):
+            assert len(
+                cur_node.value) == Y_unique, f'Expected {Y_unique} mean values, one for each class, but got: {len(cur_node.value)}'
+
     rec_node(root, 0)
+
+
 if __name__ == "__main__":
     # test_single_class()
     # test_multi_class()
