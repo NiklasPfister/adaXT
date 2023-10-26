@@ -1,4 +1,4 @@
-from ._tree import Tree, LeafNode, DecisionNode
+from .tree import Tree, LeafNode, DecisionNode
 import numpy as np
 
 # Plot an entire tree
