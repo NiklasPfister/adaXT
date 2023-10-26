@@ -30,7 +30,7 @@ def test_single_class():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index())
+    tree.fit(X, Y_cla, gini_index(X, Y_cla))
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]

@@ -3,6 +3,7 @@ from numpy import float64 as DOUBLE
 cimport numpy as cnp
 cnp.import_array()
 from .func_wrapper cimport FuncWrapper
+from .criteria cimport Criterion
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
 
@@ -12,7 +13,7 @@ cdef class Splitter:
     Splitter class used to create splits of the data
     """
 
-    def __init__(self, double[:, ::1] X, double[:] Y, criteria: FuncWrapper):
+    def __init__(self, double[:, ::1] X, double[:] Y, criteria: Criterion):
         '''
         Class initializer 
         ----------------
@@ -110,7 +111,7 @@ cdef class Splitter:
         """
         cdef:
             double mean_thresh
-            FuncWrapper criteria = self.criteria
+            Criterion criteria = self.criteria
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
@@ -124,14 +125,14 @@ cdef class Splitter:
         if n_response == 0:
             left_imp = 0.0
         else:
-            left_imp = criteria.func(features, response, left_indices, class_labels, n_in_class)
+            left_imp = criteria.impurity(features, response, left_indices)
             crit = left_imp * (n_response/self.n_indices)
         # calculate criteria value on the right dataset
         n_response = right_indices.shape[0]
         if n_response == 0:
             right_imp = 0.0
         else:
-            right_imp += criteria.func(features, response, right_indices, class_labels, n_in_class)
+            right_imp += criteria.impurity(features, response, right_indices)
         
         crit += (right_imp) * (n_response/self.n_indices)
         mean_thresh = (features[left_indices[-1], feature] + features[right_indices[0], feature]) / 2

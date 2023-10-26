@@ -10,7 +10,7 @@ import cProfile
 from pstats import Stats
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
-def test_run_time_single_tree_classification(function_to_run):
+def test_run_time_single_tree_classification():
     max_depth = 5
     min_samples = 2
 
@@ -21,7 +21,7 @@ def test_run_time_single_tree_classification(function_to_run):
     
     start_time = time.perf_counter()
     tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, function_to_run)
+    tree.fit(X, Y, gini_index(X, Y))
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -253,14 +253,14 @@ if __name__ == "__main__":
     #stats = Stats(profiler)
     #stats.sort_stats('tottime').print_stats(20)
 
-    #profiler = cProfile.Profile()
-    #profiler.enable()
+    profiler = cProfile.Profile()
+    profiler.enable()
     # Code to run
     #test_run_time_single_tree_regression()
-    #test_run_time_single_tree_classification()
-    #profiler.disable()
-    #stats = Stats(profiler)
-    #stats.sort_stats('tottime').print_stats(10)
+    test_run_time_single_tree_classification()
+    profiler.disable()
+    stats = Stats(profiler)
+    stats.sort_stats('tottime').print_stats(10)
 
     
     #test_run_time_single_tree_classification()
@@ -340,11 +340,11 @@ if __name__ == "__main__":
     #    lst.append(test_run_time_single_tree_classification(gini_index()))
     #print("old gini", sum(lst) / len(lst))
 
-    lst_new = []
-    lst_old = []
-    for i in range(100):
-        lst_new.append(test_run_time_single_tree_classification(gini_index_new()))
-        lst_old.append(test_run_time_single_tree_classification(gini_index()))
-    print("old gini", sum(lst_old) / len(lst_old))
-    print("new gini", sum(lst_new) / len(lst_new))
+    #lst_new = []
+    #lst_old = []
+    #for i in range(100):
+    #    lst_new.append(test_run_time_single_tree_classification(gini_index_new()))
+    #    lst_old.append(test_run_time_single_tree_classification(gini_index()))
+    #print("old gini", sum(lst_old) / len(lst_old))
+    #print("new gini", sum(lst_new) / len(lst_new))
 

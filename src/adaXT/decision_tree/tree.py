@@ -7,6 +7,7 @@ import sys
 
 # Custom
 from .func_wrapper import FuncWrapper
+from .criteria import Criterion
 from .splitter import Splitter
 
 
@@ -150,7 +151,7 @@ class Tree:
         return X, Y
 
     
-    def fit(self, X: np.ndarray, Y:np.ndarray, criteria: FuncWrapper, splitter:Splitter | None = None, 
+    def fit(self, X: np.ndarray, Y:np.ndarray, criteria: Criterion, splitter:Splitter | None = None, 
             feature_indices: np.ndarray|None = None, sample_indices: np.ndarray|None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
@@ -266,7 +267,7 @@ class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: np.ndarray, Y: np.ndarray, feature_indices: np.ndarray, sample_indices: np.ndarray, criteria: FuncWrapper, splitter: Splitter|None = None, tol : float = 1e-9,
+    def __init__(self, X: np.ndarray, Y: np.ndarray, feature_indices: np.ndarray, sample_indices: np.ndarray, criteria: Criterion, splitter: Splitter|None = None, tol : float = 1e-9,
                 pre_sort:np.ndarray|None = None) -> None:
         """
         Parameters
@@ -376,7 +377,7 @@ class DepthTreeBuilder:
         queue = [] # queue of elements queue objects that need to be built
         
         all_idx = np.arange(n_obs, dtype=np.int32) # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria.crit_func(features, response, all_idx)))
+        queue.append(queue_obj(all_idx, 0, criteria.impurity(features, response, all_idx)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
