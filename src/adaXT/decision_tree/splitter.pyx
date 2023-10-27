@@ -86,7 +86,6 @@ cdef class Splitter:
         """
         self.indices = indices
         self.n_indices = indices.shape[0]
-        print("n_indices_split: ", self.n_indices)
         cdef:
             int N_i = self.n_indices - 1 # number of indices to loop over. Skips last
             double best_threshold = INFINITY
@@ -129,7 +128,7 @@ cdef class Splitter:
                 if crit < best_score:
                     # Save the best split
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] # The index is given as the index of the first element of the right dataset 
-                    split = [indices[:i+1], indices[i+1:]]
-                    print("NEW BEST IMP: ", best_imp)
+                    split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
+                    
         # Return the best split
         return split, best_threshold, best_feature, best_score, best_imp

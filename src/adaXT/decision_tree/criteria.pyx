@@ -18,7 +18,6 @@ cdef class Criteria:
         raise Exception("Impurity must be implemented!")
         return 0.0
 
-    @cython.cdivision(False)
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
         """
         Function to evaluate how good a split is
@@ -50,7 +49,7 @@ cdef class Criteria:
             double[:, ::1] features = self.x
             int[:] left_indices = indices[:split_idx] 
             int[:] right_indices = indices[split_idx:]
-            int n_left =  left_indices.shape[0]
+            int n_left = left_indices.shape[0]
             int n_right = right_indices.shape[0]
         
         left_indices = indices[0:split_idx] 
@@ -59,19 +58,16 @@ cdef class Criteria:
         n_right = right_indices.shape[0]
 
         # calculate criteria value on the left dataset
-        print("Left_indices: ", list(left_indices), " Right_indices: ", list(right_indices))
-        if n_left != 0:
+        if n_left != 0.0:
             left_imp = self.impurity(left_indices)
-        crit = left_imp * (n_left/n_indices)
+        crit = left_imp * (<double > n_left)/ (<double> n_indices)
 
         # calculate criteria value on the right dataset
-        if n_right != 0:
+        if n_right != 0.0:
             right_imp = self.impurity(right_indices)
-        crit += (right_imp) * (n_right/n_indices)
+        crit += (right_imp) * (<double> n_right)/(<double> n_indices)
 
-        print("Left_imp: ", left_imp, "Right_imp: ", right_imp)
-
-        mean_thresh = (features[left_indices[split_idx-1], feature] + features[right_indices[0], feature]) / 2
+        mean_thresh = (features[left_indices[split_idx-1], feature] + features[right_indices[0], feature]) / 2.0
         
         return (crit, left_imp, right_imp, mean_thresh)
 
