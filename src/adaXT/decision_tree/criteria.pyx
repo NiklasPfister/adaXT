@@ -16,7 +16,6 @@ cdef class Criteria:
 
     cpdef double impurity(self, int[:] indices):
         raise Exception("Impurity must be implemented!")
-        return 0.0
 
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
         """
@@ -67,7 +66,7 @@ cdef class Criteria:
             right_imp = self.impurity(right_indices)
         crit += (right_imp) * (<double> n_right)/(<double> n_indices)
 
-        mean_thresh = (features[indices[split_idx-1], feature] + features[indices[split_idx], feature]) / 2.0
+        mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         
         return (crit, left_imp, right_imp, mean_thresh)
 
@@ -207,6 +206,7 @@ cdef class Squared_error(Criteria):
             double n_left = <double> split_idx
             int n_obs = indices.shape[0] # total in node
             double n_right = (<double> n_obs) - n_left
+            double[:, ::1] features = self.x
 
         if n_obs == self.old_obs and feature == self.old_feature: # If we are checking the same node with same sorting
             left_imp = self.update_left(indices, split_idx)
@@ -221,9 +221,7 @@ cdef class Squared_error(Criteria):
         crit = left_imp * n_left/ (<double> n_obs)
         crit += right_imp * (n_right)/(<double> n_obs)
 
-        mean_thresh = (self.x[indices[split_idx-1], feature] + self.x[indices[split_idx], feature]) / 2.0
-        if n_obs == 3:
-            print("left_imp, right_imp, indices, split, crit, mean_thresh", left_imp, right_imp, indices.base, split_idx, crit, mean_thresh)
+        mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
     cdef double _square_error(self, int[:] indices, int left_or_right = -1):

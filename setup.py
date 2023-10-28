@@ -18,7 +18,7 @@ if USE_CYTHON:
     with_debug = False
     # TODO: Annotate should be false upon release, it creates the html file,
     # where you can see what is in python
-    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False)
+    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=True)
 
 setup(
     name='adaXT',
