@@ -118,8 +118,6 @@ def test_regression():
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
     tree = Tree("Regression")
     tree.fit(X, Y_reg, Squared_error())
-    plot_tree(tree)
-    plt.show()
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
