@@ -1,7 +1,9 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree.tree import Tree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
-from adaXT.decision_tree.tree_utils import print_tree, pre_sort
+from adaXT.decision_tree.tree_utils import plot_tree, pre_sort
+import matplotlib.pyplot as plt
 
+import numpy as np
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
@@ -36,7 +38,6 @@ def test_gini_single():
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
-    print_tree(tree)
     assert isinstance(root, LeafNode) or isinstance(
         root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
@@ -117,6 +118,8 @@ def test_regression():
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
     tree = Tree("Regression")
     tree.fit(X, Y_reg, Squared_error())
+    plot_tree(tree)
+    plt.show()
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
@@ -318,9 +321,9 @@ def test_Entropy_multi():
 if __name__ == "__main__":
     # test_single_class()
     # test_multi_class()
-    # test_regression()
+    test_regression()
     # test_pre_sort()
     # test_prediction()
     # test_NxN_matrix()
-    test_Entropy_single()
+    # test_Entropy_single()
     # print("done")

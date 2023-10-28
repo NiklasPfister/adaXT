@@ -125,7 +125,7 @@ cdef class Splitter:
                 # test the split
                 crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature) 
         
-                if crit < best_score:
+                if (best_score - crit) > 1e-15: #rounding error
                     # Save the best split
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] # The index is given as the index of the first element of the right dataset 
                     split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
