@@ -1,67 +1,73 @@
-# On Simon
-#from . import criteria
-#from . import splitter
-
-# On William
-from . import criteria
-from . import splitter_new
 
 # General
-from typing import Callable, List
+from scipy.sparse import issparse
 import numpy as np
-import numpy.typing as npt
+from numpy import float64 as DOUBLE
 import sys
 
+# Custom
+from .func_wrapper import FuncWrapper
+from .splitter import Splitter
 
-crit = criteria.gini_index # default criteria function
 
-
-class Node: # should just be a ctype struct in later implementation
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int) -> None:
+class Node:  # should just be a ctype struct in later implementation
+    def __init__(
+            self,
+            indices: np.ndarray,
+            depth: int,
+            impurity: float,
+            n_samples: int) -> None:
         """
-        Node parent class
-
         Parameters
         ----------
-        indices : list[int]
-            indices within the data, which are apart of the node
+        indices : np.ndarray
+            indices in node
         depth : int
-            depth of the node
+            depth of noe
         impurity : float
-            impurity of the node
+            impurity of node
         n_samples : int
-            number of samples within a node
+            number of samples in node
         """
-        self.indices = indices # indices of values within the node
+        self.indices = indices  # indices of values within the node
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
 
-class DecisionNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, threshold: float, split_idx: int, left_child: "DecisionNode|LeafNode|None" = None, right_child: "DecisionNode|LeafNode|None"= None, parent: "DecisionNode|None" = None) -> None:
-        """
-        Decision node class
 
+class DecisionNode(Node):
+    def __init__(
+            self,
+            indices: np.ndarray,
+            depth: int,
+            impurity: float,
+            n_samples: int,
+            threshold: float,
+            split_idx: int,
+            left_child: "DecisionNode|LeafNode|None" = None,
+            right_child: "DecisionNode|LeafNode|None" = None,
+            parent: "DecisionNode|None" = None) -> None:
+        """
         Parameters
         ----------
-        indices : list[int]
-            indices within the data, which are apart of the node
+        indices : np.ndarray
+            indices ni node
         depth : int
-            depth of the node
+            depth of node
         impurity : float
-            impurity of the node
+            impurity in node
         n_samples : int
-            number of samples within a node
+            number of samples in node
         threshold : float
-            threshold value for a given split
+            the threshold value of a split
         split_idx : int
-            feature index of the split
-        left_child : Node | None, optional
-            left child, by default None
-        right_child : Node | None, optional
-            right child, by default None
-        parent : Node | None, optional
-            parent node, by default None
+            the feature index to split on
+        left_child : DecisionNode|LeafNode|None, optional
+            the left child, by default None
+        right_child : DecisionNode|LeafNode|None, optional
+            the right child, by default None
+        parent : DecisionNode|None, optional
+            the parent node, by default None
         """
         super().__init__(indices, depth, impurity, n_samples)
         self.threshold = threshold
@@ -70,28 +76,35 @@ class DecisionNode(Node):
         self.right_child = right_child
         self.parent = parent
 
+
 class LeafNode(Node):
-    def __init__(self, indices: List[int], depth: int, impurity: float, n_samples: int, value: list[float], parent: DecisionNode) -> None:
+    def __init__(
+            self,
+            indices: np.ndarray,
+            depth: int,
+            impurity: float,
+            n_samples: int,
+            value: list[float],
+            parent: DecisionNode) -> None:
         """
-        Leaf Node class
 
         Parameters
         ----------
-        indices : List[int]
-            _description_
+        indices : np.ndarray
+            Indices of leaf node
         depth : int
-            _description_
+            depth the leaf node is located at
         impurity : float
-            _description_
+            Impurity of leaf node
         n_samples : int
-            _description_
+            Number of samples in leaf node
         value : list[float]
-            mean value of the outcomes in the leaf node
-        parent : _type_, optional
-            _description_, by default None
+            The mean values of classes in leaf node
+        parent : DecisionNode
+            The parent node
         """
         super().__init__(indices, depth, impurity, n_samples)
-        self.value = value 
+        self.value = value
         self.parent = parent
 
 
@@ -99,9 +112,21 @@ class Tree:
     """
     Tree object
     """
-    def __init__(self, tree_type: str, max_depth: int = sys.maxsize, impurity_tol: float = 1e-20, min_samples: int = 2,
-                root : Node|None = None, n_nodes: int=-1, n_features: int=-1, n_classes: int=-1, n_obs: int=-1,
-                leaf_nodes: list[Node]|None = None, pre_sort: None| npt.NDArray=None, classes : npt.NDArray|None =None) -> None:
+
+    def __init__(
+            self,
+            tree_type: str,
+            max_depth: int = sys.maxsize,
+            impurity_tol: float = 1e-20,
+            min_samples: int = 2,
+            root: Node | None = None,
+            n_nodes: int = -1,
+            n_features: int = -1,
+            n_classes: int = -1,
+            n_obs: int = -1,
+            leaf_nodes: list[Node] | None = None,
+            pre_sort: None | np.ndarray = None,
+            classes: np.ndarray | None = None) -> None:
         """
         Parameters
         ----------
@@ -125,8 +150,10 @@ class Tree:
             number of observations in the dataset, by default -1, added after fitting
         leaf_nodes : list[Node] | None
             number of leaf nodes in the tree, by default None, added after fitting
-        classes : npt.NDArray | None
-            the different classes in outcomes, by default None, added after fitting
+        pre_sort: np.ndarray | None
+            a sorted index matrix for the dataset
+        classes : np.ndarray | None
+            the different classes in response, by default None, added after fitting
         """
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -142,255 +169,369 @@ class Tree:
         self.n_obs = n_obs
         self.pre_sort = pre_sort
         self.classes = classes
-    
-    def fit(self, X: npt.NDArray, Y:npt.NDArray, criteria:Callable, splitter:splitter_new.Splitter_new | None = None, 
-            feature_indices: npt.NDArray|None = None, sample_indices: npt.NDArray|None = None) -> None:
+
+    def check_input(self, X: object, Y: object):
+        if issparse(X):
+            X = X.tocsc()
+            X.sort_indices()
+
+            if X.data.dtype != DOUBLE:
+                X.data = np.ascontiguousarray(X, dtype=DOUBLE)
+
+        elif X.dtype != DOUBLE:
+            X = np.asfortranarray(X, dtype=DOUBLE)
+
+        if Y.dtype != DOUBLE:
+            Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+
+        return X, Y
+
+    def fit(
+            self,
+            X: np.ndarray,
+            Y: np.ndarray,
+            criteria: FuncWrapper,
+            splitter: Splitter | None = None,
+            feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
         Parameters
         ----------
-        X : npt.NDArray
+        X : np.ndarray
             feature values
-        Y : npt.NDArray
+        Y : np.ndarray
             outcome values
-        criteria : Callable
-            Callable criteria function used to calculate
-        splitter : splitter_new.Splitter_new | None, optional
+        criteria : FuncWrapper
+            Callable criteria function used to calculate impurity wrapped in Funcwrapper class.
+        splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
-        feature_indices : npt.NDArray | None, optional
+        feature_indices : np.ndarray | None, optional
             which features to use from the data X, by default uses all
-        sample_indices : npt.NDArray | None, optional
+        sample_indices : np.ndarray | None, optional
             which samples to use from the data X and Y, by default uses all
         """
         # TODO: test feature and sample indexing
+        X, Y = self.check_input(X, Y)
         row, col = X.shape
         if sample_indices is None:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
-    
-        builder = DepthTreeBuilder(X, Y, feature_indices, sample_indices, criteria, splitter, self.impurity_tol, pre_sort=self.pre_sort)
+        builder = DepthTreeBuilder(
+            X,
+            Y,
+            feature_indices,
+            sample_indices,
+            criteria,
+            splitter,
+            self.impurity_tol,
+            pre_sort=self.pre_sort)
         builder.build_tree(self)
 
-
-    def predict(self, X: npt.NDArray) -> npt.NDArray:
-        #TODO: test it
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predicts a y-value for given X values
 
         Parameters
         ----------
-        X : npt.NDArray
+        X : np.ndarray
             (N, M) numpy array with features to predict
 
         Returns
         -------
-        npt.NDArray
+        np.ndarray
             (N, M+1) numpy array with last column being the predicted y-values, or empty on fail
         """
         # Check if node exists
         row, _ = X.shape
         Y = np.empty(row)
-
-        if not self.root: 
+        if not self.root:
             return Y
         for i in range(row):
             cur_node = self.root
-            while type(cur_node) == DecisionNode:
+            while isinstance(cur_node, DecisionNode):
                 if X[i, cur_node.split_idx] < cur_node.threshold:
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            if type(cur_node) == LeafNode and self.tree_type == "Regression":
+            if isinstance(
+                    cur_node,
+                    LeafNode) and self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
-            elif type(cur_node) == LeafNode and self.tree_type == "Classification":
-                idx = np.argmax(cur_node.value)
-                if type(self.classes) == np.ndarray:
+            elif isinstance(cur_node, LeafNode) and self.tree_type == "Classification":
+                values = np.array(cur_node.value)
+                idx = np.argmax(values)
+                if isinstance(self.classes, np.ndarray):
                     Y[i] = self.classes[idx]
 
         return Y
-    
-    def weight_matrix(self) -> npt.NDArray:
+
+    def weight_matrix(self) -> np.ndarray:
         """
         Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
 
         Returns
         -------
-        npt.NDArray|int
-            NxN matrix, or -1 if there no observations or leaf_nodes in the tree.
+        np.ndarray
+            NxN matrix
         """
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 
         data = np.zeros((n_obs, n_obs))
-        if (not leaf_nodes): # make sure that there are calculated observations
+        if (not leaf_nodes):  # make sure that there are calculated observations
             return data
-        for node in leaf_nodes: 
+        for node in leaf_nodes:
             data[np.ix_(node.indices, node.indices)] = 1
         return data
 
+
 class queue_obj:
-    def __init__(self, indices : list, depth : int, impurity: float, parent: Node|None = None, is_left : int|None = None) -> None:
+    """
+    Queue object for the splitter depthtree builder class
+    """
+
+    def __init__(
+            self,
+            indices: np.ndarray,
+            depth: int,
+            impurity: float,
+            parent: Node | None = None,
+            is_left: bool | None = None) -> None:
         """
-        queue object
 
         Parameters
         ----------
-        indices : list
-            indices used to calculate node
+        indices : np.ndarray
+            indicies waiting to be split
         depth : int
-            depth of the computed node
-        idx : int
-            index of where the node should be saved in the final nodes of the tree
-        parent : Node, optional
-            parent of the computed node, by default None
-        is_left : int
+            depth of the node which is to be made
+        impurity : float
+            impurity in the node to be made
+        parent : Node | None, optional
+            parent of the node to be made, by default None
+        is_left : bool | None, optional
+            whether the object is left or right, by default None
         """
         self.indices = indices
         self.depth = depth
         self.impurity = impurity
         self.parent = parent
         self.is_left = is_left
-        
+
+
 class DepthTreeBuilder:
     """
     Depth first tree builder
     """
-    def __init__(self, X: npt.NDArray, Y: npt.NDArray, feature_indices: npt.NDArray, sample_indices: npt.NDArray, criterion: Callable|None = None, Splitter: splitter_new.Splitter_new|None = None, tol : float = 1e-9,
-                pre_sort:npt.NDArray|None = None) -> None:
+
+    def __init__(
+            self,
+            X: np.ndarray,
+            Y: np.ndarray,
+            feature_indices: np.ndarray,
+            sample_indices: np.ndarray,
+            criteria: FuncWrapper,
+            splitter: Splitter | None = None,
+            tol: float = 1e-9,
+            pre_sort: np.ndarray | None = None) -> None:
         """
         Parameters
         ----------
-        data : np.dtype
-            data used to create the tree
-        splitter : Splitter
-            the splitter class used to split the data
-        max_depth : int
-            the maximum depth of the tree
-        criterion : Callable
-            the function to calculate the criteria used for splitting, 
-            by default the one specied at the top of the file.
-        Splitter : Splitter
-            optional splitter class, uses standard implementation by default
-        tol : float
-            tolerance for impurity of leaf nodes
+        X : np.ndarray
+            The feature values
+        Y : np.ndarray
+            The response values
+        feature_indices : np.ndarray
+            Which features to use
+        sample_indices : np.ndarray
+            Indicies of the samples to use.
+        criteria : FuncWrapper
+            Criteria function used for impurity calculations, wrapped in FuncWrapper class
+        splitter : Splitter | None, optional
+            Splitter class used to split data, by default None
+        tol : float, optional
+            Tolerance in impurity of leaf node, by default 1e-9
+        pre_sort : np.ndarray | None, optional
+            Pre_sorted indicies in regards to features, by default None
         """
         self.features = X[np.ix_(sample_indices, feature_indices)]
-        self.outcomes = Y[sample_indices]
+        self.response = Y[sample_indices]
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
-        if criterion:
-            self.criteria = criterion
+        self.criteria = criteria
+
+        if splitter:
+            self.splitter = splitter
         else:
-            self.criteria = crit
-        if Splitter:
-            self.splitter = Splitter
-        else:
-            self.splitter = splitter_new.Splitter_new(self.features, self.outcomes, self.criteria)
-        if type(pre_sort) == np.ndarray:
-            self.splitter.pre_sort = pre_sort
+            self.splitter = Splitter(self.features, self.response, criteria)
+
+        if isinstance(pre_sort, np.ndarray):
+            if pre_sort.dtype != np.int32:
+                pre_sort = np.ascontiguousarray(pre_sort, np.int32)
+            self.splitter.set_pre_sort(pre_sort)
         self.tol = tol
 
-    def get_mean(self, tree: Tree, node_outcomes: npt.NDArray, n_samples: int, n_classes: int) -> list[float]:
+    def get_mean(
+            self,
+            tree: Tree,
+            node_response: np.ndarray,
+            n_samples: int) -> list[float]:
+        """
+        Calculates the mean of a leafnode
+
+        Parameters
+        ----------
+        tree : Tree
+            The fille tree object
+        node_response : np.ndarray
+            outcome values in the node
+        n_samples : int
+            number of samples in the node
+        n_classes : int
+            number of different classes in the node
+
+        Returns
+        -------
+        list[float]
+            A list of mean values for each class in the node
+        """
         if tree.tree_type == "Regression":
-            return [float(np.mean(node_outcomes))]
-        lst = [0.0 for _ in range(n_classes)] # create an empty list for each class type   
+            return [float(np.mean(node_response))]
+        # create an empty list for each class type
+        lst = [0.0 for _ in range(tree.n_classes)]
         classes = self.classes
-        for i in range(n_classes):
+        for i in range(tree.n_classes):
             for idx in range(n_samples):
-                if node_outcomes[idx] == classes[i]:
-                    lst[i] += 1 # add 1, if the value is the same as class value
-            lst[i] = lst[i]/n_samples # weight by the number of total samples in the leaf
+                if node_response[idx] == classes[i]:
+                    lst[i] += 1  # add 1, if the value is the same as class value
+            # weight by the number of total samples in the leaf
+            lst[i] = lst[i] / n_samples
         return lst
 
-        
-    def build_tree(self, tree: Tree) -> Tree:
+    def build_tree(self, tree: Tree):
         """
-        Builds the tree 
+        Builds the tree
 
         Parameters
         ----------
         tree : Tree
             the tree to build
-        sample_indices : npt.NDArray
-            which samples to use from the total dataset
-        feature_indices : npt.NDArray
-            which features to use from the total dataset
         Returns
         -------
-        Tree
-            the tree object built
+        int :
+            returns 0 on succes
         """
+        features = self.features
+        response = self.response
         splitter = self.splitter
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            classes = np.unique(response)
+            self.classes = classes
+            tree.classes = classes
+            n_classes = len(classes)
+
+            # Initialize c lists in splitter class
+            splitter.make_c_lists(n_classes)
+        tree.n_classes = n_classes
         min_samples = tree.min_samples
         criteria = self.criteria
 
-        features = self.features
-        outcomes = self.outcomes
-
         max_depth = tree.max_depth
-        classes = np.unique(outcomes)
-        self.classes = classes
-        n_classes = len(self.classes)
-
         root = None
-    
+
         leaf_node_list = []
         max_depth_seen = 0
-        
-        n_obs = len(outcomes)
-        queue = [] # queue of elements queue objects that need to be built
-        
-        all_idx = [*range(n_obs)] # root node contains all indices
-        queue.append(queue_obj(all_idx, 0, criteria(features[all_idx], outcomes[all_idx])))
+
+        n_obs = len(response)
+        queue = []  # queue of elements queue objects that need to be built
+
+        # root node contains all indices
+        all_idx = np.arange(n_obs, dtype=np.int32)
+        queue.append(
+            queue_obj(
+                all_idx,
+                0,
+                criteria.crit_func(
+                    features,
+                    response,
+                    all_idx)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             n_samples = len(indices)
-            is_leaf = (depth >= max_depth or impurity <= self.tol
-                       or n_samples < min_samples) # bool used to determine wheter a node is a leaf or not, feel free to add or statements
-
-            if depth > max_depth_seen: # keep track of the max depth seen
+            # bool used to determine wheter a node is a leaf or not, feel free
+            # to add or statements
+            is_leaf = (depth >= max_depth or impurity <=
+                       self.tol or n_samples < min_samples)
+            # TODO: possible impurity improvement tolerance.
+            if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
 
             if not is_leaf:
-                split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(indices)
+                split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(
+                    indices)
+
                 # Add the decision node to the list of nodes
-                new_node = DecisionNode(indices, depth, impurity, n_samples, best_threshold, best_index, parent = parent)
-                if is_left and parent: # if there is a parent
+                new_node = DecisionNode(
+                    indices,
+                    depth,
+                    impurity,
+                    n_samples,
+                    best_threshold,
+                    best_index,
+                    parent=parent)
+                if is_left and parent:  # if there is a parent
                     parent.left_child = new_node
                 elif parent:
                     parent.right_child = new_node
 
                 left, right = split
                 # Add the left node to the queue of nodes yet to be computed
-                queue.append(queue_obj(left, depth+1, chil_imp[0], new_node, 1))
+                queue.append(
+                    queue_obj(
+                        left,
+                        depth + 1,
+                        chil_imp[0],
+                        new_node,
+                        1))
                 # Add the right node to the queue of nodes yet to be computed
-                queue.append(queue_obj(right, depth+1, chil_imp[1], new_node, 0))
+                queue.append(
+                    queue_obj(
+                        right,
+                        depth + 1,
+                        chil_imp[1],
+                        new_node,
+                        0))
             else:
-                mean_value = self.get_mean(tree, outcomes[indices], n_samples, n_classes)
-                new_node = LeafNode(indices, depth, impurity, n_samples, mean_value, parent=parent)
-                if is_left and parent: # if there is a parent
+                mean_value = self.get_mean(tree, response[indices], n_samples)
+                new_node = LeafNode(
+                    indices,
+                    depth,
+                    impurity,
+                    n_samples,
+                    mean_value,
+                    parent=parent)
+                if is_left and parent:  # if there is a parent
                     parent.left_child = new_node
                 elif parent:
                     parent.right_child = new_node
                 leaf_node_list.append(new_node)
             if n_nodes == 0:
                 root = new_node
-            n_nodes += 1 # number of nodes increase by 1
+            n_nodes += 1  # number of nodes increase by 1
 
+        # Free the last calculated nodes lists
+        if tree.tree_type == "Classification":
+            splitter.free_c_lists()  # Free the last calculated nodes lists
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = splitter.n_features
+        tree.n_features = features.shape[0]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.n_classes = n_classes
-        tree.classes = classes
-        return tree
-
-    
-
-    
+        return 0

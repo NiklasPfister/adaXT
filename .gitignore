@@ -1,6 +1,9 @@
 # Ignore the ipynb for testing:
 timing.ipynb
 
+# Ignore temp files
+/temp
+
 # Ignore the csv testing files
 *.csv
 
@@ -9,8 +12,8 @@ timing.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
-*.py[cod]
-*$py.class
+#*.py[cod]
+#*$py.class
 
 # C extensions
 *.so
@@ -172,3 +175,9 @@ cython_debug/
 # William files
 notes_william/
 TODO_william.txt
+scrap.py
+scrap.pyx
+.gitignore
+*.c 
+*.pyd
+*.html
