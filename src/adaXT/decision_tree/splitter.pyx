@@ -105,8 +105,8 @@ cdef class Splitter:
         Returns 
         -----------
         (double, double, double, double)
-            A quadruple containing the criteria value, the left impurity, the right impurity and the mean threshold between the two
-            closest datapoints of the current feature
+            A quadruple containing the criteria value, the left impurity, the right impurity
+            and the mean threshold between the two closest datapoints of the current feature
         """
         cdef:
             double mean_thresh
@@ -120,13 +120,13 @@ cdef class Splitter:
             double[:, ::1] features = self.features
             double[:] response = self.response
         
-        # calculate criteria value on the left dataset
+        # Calculate criteria value on the left dataset
         if n_response == 0:
             left_imp = 0.0
         else:
             left_imp = criteria.func(features, response, left_indices, class_labels, n_in_class)
             crit = left_imp * (n_response/self.n_indices)
-        # calculate criteria value on the right dataset
+        # Calculate criteria value on the right dataset
         n_response = right_indices.shape[0]
         if n_response == 0:
             right_imp = 0.0
@@ -152,8 +152,12 @@ cdef class Splitter:
         Returns 
         -----------
         (list, double, int, double, double)
-            Returns the best split of the dataset, with the values being: (1) a list containing the left and right indices, (2) the best
-            threshold for doing the splits, (3) what feature to split on, (4) the best criteria score, and (5) the best impurity 
+            Returns the best split of the dataset, with the values being:
+            (1) a list containing the left and right indices,
+            (2) the best threshold for doing the splits,
+            (3) what feature to split on,
+            (4) the best criteria score, and
+            (5) the best impurity 
         """
         self.indices = indices
         self.n_indices = indices.shape[0]
@@ -167,7 +171,8 @@ cdef class Splitter:
             int[:] left_indices, right_indices
             cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
         
-        # If the classes list is not null, then we have a classification tree, in that case allocate memory for lists
+        # If the classes list is not null, we have a classification tree
+        # In that case allocate memory for lists
         if self.class_labels != NULL:
             self.free_c_lists()
             classes = np.unique(self.response.base[indices])
@@ -200,7 +205,8 @@ cdef class Splitter:
 
                 if crit < best_score:
                     # Save the best split
-                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] # The index is given as the index of the first element of the right dataset 
+                    # The index is given as the index of the first element of the right dataset 
+                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] 
                     split = [left_indices, right_indices]
         # Return the best split
         return split, best_threshold, best_feature, best_score, best_imp
