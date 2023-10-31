@@ -171,10 +171,7 @@ class Tree:
         self.classes = classes
 
     def check_input(self, X: object, Y: object):
-        if issparse(X):
-            X = X.tocsc()
-            X.sort_indices()
-
+        # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 

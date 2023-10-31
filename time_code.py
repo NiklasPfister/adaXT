@@ -10,7 +10,7 @@ import cProfile
 from pstats import Stats
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 
-def test_run_time_single_tree_classification():
+def test_run_time_single_tree_classification(crit_func):
     max_depth = 5
     min_samples = 2
 
@@ -21,7 +21,7 @@ def test_run_time_single_tree_classification():
     
     start_time = time.perf_counter()
     tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, Gini_index)
+    tree.fit(X, Y, crit_func)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -262,7 +262,7 @@ def regression_table():
             data.append([f'{n_el} by {d_el}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
 
     # Create a Pandas DataFrame
-    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'fraction'])
+    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'us / sklearn'])
 
     # Create a figure and axis for plotting
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -278,7 +278,7 @@ def regression_table():
     plt.savefig('regression.png', bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
-def classification_table():
+def classification_table_gini():
     data = []
 
     d = [5, 15, 25]
@@ -293,7 +293,7 @@ def classification_table():
 
             for i in range(10):
                 sk_list.append(run_sklearn_classification())
-                ada_list.append(test_run_time_single_tree_classification())
+                ada_list.append(test_run_time_single_tree_classification(Gini_index))
             
             sk_time = sum(sk_list) / len(sk_list)
             
@@ -307,7 +307,7 @@ def classification_table():
             data.append([f'{n_el} by {d_el}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
 
     # Create a Pandas DataFrame
-    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'fraction'])
+    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'us / sklearn'])
 
     # Create a figure and axis for plotting
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -320,7 +320,52 @@ def classification_table():
     table.scale(1, 1.5)
 
     # Save the table as an image (e.g., PNG)
-    plt.savefig('classification.png', bbox_inches='tight', pad_inches=0.1)
+    plt.savefig('classification_gini.png', bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+def classification_table_entropy():
+    data = []
+
+    d = [5, 15, 25]
+    n = [100, 1000, 2500]
+
+        # For classification
+    for d_el in d:
+        for n_el in n:
+            update_data_set("Classification", n_el, d_el, 3)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_classification())
+                ada_list.append(test_run_time_single_tree_classification(Entropy))
+            
+            sk_time = sum(sk_list) / len(sk_list)
+            
+            ada_time = sum(ada_list) / len(ada_list)
+
+            #print("With", n_el, "rows and", d_el, "features:")
+            #print("sklearn runtime:", sk_time)
+            #print("our runtime:", ada_time)
+            #print("They are", ada_time / sk_time, "times faster than us.\n\n")
+
+            data.append([f'{n_el} by {d_el}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
+
+    # Create a Pandas DataFrame
+    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'us / sklearn'])
+
+    # Create a figure and axis for plotting
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('off')  # Turn off axis lines and labels
+
+    # Create a table from the DataFrame and display it
+    table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center', colColours=['#f2f2f2']*4)
+    table.auto_set_font_size(False)
+    table.set_fontsize(14)
+    table.scale(1, 1.5)
+
+    # Save the table as an image (e.g., PNG)
+    plt.savefig('classification_entropy.png', bbox_inches='tight', pad_inches=0.1)
     plt.show()
 
 def classification_table_change_num_classes():
@@ -338,7 +383,7 @@ def classification_table_change_num_classes():
 
             for i in range(10):
                 sk_list.append(run_sklearn_classification())
-                ada_list.append(test_run_time_single_tree_classification())
+                ada_list.append(test_run_time_single_tree_classification(Gini_index))
             
             sk_time = sum(sk_list) / len(sk_list)
 
@@ -352,7 +397,7 @@ def classification_table_change_num_classes():
             data.append([f'{n_el} by {n_class}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
 
     # Create a Pandas DataFrame
-    df = pd.DataFrame(data, columns=['rows by num_classes', 'us', 'sklearn', 'fraction'])
+    df = pd.DataFrame(data, columns=['rows by num_classes', 'us', 'sklearn', 'us / sklearn'])
 
     # Create a figure and axis for plotting
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -393,7 +438,7 @@ if __name__ == "__main__":
     #profiler.enable()
     # Code to run
     #print("ms", test_run_time_single_tree_regression())
-    print(test_run_time_single_tree_classification())
+    #print(test_run_time_single_tree_classification(Gini_index))
     #profiler.disable()
     #stats = Stats(profiler)
     #stats.sort_stats('tottime').print_stats(10)
@@ -404,7 +449,8 @@ if __name__ == "__main__":
     #print("Sklearn time classification:", run_sklearn_classification())
 
     regression_table()
-    classification_table()
+    classification_table_gini()
+    classification_table_entropy()
     classification_table_change_num_classes()
 
 
