@@ -1,16 +1,41 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True
 
 cdef int fill_class_lists(double[:] y, int[:] indices, double* class_labels, int* n_in_class):
+    '''
+    Function that updates the class labels ('class_labels') and the number of
+    elements in each class ('n_in_class') and returns the number of classes
+        ----------
+
+        Parameters
+        ----------
+        y : memoryview of NDArray
+            The response variable for which the number of elements per class
+            should be updated
+
+        indices : memoryview of NDArray
+            The indices for which to count the number of elements per class
+
+        class_labels: double pointer
+            A pointer to a double array for the class_labels 
+
+        n_in_class : int pointer
+            A pointer to an int array for the number of elements seen of each class
+        
+        Returns
+        -------
+        int
+            The number of seen classes
+    '''
     cdef:
         int n_classes = 0    
         int n_obs = indices.shape[0]
         int i,j
         bint seen
     
-    # Loop over all the observations to calculate the gini index for
+    # Loop over all the observations in indices
     for i in range(n_obs):
         seen = False
-        # loop over all the classes we have seen so far
+        # Loop over all the classes we have seen so far
         for j in range(n_classes):
             # If the current element is one we have already seen, increase it's counter
             if class_labels[j] == y[indices[i]]:
@@ -40,7 +65,7 @@ cdef double mean(double[:] lst, int[:] indices):
         Returns
         -------
         double
-            mean of lst
+            The mean of lst
     '''
     cdef double sum = 0.0
     cdef int i 
