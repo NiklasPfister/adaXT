@@ -1,10 +1,8 @@
 import numpy as np
-from numpy import float64 as DOUBLE
 cimport numpy as cnp
+from numpy import float64 as DOUBLE
 cnp.import_array()
-from .func_wrapper cimport FuncWrapper
-from .criteria cimport Criterion
-from libc.stdlib cimport malloc, free
+from .criteria cimport Criteria
 from numpy.math cimport INFINITY
 
 
@@ -12,8 +10,7 @@ cdef class Splitter:
     """
     Splitter class used to create splits of the data
     """
-
-    def __init__(self, double[:, ::1] X, double[:] Y, criteria: Criterion):
+    def __init__(self, double[:, ::1] X, double[:] Y, criteria: Criteria):
         '''
         Class initializer 
         ----------------
@@ -35,25 +32,6 @@ cdef class Splitter:
         self.criteria = criteria
         self.pre_sort = None
         self.n_class = len(np.unique(Y))
-
-    cpdef void make_c_lists(self, int n_class):
-        '''
-        Function to allocate memory for the classes of the response
-        ----------------
-        Parameters
-            ----------
-            n_class: int
-                The number of classes 
-        '''
-        self.class_labels = <double *> malloc(sizeof(double) * self.n_class)
-        self.n_in_class = <int *> malloc(sizeof(int) * self.n_class)
-
-    cpdef void free_c_lists(self):
-        '''
-        Function to deallocate memory for the classes of the response
-        '''
-        free(self.class_labels)
-        free(self.n_in_class)
 
     def set_pre_sort(self, pre_sort):
         '''
@@ -167,12 +145,6 @@ cdef class Splitter:
             int i, feature # variables for loop
             int[:] left_indices, right_indices
             cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
-        
-        # If the classes list is not null, then we have a classification tree, in that case allocate memory for lists
-        if self.class_labels != NULL:
-            self.free_c_lists()
-            classes = np.unique(self.response.base[indices])
-            self.make_c_lists(len(classes))
  
         features = self.features.base
         n_features = self.n_features
@@ -194,14 +166,13 @@ cdef class Splitter:
                 # Skip one iteration of the loop if the current threshold value is the same as the next in the feature list
                 if current_feature_values[sorted_index_list_feature[i]] == current_feature_values[sorted_index_list_feature[i + 1]]:
                     continue 
-                # Split the dataset
-                left_indices = sorted_index_list_feature[:i + 1]
-                right_indices = sorted_index_list_feature[i + 1:]
-                crit, left_imp, right_imp, threshold = self.evaluate_split(left_indices, right_indices, feature) # test the split
-
-                if crit < best_score:
+                # test the split
+                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature) 
+        
+                if (best_score - crit) > 1e-15: #rounding error
                     # Save the best split
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp] # The index is given as the index of the first element of the right dataset 
-                    split = [left_indices, right_indices]
+                    split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
+                    
         # Return the best split
         return split, best_threshold, best_feature, best_score, best_imp

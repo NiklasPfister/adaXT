@@ -1,2 +1,7 @@
-cdef class Criterion:
-    cdef double impurity(self, double[:, ::1] x, double[:] y, int[:] indices)
+cdef class Criteria:
+    cdef:
+        double[:, ::1] x
+        double[:] y
+        
+    cpdef double impurity(self, int[:] indices)
+    cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature)

@@ -1,6 +1,9 @@
 # Ignore the ipynb for testing:
 timing.ipynb
 
+# Ignore temp files
+/temp
+
 # Ignore the csv testing files
 *.csv
 
