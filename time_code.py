@@ -233,6 +233,142 @@ def test_run_time_single_tree_classification_presort():
     #add_time_entry(new_time_entry, "classification on a single tree with presort")
     return elapsed
 
+def regression_table():
+    data = []
+
+    d = [5, 15, 25]
+    n = [100, 1000, 2500]
+
+    # For regression
+    for d_el in d:
+        for n_el in n:
+            update_data_set("Regression", n_el, d_el, -1)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_regression())
+                ada_list.append(test_run_time_single_tree_regression())
+            
+            sk_time = sum(sk_list) / len(sk_list)
+
+            ada_time = sum(ada_list) / len(ada_list)
+
+            #print("With", n_el, "rows and", d_el, "features:")
+            #print("sklearn runtime:", sk_time)
+            #print("our runtime:", ada_time)
+            #print("They are", ada_time / sk_time, "times faster than us.\n\n")
+
+            data.append([f'{n_el} by {d_el}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
+
+    # Create a Pandas DataFrame
+    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'fraction'])
+
+    # Create a figure and axis for plotting
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('off')  # Turn off axis lines and labels
+
+    # Create a table from the DataFrame and display it
+    table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center', colColours=['#f2f2f2']*4)
+    table.auto_set_font_size(False)
+    table.set_fontsize(14)
+    table.scale(1, 1.5)
+
+    # Save the table as an image (e.g., PNG)
+    plt.savefig('regression.png', bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+def classification_table():
+    data = []
+
+    d = [5, 15, 25]
+    n = [100, 1000, 2500]
+
+        # For classification
+    for d_el in d:
+        for n_el in n:
+            update_data_set("Classification", n_el, d_el, 3)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_classification())
+                ada_list.append(test_run_time_single_tree_classification())
+            
+            sk_time = sum(sk_list) / len(sk_list)
+            
+            ada_time = sum(ada_list) / len(ada_list)
+
+            #print("With", n_el, "rows and", d_el, "features:")
+            #print("sklearn runtime:", sk_time)
+            #print("our runtime:", ada_time)
+            #print("They are", ada_time / sk_time, "times faster than us.\n\n")
+
+            data.append([f'{n_el} by {d_el}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
+
+    # Create a Pandas DataFrame
+    df = pd.DataFrame(data, columns=['rows by features', 'us', 'sklearn', 'fraction'])
+
+    # Create a figure and axis for plotting
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('off')  # Turn off axis lines and labels
+
+    # Create a table from the DataFrame and display it
+    table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center', colColours=['#f2f2f2']*4)
+    table.auto_set_font_size(False)
+    table.set_fontsize(14)
+    table.scale(1, 1.5)
+
+    # Save the table as an image (e.g., PNG)
+    plt.savefig('classification.png', bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+def classification_table_change_num_classes():
+    data = []
+
+    # Classification with changing num classes
+    n = [1000, 2000]
+    number_of_classes = [5, 7, 10, 13]
+
+    for n_el in n:
+        for n_class in number_of_classes:
+            update_data_set("Classification", n_el, 15, n_class)
+            sk_list = []
+            ada_list = []
+
+            for i in range(10):
+                sk_list.append(run_sklearn_classification())
+                ada_list.append(test_run_time_single_tree_classification())
+            
+            sk_time = sum(sk_list) / len(sk_list)
+
+            ada_time = sum(ada_list) / len(ada_list)
+            
+            #print("With", n_el, "rows and", 15, "features, and", n_class, "classes:")
+            #print("sklearn runtime:", sk_time)
+            #print("our runtime:", ada_time)
+            #print("They are", ada_time / sk_time, "times faster than us.\n\n")
+
+            data.append([f'{n_el} by {n_class}', f'{ada_time:.1f} ms', f'{sk_time:.1f} ms', f'{ada_time / sk_time:.2f}'])
+
+    # Create a Pandas DataFrame
+    df = pd.DataFrame(data, columns=['rows by num_classes', 'us', 'sklearn', 'fraction'])
+
+    # Create a figure and axis for plotting
+    fig, ax = plt.subplots(figsize=(8, 4))
+    ax.axis('off')  # Turn off axis lines and labels
+
+    # Create a table from the DataFrame and display it
+    table = ax.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center', colColours=['#f2f2f2']*4)
+    table.auto_set_font_size(False)
+    table.set_fontsize(14)
+    table.scale(1, 1.5)
+
+    # Save the table as an image (e.g., PNG)
+    plt.savefig('classification_change_num_classes.png', bbox_inches='tight', pad_inches=0.1)
+    plt.show()
+
+
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
     #update_data_set("Classification", 1000, 10, 3)
@@ -267,78 +403,16 @@ if __name__ == "__main__":
     #print("Sklearn time regression:", run_sklearn_regression())
     #print("Sklearn time classification:", run_sklearn_classification())
 
-    d = [5, 15, 25]
-    n = [100, 1000, 2500]
-
-    # For regression
-    '''for d_el in d:
-        for n_el in n:
-            update_data_set("Regression", n_el, d_el, -1)
-            sk_list = []
-            ada_list = []
-
-            for i in range(10):
-                sk_list.append(run_sklearn_regression())
-                ada_list.append(test_run_time_single_tree_regression())
-            
-            print("With", n_el, "rows and", d_el, "features:")
-            sk_time = sum(sk_list) / len(sk_list)
-            print("sklearn runtime:", sk_time)
-
-            ada_time = sum(ada_list) / len(ada_list)
-            print("our runtime:", ada_time)
-
-            print("They are", ada_time / sk_time, "times faster than us.\n\n")'''
-        
-    # For classification
-    '''for d_el in d:
-        for n_el in n:
-            update_data_set("Classification", n_el, d_el, 3)
-            sk_list = []
-            ada_list = []
-
-            for i in range(10):
-                sk_list.append(run_sklearn_classification())
-                ada_list.append(test_run_time_single_tree_classification())
-            
-            print("With", n_el, "rows and", d_el, "features:")
-            sk_time = sum(sk_list) / len(sk_list)
-            print("sklearn runtime:", sk_time)
-
-            ada_time = sum(ada_list) / len(ada_list)
-            print("our runtime:", ada_time)
-
-            print("They are", ada_time / sk_time, "times faster than us.\n\n")
-    
-    # Classification with changing num classes
-    n = [1000, 2000]
-    number_of_classes = [5, 7, 10, 13]
-
-    for n_el in n:
-        for n_class in number_of_classes:
-            update_data_set("Classification", n_el, 15, n_class)
-            sk_list = []
-            ada_list = []
-
-            for i in range(10):
-                sk_list.append(run_sklearn_classification())
-                ada_list.append(test_run_time_single_tree_classification())
-            
-            print("With", n_el, "rows and", 15, "features, and", n_class, "classes:")
-            sk_time = sum(sk_list) / len(sk_list)
-            print("sklearn runtime:", sk_time)
-
-            ada_time = sum(ada_list) / len(ada_list)
-            print("our runtime:", ada_time)
-
-            print("They are", ada_time / sk_time, "times faster than us.\n\n")'''
+    regression_table()
+    classification_table()
+    classification_table_change_num_classes()
 
 
 
-    lst = []
-    for i in range(100):
-        lst.append(test_run_time_single_tree_classification())
-    print("entropy", sum(lst) / len(lst))
+    #lst = []
+    #for i in range(100):
+    #    lst.append(test_run_time_single_tree_classification())
+    #print("entropy", sum(lst) / len(lst))
 
     #lst_new = []
     #lst_old = []
