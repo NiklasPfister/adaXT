@@ -175,14 +175,8 @@ class Tree:
             X = X.tocsc()
             X.sort_indices()
 
-            if X.data.dtype != DOUBLE:
-                X.data = np.ascontiguousarray(X, dtype=DOUBLE)
-
-        elif X.dtype != DOUBLE:
-            X = np.asfortranarray(X, dtype=DOUBLE)
-
-        if Y.dtype != DOUBLE:
-            Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
         return X, Y
 
@@ -219,13 +213,13 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
-        criteria.set_x_and_y(X, Y)
+        
         builder = DepthTreeBuilder(
             X,
             Y,
             feature_indices,
             sample_indices,
-            criteria,
+            criteria(X, Y),
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)

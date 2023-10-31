@@ -1,5 +1,5 @@
 from adaXT.decision_tree.tree import *
-from adaXT.decision_tree.criteria import squared_error, gini_index, gini_index_new
+from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
 import time
@@ -21,7 +21,7 @@ def test_run_time_single_tree_classification():
     
     start_time = time.perf_counter()
     tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, gini_index(X, Y))
+    tree.fit(X, Y, Gini_index)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -49,7 +49,7 @@ def test_run_time_single_tree_regression():
     
     start_time = time.perf_counter()
     tree = Tree("Regression", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, squared_error())
+    tree.fit(X, Y, Squared_error)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -83,7 +83,7 @@ def test_run_time_multiple_tree_classification(num_trees_to_build, pre_sorted):
     
     for i in range(num_trees_to_build):
         tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples, pre_sort=pre_sorted_data)
-        tree.fit(X, Y, gini_index())
+        tree.fit(X, Y, Gini_index)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -118,7 +118,7 @@ def test_run_time_multiple_tree_regression(num_trees_to_build, pre_sorted):
     
     for i in range(num_trees_to_build):
         tree = Tree("Regression", max_depth=max_depth, min_samples=min_samples, pre_sort=pre_sorted_data)
-        tree.fit(X, Y, squared_error())
+        tree.fit(X, Y, Squared_error)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -216,7 +216,7 @@ def test_run_time_single_tree_classification_presort():
     start_time = time.perf_counter()
     pre_sorted = pre_sort(X).astype(int)
     tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples, pre_sort=pre_sorted)
-    tree.fit(X, Y, gini_index())
+    tree.fit(X, Y, Gini_index)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
 
@@ -236,7 +236,7 @@ def test_run_time_single_tree_classification_presort():
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
     #update_data_set("Classification", 1000, 10, 3)
-    #update_data_set("Regression", 1500, 10, -1)
+    #update_data_set("Regression", 1000, 10, -1)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
 
@@ -253,18 +253,18 @@ if __name__ == "__main__":
     #stats = Stats(profiler)
     #stats.sort_stats('tottime').print_stats(20)
 
-    profiler = cProfile.Profile()
-    profiler.enable()
+    #profiler = cProfile.Profile()
+    #profiler.enable()
     # Code to run
-    #test_run_time_single_tree_regression()
-    test_run_time_single_tree_classification()
-    profiler.disable()
-    stats = Stats(profiler)
-    stats.sort_stats('tottime').print_stats(10)
+    #print("ms", test_run_time_single_tree_regression())
+    print(test_run_time_single_tree_classification())
+    #profiler.disable()
+    #stats = Stats(profiler)
+    #stats.sort_stats('tottime').print_stats(10)
 
     
     #test_run_time_single_tree_classification()
-    # print("Sklearn time regression:", run_sklearn_regression())
+    #print("Sklearn time regression:", run_sklearn_regression())
     #print("Sklearn time classification:", run_sklearn_classification())
 
     d = [5, 15, 25]
@@ -335,16 +335,16 @@ if __name__ == "__main__":
 
 
 
-    #lst = []
-    #for i in range(100):
-    #    lst.append(test_run_time_single_tree_classification(gini_index()))
-    #print("old gini", sum(lst) / len(lst))
+    lst = []
+    for i in range(100):
+        lst.append(test_run_time_single_tree_classification())
+    print("entropy", sum(lst) / len(lst))
 
     #lst_new = []
     #lst_old = []
     #for i in range(100):
     #    lst_new.append(test_run_time_single_tree_classification(gini_index_new()))
-    #    lst_old.append(test_run_time_single_tree_classification(gini_index()))
+    #    lst_old.append(test_run_time_single_tree_classification(Gini_index))
     #print("old gini", sum(lst_old) / len(lst_old))
     #print("new gini", sum(lst_new) / len(lst_new))
 
