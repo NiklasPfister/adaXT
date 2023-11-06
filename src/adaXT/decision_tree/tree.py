@@ -210,7 +210,7 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
-        
+
         builder = DepthTreeBuilder(
             X,
             Y,
