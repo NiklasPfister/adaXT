@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
+
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
     Used to check the depth value associated with nodes
