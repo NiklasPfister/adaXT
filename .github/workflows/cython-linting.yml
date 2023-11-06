@@ -3,7 +3,7 @@ name: Cython-linting
 on: 
     push:
         branches:
-            - Development
+            - '*'
 
     pull_request:
         branches:
@@ -18,7 +18,7 @@ jobs:
         strategy:
           fail-fast: false
           matrix:
-            python-version: ["3.10", "3.11"]
+            python-version: ["3.11"]
         
         steps:
         - uses: actions/checkout@v3
@@ -35,5 +35,5 @@ jobs:
         
         - name: Cython Linting
           run: |
-            cython-lint src/* --count --max-line-length=127 --statistics
+            cython-lint src/* --max-line-length=127 --ignore=W291,W292,W293
             

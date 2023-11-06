@@ -1,13 +1,12 @@
 # cython: profile=True, boundscheck=False, wraparound=False, cdivision=True
 
-from libc.math cimport log2, fabs
-from libc.stdlib cimport hash, malloc, free
+from libc.math cimport log2
+from libc.stdlib cimport  malloc, free
 import numpy as np
 
-from .crit_helpers cimport fill_class_lists, mean
+from .crit_helpers cimport mean
 
 import numpy as np
-cimport cython
 
 cdef class Criteria:
     def __cinit__(self, double[:, ::1] x, double[::1] y):
@@ -36,7 +35,10 @@ cdef class Criteria:
         Returns 
         -----------
         (double, double, double, double)
-            A quadruple containing the criteria value, the left impurity, the right impurity and the mean threshold between the two
+            A quadruple containing the criteria value, 
+            the left impurity, 
+            the right impurity and 
+            the mean threshold between the two
             closest datapoints of the current feature
         """
         cdef:
@@ -44,7 +46,7 @@ cdef class Criteria:
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
-            int n_indices = indices.shape[0] # total in node
+            int n_indices = indices.shape[0]  # total in node
             double[:, ::1] features = self.x
             int[:] left_indices = indices[:split_idx] 
             int[:] right_indices = indices[split_idx:]
@@ -53,7 +55,7 @@ cdef class Criteria:
         
         left_indices = indices[:split_idx] 
         right_indices = indices[split_idx:]
-        n_left =  left_indices.shape[0]
+        n_left = left_indices.shape[0]
         n_right = right_indices.shape[0]
 
         # calculate criteria value on the left dataset
@@ -69,11 +71,6 @@ cdef class Criteria:
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         
         return (crit, left_imp, right_imp, mean_thresh)
-
-
-
-
-
 
 cdef class Gini_index(Criteria):
     cdef:
@@ -94,7 +91,7 @@ cdef class Gini_index(Criteria):
         self.n_in_class_right = <int *> malloc(sizeof(int) * self.num_classes)
         self.old_obs = -1
 
-    def __del__(self): # Called by garbage collector.
+    def __del__(self):  # Called by garbage collector.
         free(self.n_in_class)
         free(self.n_in_class_left)
         free(self.n_in_class_right)
@@ -102,7 +99,7 @@ cdef class Gini_index(Criteria):
     cpdef double impurity(self, int[:] indices):
         return self._gini(indices, self.n_in_class)
 
-    cdef void reset_n_in_class(self,int* n_in_class):
+    cdef void reset_n_in_class(self, int* n_in_class):
         cdef int i
         for i in range(self.num_classes):
             n_in_class[i] = 0    
@@ -125,7 +122,7 @@ cdef class Gini_index(Criteria):
         double
             The value of the gini index
         """
-        self.reset_n_in_class(n_in_class) # Reset the counter such that no previous values influence the new ones
+        self.reset_n_in_class(n_in_class)  # Reset the counter such that no previous values influence the new ones
 
         cdef:
             double sum = 0.0
@@ -135,8 +132,8 @@ cdef class Gini_index(Criteria):
             double[:] y = self.y
         class_labels = self.class_labels
 
-        for i in range(n_obs): # loop over all indices
-            for j in range(self.num_classes): # Find the element we are currently on and increase it's counter
+        for i in range(n_obs):  # loop over all indices
+            for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 if y[indices[i]] == class_labels[j]:
                     n_in_class[j] += 1
 
@@ -156,7 +153,7 @@ cdef class Gini_index(Criteria):
             double sum = 0.0
         start_idx = self.old_split
 
-        for i in range(start_idx, new_split): # loop over indices to be updated
+        for i in range(start_idx, new_split):  # loop over indices to be updated
             tmp = self.y[indices[i]] 
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
@@ -179,7 +176,7 @@ cdef class Gini_index(Criteria):
             double sum = 0.0
         start_idx = self.old_split
 
-        for i in range(start_idx, new_split): # loop over indices to be updated
+        for i in range(start_idx, new_split):  # loop over indices to be updated
             tmp = self.y[indices[i]] 
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
@@ -201,11 +198,11 @@ cdef class Gini_index(Criteria):
             double right_imp = 0.0
             double crit = 0.0
             double n_left = <double> split_idx
-            int n_obs = indices.shape[0] # total in node
+            int n_obs = indices.shape[0]  # total in node
             double n_right = (<double> n_obs) - n_left
             double[:, ::1] features = self.x
 
-        if n_obs == self.old_obs and feature == self.old_feature: # If we are checking the same node with same sorting
+        if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
             left_imp = self.update_left(indices, split_idx)
             right_imp = self.update_right(indices, split_idx)
 
@@ -220,10 +217,6 @@ cdef class Gini_index(Criteria):
 
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
-
-
-
-
 
 cdef class Squared_error(Criteria):
     cdef:
@@ -259,7 +252,7 @@ cdef class Squared_error(Criteria):
     cdef double update_right(self, int[:] indices, int new_split):
         cdef:
             int i, start_idx
-            double tmp, square_sum, cur_sum, new_mu, n_obs, square_err
+            double tmp, square_sum, cur_sum, new_mu, n_obs
         n_obs = <double> (indices.shape[0] - new_split)
         square_sum = self.old_right_square_sum
         cur_sum = self.old_right_sum
@@ -284,11 +277,11 @@ cdef class Squared_error(Criteria):
             double right_imp = 0.0
             double crit = 0.0
             double n_left = <double> split_idx
-            int n_obs = indices.shape[0] # total in node
+            int n_obs = indices.shape[0]  # total in node
             double n_right = (<double> n_obs) - n_left
             double[:, ::1] features = self.x
 
-        if n_obs == self.old_obs and feature == self.old_feature: # If we are checking the same node with same sorting
+        if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
             left_imp = self.update_left(indices, split_idx)
             right_imp = self.update_right(indices, split_idx)
 
@@ -335,7 +328,7 @@ cdef class Squared_error(Criteria):
         cdef:
             double cur_sum = 0.0
             double[:] y = self.y
-            double mu = mean(y, indices) # set mu to be the mean of the dataset
+            double mu = mean(y, indices)  # set mu to be the mean of the dataset
             double square_err, tmp
             int i 
             int n_obs = indices.shape[0]
@@ -355,10 +348,6 @@ cdef class Squared_error(Criteria):
                 self.old_right_sum = mu*(<double> n_obs)
                 self.old_right_square_sum = cur_sum
         return square_err
-
-
-
-
 
 cdef class Entropy(Criteria):
     cdef:
