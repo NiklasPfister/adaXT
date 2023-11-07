@@ -199,9 +199,8 @@ def test_prediction():
     tree = Tree("Classification")
     tree.fit(X, Y_cla, Gini_index)
     prediction = tree.predict(X)
-    print(prediction)
-    # for i in range(len(Y_cla)):
-    # assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+    for i in range(len(Y_cla)):
+        assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
 def test_NxN_matrix():
@@ -231,7 +230,6 @@ def test_NxN_matrix():
         for j in range(len(true_weight[0])):
             assert weight_matrix[i, j] == true_weight[i,
                                                       j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
-
 
 def test_entropy_single():
     X = np.array([[1, -1],
