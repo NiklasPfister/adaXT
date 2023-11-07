@@ -368,7 +368,7 @@ cdef class Entropy(Criteria):
         self.n_in_class_right = <int *> malloc(sizeof(int) * self.num_classes)
         self.old_obs = -1
 
-    def __del__(self): # Called by garbage collector.
+    def __del__(self):  # Called by garbage collector.
         free(self.n_in_class)
         free(self.n_in_class_left)
         free(self.n_in_class_right)
@@ -399,7 +399,7 @@ cdef class Entropy(Criteria):
         double
             The value of the gini index
         """
-        self.reset_n_in_class(n_in_class) # Reset the counter such that no previous values influence the new ones
+        self.reset_n_in_class(n_in_class)  # Reset the counter such that no previous values influence the new ones
 
         cdef:
             double sum = 0.0
@@ -409,14 +409,14 @@ cdef class Entropy(Criteria):
             double[:] y = self.y
         class_labels = self.class_labels
 
-        for i in range(n_obs): # loop over all indices
-            for j in range(self.num_classes): # Find the element we are currently on and increase it's counter
+        for i in range(n_obs):  # loop over all indices
+            for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 if y[indices[i]] == class_labels[j]:
                     n_in_class[j] += 1
 
         # Loop over all classes and calculate entropy 
         for i in range(self.num_classes):
-            if n_in_class[i] == 0: # To make sure we dont take log(0)
+            if n_in_class[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> n_in_class[i])/(<double> n_obs)
             sum += - (pp) * log2(pp)
@@ -431,7 +431,7 @@ cdef class Entropy(Criteria):
             double sum = 0.0
         start_idx = self.old_split
 
-        for i in range(start_idx, new_split): # loop over indices to be updated
+        for i in range(start_idx, new_split):  # loop over indices to be updated
             tmp = self.y[indices[i]] 
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
@@ -440,7 +440,7 @@ cdef class Entropy(Criteria):
         
         # Loop over all classes and calculate entropy 
         for i in range(self.num_classes):
-            if self.n_in_class_left[i] == 0: # To make sure we dont take log(0)
+            if self.n_in_class_left[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> self.n_in_class_left[i])/(<double> n_obs)
             sum += - (pp) * log2(pp)
@@ -455,7 +455,7 @@ cdef class Entropy(Criteria):
             double sum = 0.0
         start_idx = self.old_split
 
-        for i in range(start_idx, new_split): # loop over indices to be updated
+        for i in range(start_idx, new_split):  # loop over indices to be updated
             tmp = self.y[indices[i]] 
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
@@ -464,7 +464,7 @@ cdef class Entropy(Criteria):
         
         # Loop over all classes and calculate entropy 
         for i in range(self.num_classes):
-            if self.n_in_class_right[i] == 0: # To make sure we dont take log(0)
+            if self.n_in_class_right[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> self.n_in_class_right[i])/(<double> n_obs)
             sum += - (pp) * log2(pp)
@@ -478,11 +478,11 @@ cdef class Entropy(Criteria):
             double right_imp = 0.0
             double crit = 0.0
             double n_left = <double> split_idx
-            int n_obs = indices.shape[0] # total in node
+            int n_obs = indices.shape[0]  # total in node
             double n_right = (<double> n_obs) - n_left
             double[:, ::1] features = self.x
 
-        if n_obs == self.old_obs and feature == self.old_feature: # If we are checking the same node with same sorting
+        if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
             left_imp = self.update_left(indices, split_idx)
             right_imp = self.update_right(indices, split_idx)
         else:
