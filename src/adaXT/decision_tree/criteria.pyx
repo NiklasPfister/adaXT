@@ -225,7 +225,6 @@ cdef class Gini_index(Criteria):
 cdef class Entropy(Criteria):
     cdef:
         double[::1] class_labels
-        int* n_in_class
         int* n_in_class_left
         int* n_in_class_right
         int num_classes
