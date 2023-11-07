@@ -1,9 +1,7 @@
 
 # General
-from scipy.sparse import issparse
 import numpy as np
 from numpy import float64 as DOUBLE
-#from .splitter cimport EPSILON
 import sys
 
 # Custom
@@ -11,6 +9,7 @@ from .splitter import Splitter
 from .criteria import Criteria
 
 cdef double EPSILON = np.finfo('double').eps
+
 
 class Node:  # should just be a ctype struct in later implementation
     def __init__(
@@ -108,6 +107,7 @@ class LeafNode(Node):
         super().__init__(indices, depth, impurity, n_samples)
         self.value = value
         self.parent = parent
+
 
 class Tree:
     """
@@ -264,7 +264,10 @@ class Tree:
 
     def weight_matrix(self) -> np.ndarray:
         """
-        Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
+        Creates NxN matrix, 
+        where N is the number of observations. 
+        If a given value is 1, then they are in the same leaf, 
+        otherwise it is 0
 
         Returns
         -------
@@ -455,10 +458,9 @@ class DepthTreeBuilder:
             n_samples = len(indices)
             # bool used to determine wheter a node is a leaf or not, feel free
             # to add or statements
-            is_leaf = ((depth >= max_depth) or
-                        (abs(impurity - self.min_impurity) < EPSILON) or
-                        (n_samples <= min_samples)
-                    )
+            is_leaf = ((depth >= max_depth) or 
+                       (abs(impurity - self.min_impurity) < EPSILON) or
+                       (n_samples <= min_samples))
             # Check improvement
             # if parent != None:
             #     is_leaf = (abs(parent.impurity - impurity) <= self.min_improvement) or is_leaf
@@ -468,7 +470,7 @@ class DepthTreeBuilder:
                 max_depth_seen = depth
 
             if not is_leaf:
-                split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(
+                split, best_threshold, best_index, _, chil_imp = splitter.get_split(
                     indices)
 
                 # Add the decision node to the list of nodes
@@ -503,12 +505,6 @@ class DepthTreeBuilder:
                         new_node,
                         0))
             else:
-            #     if impurity != 0:
-            #         print("DEPTH: ", (depth >= max_depth))
-            #         print("IMPURITY: ", (impurity <= self.min_impurity))
-            #         print("SAMPLES: ", n_samples < min_samples)
-            #         print("IMP IMPROVEMENT: ", abs(parent.impurity - impurity) <= self.min_improvement)
-            #         print(abs(parent.impurity - impurity))
                 mean_value = self.get_mean(tree, response[indices], n_samples)
                 new_node = LeafNode(
                     indices,

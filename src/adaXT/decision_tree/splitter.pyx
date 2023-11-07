@@ -2,7 +2,6 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
-from libc.math cimport fabs
 
 cdef double EPSILON = 2*np.finfo('double').eps
 cdef double INFINITY = 1e20
