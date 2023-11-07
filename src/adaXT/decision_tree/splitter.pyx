@@ -79,8 +79,12 @@ cdef class Splitter:
         Returns 
         -----------
         (list, double, int, double, double)
-            Returns the best split of the dataset, with the values being: (1) a list containing the left and right indices, (2) the best
-            threshold for doing the splits, (3) what feature to split on, (4) the best criteria score, and (5) the best impurity 
+            Returns the best split of the dataset, with the values being:
+            (1) a list containing the left and right indices,
+            (2) the best threshold for doing the splits,
+            (3) what feature to split on,
+            (4) the best criteria score, and
+            (5) the best impurity 
         """
         self.indices = indices
         self.n_indices = indices.shape[0]
