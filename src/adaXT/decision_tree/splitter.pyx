@@ -2,8 +2,10 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
-from numpy.math cimport INFINITY
+from libc.math cimport fabs
 
+cdef double EPSILON = 2*np.finfo('double').eps
+cdef double INFINITY = 1e20
 
 cdef class Splitter:
     """
@@ -93,9 +95,11 @@ cdef class Splitter:
             double[:] current_feature_values
             int i, feature  # variables for loop
             cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
+            double crit
 
         features = self.features.base
         n_features = self.n_features
+        split, best_imp = [], []
         # For all features
         for feature in range(n_features):
             current_feature_values = features[:, feature]
@@ -121,11 +125,14 @@ cdef class Splitter:
                 # test the split
                 crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature) 
         
-                if (best_score - crit) > 1e-15:  # rounding error
+                if best_score - crit > EPSILON:  # rounding error
                     # Save the best split
                     # The index is given as the index of the first element of the right dataset
                     best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp]  
                     split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
-                    
-        # Return the best split
+                    if len(split) == 0:
+                        print(best_feature, best_threshold, best_score, best_imp)
+                        print(crit - best_score < EPSILON)
+        if len(split) == 0:
+            print("INDICES", N_i)
         return split, best_threshold, best_feature, best_score, best_imp

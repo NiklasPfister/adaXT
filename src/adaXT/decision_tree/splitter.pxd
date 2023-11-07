@@ -2,9 +2,6 @@ cimport numpy as cnp
 from .criteria cimport Criteria
 cnp.import_array()
 
-ctypedef cnp.float64_t npFloat
-ctypedef cnp.int_t npInt
-
 cdef class test_obj:
     cdef:
         double crit

@@ -3,12 +3,14 @@
 from scipy.sparse import issparse
 import numpy as np
 from numpy import float64 as DOUBLE
+#from .splitter cimport EPSILON
 import sys
 
 # Custom
 from .splitter import Splitter
 from .criteria import Criteria
 
+cdef double EPSILON = np.finfo('double').eps
 
 class Node:  # should just be a ctype struct in later implementation
     def __init__(
@@ -107,7 +109,6 @@ class LeafNode(Node):
         self.value = value
         self.parent = parent
 
-
 class Tree:
     """
     Tree object
@@ -118,7 +119,7 @@ class Tree:
             tree_type: str,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
-            min_samples: int = 2,
+            min_samples: int = 1,
             root: Node | None = None,
             n_nodes: int = -1,
             n_features: int = -1,
@@ -210,13 +211,14 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
+        criteria.set_x_y(X, Y)
 
         builder = DepthTreeBuilder(
             X,
             Y,
             feature_indices,
             sample_indices,
-            criteria(X, Y),
+            criteria,
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)
@@ -327,7 +329,8 @@ class DepthTreeBuilder:
             sample_indices: np.ndarray,
             criteria: Criteria,
             splitter: Splitter | None = None,
-            tol: float = 1e-9,
+            min_impurity: float = 0,
+            min_improvement: float = EPSILON, 
             pre_sort: np.ndarray | None = None) -> None:
         """
         Parameters
@@ -344,8 +347,8 @@ class DepthTreeBuilder:
             Criteria function used for impurity calculations, wrapped in FuncWrapper class
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        tol : float, optional
-            Tolerance in impurity of leaf node, by default 1e-9
+        min_impurity : float, optional
+            Tolerance in impurity of leaf node, by default 0
         pre_sort : np.ndarray | None, optional
             Pre_sorted indicies in regards to features, by default None
         """
@@ -364,7 +367,8 @@ class DepthTreeBuilder:
             if pre_sort.dtype != np.int32:
                 pre_sort = np.ascontiguousarray(pre_sort, np.int32)
             self.splitter.set_pre_sort(pre_sort)
-        self.tol = tol
+        self.min_impurity = min_impurity
+        self.min_improvement = min_improvement
 
     def get_mean(
             self,
@@ -423,6 +427,7 @@ class DepthTreeBuilder:
         n_classes = 0
         if tree.tree_type == "Classification":
             self.classes = np.unique(response)
+            tree.classes = self.classes
             n_classes = self.classes.shape[0]
 
         tree.n_classes = n_classes
@@ -450,8 +455,14 @@ class DepthTreeBuilder:
             n_samples = len(indices)
             # bool used to determine wheter a node is a leaf or not, feel free
             # to add or statements
-            is_leaf = (depth >= max_depth or impurity <=
-                       self.tol or n_samples < min_samples)
+            is_leaf = ((depth >= max_depth) or
+                        (abs(impurity - self.min_impurity) < EPSILON) or
+                        (n_samples <= min_samples)
+                    )
+            # Check improvement
+            # if parent != None:
+            #     is_leaf = (abs(parent.impurity - impurity) <= self.min_improvement) or is_leaf
+
             # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
@@ -492,6 +503,12 @@ class DepthTreeBuilder:
                         new_node,
                         0))
             else:
+            #     if impurity != 0:
+            #         print("DEPTH: ", (depth >= max_depth))
+            #         print("IMPURITY: ", (impurity <= self.min_impurity))
+            #         print("SAMPLES: ", n_samples < min_samples)
+            #         print("IMP IMPROVEMENT: ", abs(parent.impurity - impurity) <= self.min_improvement)
+            #         print(abs(parent.impurity - impurity))
                 mean_value = self.get_mean(tree, response[indices], n_samples)
                 new_node = LeafNode(
                     indices,

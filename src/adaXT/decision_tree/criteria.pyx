@@ -9,7 +9,7 @@ from .crit_helpers cimport mean
 import numpy as np
 
 cdef class Criteria:
-    def __cinit__(self, double[:, ::1] x, double[::1] y):
+    def set_x_y(self, double[:, ::1] x, double[::1] y):
         self.x = x
         self.y = y
 
@@ -83,7 +83,9 @@ cdef class Gini_index(Criteria):
         int old_split
         int old_feature
     
-    def __init__(self, double[:, ::1] x, double[::1] y):
+    def set_x_y(self, double[:, ::1] x, double[::1] y):
+        self.x = x
+        self.y = y
         self.class_labels = np.unique(y.base)
         self.num_classes = self.class_labels.shape[0]
         self.n_in_class = <int *> malloc(sizeof(int) * self.num_classes)
@@ -228,7 +230,8 @@ cdef class Squared_error(Criteria):
         int old_split
         int old_feature
 
-    def __init__(self, double[:, ::1] x, double[:] y):
+    def set_x_y(self, double[:, ::1] x, double[:] y):
+        super().set_x_y(x, y)
         self.old_obs = -1
     
     cdef double update_left(self, int[:] indices, int new_split):
@@ -360,7 +363,8 @@ cdef class Entropy(Criteria):
         int old_split
         int old_feature
     
-    def __init__(self, double[:, ::1] x, double[::1] y):
+    def set_x_y(self, double[:, ::1] x, double[::1] y):
+        super().set_x_y(x, y)
         self.class_labels = np.unique(y.base)
         self.num_classes = self.class_labels.shape[0]
         self.n_in_class = <int *> malloc(sizeof(int) * self.num_classes)
