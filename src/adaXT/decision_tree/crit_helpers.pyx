@@ -4,7 +4,7 @@ cdef int fill_class_lists(double[:] y, int[:] indices, double* class_labels, int
     cdef:
         int n_classes = 0    
         int n_obs = indices.shape[0]
-        int i,j
+        int i, j
         bint seen
     
     # Loop over all the observations to calculate the gini index for

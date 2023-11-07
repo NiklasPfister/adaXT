@@ -1,6 +1,9 @@
-from adaXT.decision_tree.tree import *
-from adaXT.decision_tree.criteria import gini_index, squared_error, entropy
-from adaXT.decision_tree.tree_utils import print_tree, pre_sort
+from adaXT.decision_tree.tree import Tree, LeafNode, DecisionNode
+from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
+from adaXT.decision_tree.tree_utils import plot_tree, pre_sort
+import matplotlib.pyplot as plt
+
+import numpy as np
 
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -32,11 +35,10 @@ def test_gini_single():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index())
+    tree.fit(X, Y_cla, Gini_index)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
-    print_tree(tree)
     assert isinstance(root, LeafNode) or isinstance(
         root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
@@ -75,7 +77,7 @@ def test_gini_multi():
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
-    tree.fit(X, Y_multi, gini_index())
+    tree.fit(X, Y_multi, Gini_index)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
     # leaf node
@@ -116,7 +118,7 @@ def test_regression():
                   [-0.5, 2]])
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
     tree = Tree("Regression")
-    tree.fit(X, Y_reg, squared_error())
+    tree.fit(X, Y_reg, Squared_error)
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
@@ -154,7 +156,7 @@ def test_pre_sort():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
     tree = Tree("Classification", pre_sort=pre_sorted)
-    tree.fit(X, Y_cla, gini_index())
+    tree.fit(X, Y_cla, Gini_index)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -195,7 +197,7 @@ def test_prediction():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index())
+    tree.fit(X, Y_cla, Gini_index)
     prediction = tree.predict(X)
     print(prediction)
     # for i in range(len(Y_cla)):
@@ -213,7 +215,7 @@ def test_NxN_matrix():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, gini_index())
+    tree.fit(X, Y_cla, Gini_index)
     weight_matrix = tree.weight_matrix()
     true_weight = np.array([
         [1, 0, 0, 0, 1, 0, 1, 0],
@@ -243,7 +245,7 @@ def test_entropy_single():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
     tree = Tree("Classification")
-    tree.fit(X, Y_cla, entropy())
+    tree.fit(X, Y_cla, Entropy)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -285,7 +287,7 @@ def test_entropy_multi():
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
     tree = Tree("Classification")
-    tree.fit(X, Y_multi, gini_index())
+    tree.fit(X, Y_multi, Entropy)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
     # leaf node
@@ -316,11 +318,12 @@ def test_entropy_multi():
 
 
 if __name__ == "__main__":
-    # test_single_class()
-    # test_multi_class()
-    # test_regression()
-    # test_pre_sort()
-    # test_prediction()
-    # test_NxN_matrix()
+    test_gini_single()
+    test_gini_multi()
     test_entropy_single()
-    # print("done")
+    test_entropy_multi()
+    test_regression()
+    test_pre_sort()
+    test_prediction()
+    test_NxN_matrix()
+    print("done")

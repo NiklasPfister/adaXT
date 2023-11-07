@@ -6,8 +6,8 @@ from numpy import float64 as DOUBLE
 import sys
 
 # Custom
-from .func_wrapper import FuncWrapper
 from .splitter import Splitter
+from .criteria import Criteria
 
 
 class Node:  # should just be a ctype struct in later implementation
@@ -171,18 +171,9 @@ class Tree:
         self.classes = classes
 
     def check_input(self, X: object, Y: object):
-        if issparse(X):
-            X = X.tocsc()
-            X.sort_indices()
-
-            if X.data.dtype != DOUBLE:
-                X.data = np.ascontiguousarray(X, dtype=DOUBLE)
-
-        elif X.dtype != DOUBLE:
-            X = np.asfortranarray(X, dtype=DOUBLE)
-
-        if Y.dtype != DOUBLE:
-            Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
         return X, Y
 
@@ -190,7 +181,7 @@ class Tree:
             self,
             X: np.ndarray,
             Y: np.ndarray,
-            criteria: FuncWrapper,
+            criteria: Criteria,
             splitter: Splitter | None = None,
             feature_indices: np.ndarray | None = None,
             sample_indices: np.ndarray | None = None) -> None:
@@ -219,12 +210,13 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
+
         builder = DepthTreeBuilder(
             X,
             Y,
             feature_indices,
             sample_indices,
-            criteria,
+            criteria(X, Y),
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)
@@ -333,7 +325,7 @@ class DepthTreeBuilder:
             Y: np.ndarray,
             feature_indices: np.ndarray,
             sample_indices: np.ndarray,
-            criteria: FuncWrapper,
+            criteria: Criteria,
             splitter: Splitter | None = None,
             tol: float = 1e-9,
             pre_sort: np.ndarray | None = None) -> None:
@@ -402,10 +394,9 @@ class DepthTreeBuilder:
             return [float(np.mean(node_response))]
         # create an empty list for each class type
         lst = [0.0 for _ in range(tree.n_classes)]
-        classes = self.classes
         for i in range(tree.n_classes):
             for idx in range(n_samples):
-                if node_response[idx] == classes[i]:
+                if node_response[idx] == self.classes[i]:
                     lst[i] += 1  # add 1, if the value is the same as class value
             # weight by the number of total samples in the leaf
             lst[i] = lst[i] / n_samples
@@ -427,19 +418,15 @@ class DepthTreeBuilder:
         features = self.features
         response = self.response
         splitter = self.splitter
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            classes = np.unique(response)
-            self.classes = classes
-            tree.classes = classes
-            n_classes = len(classes)
-
-            # Initialize c lists in splitter class
-            splitter.make_c_lists(n_classes)
-        tree.n_classes = n_classes
-        min_samples = tree.min_samples
         criteria = self.criteria
 
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            self.classes = np.unique(response)
+            n_classes = self.classes.shape[0]
+
+        tree.n_classes = n_classes
+        min_samples = tree.min_samples
         max_depth = tree.max_depth
         root = None
 
@@ -455,10 +442,7 @@ class DepthTreeBuilder:
             queue_obj(
                 all_idx,
                 0,
-                criteria.crit_func(
-                    features,
-                    response,
-                    all_idx)))
+                criteria.impurity(all_idx)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
@@ -525,9 +509,6 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
-        # Free the last calculated nodes lists
-        if tree.tree_type == "Classification":
-            splitter.free_c_lists()  # Free the last calculated nodes lists
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = features.shape[0]
