@@ -2,11 +2,11 @@
 
 cdef int fill_class_lists(double[:] y, int[:] indices, double* class_labels, int* n_in_class):
     cdef:
-        int n_classes = 0    
+        int n_classes = 0
         int n_obs = indices.shape[0]
         int i, j
         bint seen
-    
+
     # Loop over all the observations to calculate the gini index for
     for i in range(n_obs):
         seen = False
@@ -36,14 +36,14 @@ cdef double mean(double[:] lst, int[:] indices):
 
         indices : memoryview of NDArray
             The indices to calculate the mean at
-        
+
         Returns
         -------
         double
             mean of lst
     '''
     cdef double sum = 0.0
-    cdef int i 
+    cdef int i
     cdef int length = indices.shape[0]
 
     for i in range(length):

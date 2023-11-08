@@ -112,22 +112,22 @@ cdef class Splitter:
                 # Mask only current node
                 mask = np.isin(pre_sort[:, feature], indices)
                 # Use the mask to retrieve values from presort
-                sorted_index_list_feature = np.asarray(pre_sort[:, feature])[mask]       
+                sorted_index_list_feature = np.asarray(pre_sort[:, feature])[mask]
 
             # Loop over sorted feature list
             for i in range(N_i):
-                # Skip one iteration of the loop if the current 
+                # Skip one iteration of the loop if the current
                 # threshold value is the same as the next in the feature list
-                if (current_feature_values[sorted_index_list_feature[i]] == 
+                if (current_feature_values[sorted_index_list_feature[i]] ==
                         current_feature_values[sorted_index_list_feature[i + 1]]):
-                    continue 
+                    continue
                 # test the split
-                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature) 
-        
+                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature)
+
                 if best_score - crit > EPSILON:  # rounding error
                     # Save the best split
                     # The index is given as the index of the first element of the right dataset
-                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp]  
+                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp]
                     split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
                     if len(split) == 0:
                         print(best_feature, best_threshold, best_score, best_imp)

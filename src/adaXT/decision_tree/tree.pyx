@@ -264,9 +264,9 @@ class Tree:
 
     def weight_matrix(self) -> np.ndarray:
         """
-        Creates NxN matrix, 
-        where N is the number of observations. 
-        If a given value is 1, then they are in the same leaf, 
+        Creates NxN matrix,
+        where N is the number of observations.
+        If a given value is 1, then they are in the same leaf,
         otherwise it is 0
 
         Returns
@@ -333,7 +333,7 @@ class DepthTreeBuilder:
             criteria: Criteria,
             splitter: Splitter | None = None,
             min_impurity: float = 0,
-            min_improvement: float = EPSILON, 
+            min_improvement: float = EPSILON,
             pre_sort: np.ndarray | None = None) -> None:
         """
         Parameters
@@ -458,7 +458,7 @@ class DepthTreeBuilder:
             n_samples = len(indices)
             # bool used to determine wheter a node is a leaf or not, feel free
             # to add or statements
-            is_leaf = ((depth >= max_depth) or 
+            is_leaf = ((depth >= max_depth) or
                        (abs(impurity - self.min_impurity) < EPSILON) or
                        (n_samples <= min_samples))
             # Check improvement

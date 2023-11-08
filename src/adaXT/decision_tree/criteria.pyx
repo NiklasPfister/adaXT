@@ -28,16 +28,16 @@ cdef class Criteria:
 
         split_idx: int
             the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
-        
+
         feature: int
             The current feature we are working on
-            
-        Returns 
+
+        Returns
         -----------
         (double, double, double, double)
-            A quadruple containing the criteria value, 
-            the left impurity, 
-            the right impurity and 
+            A quadruple containing the criteria value,
+            the left impurity,
+            the right impurity and
             the mean threshold between the two
             closest datapoints of the current feature
         """
@@ -48,12 +48,12 @@ cdef class Criteria:
             double crit = 0.0
             int n_indices = indices.shape[0]  # total in node
             double[:, ::1] features = self.x
-            int[:] left_indices = indices[:split_idx] 
+            int[:] left_indices = indices[:split_idx]
             int[:] right_indices = indices[split_idx:]
             int n_left = left_indices.shape[0]
             int n_right = right_indices.shape[0]
-        
-        left_indices = indices[:split_idx] 
+
+        left_indices = indices[:split_idx]
         right_indices = indices[split_idx:]
         n_left = left_indices.shape[0]
         n_right = right_indices.shape[0]
@@ -69,7 +69,7 @@ cdef class Criteria:
         crit += (right_imp) * (<double> n_right)/(<double> n_indices)
 
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
-        
+
         return (crit, left_imp, right_imp, mean_thresh)
 
 cdef class Gini_index(Criteria):
@@ -82,7 +82,7 @@ cdef class Gini_index(Criteria):
         int old_obs
         int old_split
         int old_feature
-    
+
     def set_x_y(self, double[:, ::1] x, double[::1] y):
         self.x = x
         self.y = y
@@ -104,7 +104,7 @@ cdef class Gini_index(Criteria):
     cdef void reset_n_in_class(self, int* n_in_class):
         cdef int i
         for i in range(self.num_classes):
-            n_in_class[i] = 0    
+            n_in_class[i] = 0
 
     cdef double _gini(self, int[:] indices, int* n_in_class):
         """
@@ -112,14 +112,14 @@ cdef class Gini_index(Criteria):
         ----------
 
         Parameters
-        ----------        
+        ----------
         indices : memoryview of NDArray
             The indices to calculate the gini index for
 
         n_in_class : int pointer
             A pointer to an int array for the number of elements seen of each class
-                
-        Returns 
+
+        Returns
         -----------
         double
             The value of the gini index
@@ -129,7 +129,7 @@ cdef class Gini_index(Criteria):
         cdef:
             double sum = 0.0
             int n_obs = indices.shape[0]
-            double proportion_cls 
+            double proportion_cls
             int i, j
             double[:] y = self.y
         class_labels = self.class_labels
@@ -139,13 +139,13 @@ cdef class Gini_index(Criteria):
                 if y[indices[i]] == class_labels[j]:
                     n_in_class[j] += 1
 
-        # Loop over all classes and calculate gini_index 
+        # Loop over all classes and calculate gini_index
         for i in range(self.num_classes):
             proportion_cls = (<double> n_in_class[i]) / (<double> n_obs)
             sum += proportion_cls * proportion_cls
 
-        return 1 - sum  
-    
+        return 1 - sum
+
     cdef double update_left(self, int[:] indices, int new_split):
         # All new values in node from before
         cdef:
@@ -156,19 +156,19 @@ cdef class Gini_index(Criteria):
         start_idx = self.old_split
 
         for i in range(start_idx, new_split):  # loop over indices to be updated
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
                     self.n_in_class_left[j] += 1
                     break
-        
-        # Loop over all classes and calculate gini_index 
+
+        # Loop over all classes and calculate gini_index
         for i in range(self.num_classes):
             proportion_cls = (<double> self.n_in_class_left[i]) / (<double> n_obs)
             sum += proportion_cls * proportion_cls
 
-        return 1 - sum  
-    
+        return 1 - sum
+
     cdef double update_right(self, int[:] indices, int new_split):
         # All new values in node from before
         cdef:
@@ -179,18 +179,18 @@ cdef class Gini_index(Criteria):
         start_idx = self.old_split
 
         for i in range(start_idx, new_split):  # loop over indices to be updated
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
                     self.n_in_class_right[j] -= 1
                     break
-        
-        # Loop over all classes and calculate gini_index 
+
+        # Loop over all classes and calculate gini_index
         for i in range(self.num_classes):
             proportion_cls = (<double> self.n_in_class_right[i]) / (<double> n_obs)
             sum += proportion_cls * proportion_cls
 
-        return 1 - sum  
+        return 1 - sum
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
@@ -233,7 +233,7 @@ cdef class Squared_error(Criteria):
     def set_x_y(self, double[:, ::1] x, double[:] y):
         super().set_x_y(x, y)
         self.old_obs = -1
-    
+
     cdef double update_left(self, int[:] indices, int new_split):
         # All new values in node from before
         cdef:
@@ -244,7 +244,7 @@ cdef class Squared_error(Criteria):
         cur_sum = self.old_left_sum
         start_idx = self.old_split
         for i in range(start_idx, new_split):
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             square_sum += tmp * tmp
             cur_sum += tmp
         self.old_left_square_sum = square_sum
@@ -261,14 +261,14 @@ cdef class Squared_error(Criteria):
         cur_sum = self.old_right_sum
         start_idx = self.old_split
         for i in range(start_idx, new_split):
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             square_sum -= tmp * tmp
             cur_sum -= tmp
         self.old_right_square_sum = square_sum
         self.old_right_sum = cur_sum
         new_mu = cur_sum / n_obs
         return (square_sum/n_obs - new_mu*new_mu)
-    
+
     cpdef double impurity(self, int[:] indices):
         return self._square_error(indices)
 
@@ -310,15 +310,15 @@ cdef class Squared_error(Criteria):
         ----------
         x : memoryview of NDArray
             The feature values of the dataset
-        
+
         y : memoryview of NDArray
             The response values of the dataset
-        
+
         indices : memoryview of NDArray
             The indices to calculate the gini index for
-        
+
         class_labels : double pointer
-            A pointer to a double array for the class_labels 
+            A pointer to a double array for the class_labels
 
         n_in_class : int pointer
             A pointer to an int array for the number of elements seen of each class
@@ -333,7 +333,7 @@ cdef class Squared_error(Criteria):
             double[:] y = self.y
             double mu = mean(y, indices)  # set mu to be the mean of the dataset
             double square_err, tmp
-            int i 
+            int i
             int n_obs = indices.shape[0]
             int n_indices = indices.shape[0]
         # Calculate the variance using: variance = sum((y_i - mu)^2)/y_len
@@ -343,7 +343,7 @@ cdef class Squared_error(Criteria):
         square_err = cur_sum/(<double> n_obs) - mu*mu
         if left_or_right != -1:
             # Left subnode
-            if left_or_right == 0: 
+            if left_or_right == 0:
                 self.old_left_sum = mu * (<double> n_obs)
                 self.old_left_square_sum = cur_sum
             # Right subnode
@@ -362,7 +362,7 @@ cdef class Entropy(Criteria):
         int old_obs
         int old_split
         int old_feature
-    
+
     def set_x_y(self, double[:, ::1] x, double[::1] y):
         super().set_x_y(x, y)
         self.class_labels = np.unique(y.base)
@@ -391,14 +391,14 @@ cdef class Entropy(Criteria):
         ----------
 
         Parameters
-        ----------        
+        ----------
         indices : memoryview of NDArray
             The indices to calculate the gini index for
 
         n_in_class : int pointer
             A pointer to an int array for the number of elements seen of each class
-                
-        Returns 
+
+        Returns
         -----------
         double
             The value of the gini index
@@ -408,7 +408,7 @@ cdef class Entropy(Criteria):
         cdef:
             double sum = 0.0
             int n_obs = indices.shape[0]
-            double pp 
+            double pp
             int i, j
             double[:] y = self.y
         class_labels = self.class_labels
@@ -418,7 +418,7 @@ cdef class Entropy(Criteria):
                 if y[indices[i]] == class_labels[j]:
                     n_in_class[j] += 1
 
-        # Loop over all classes and calculate entropy 
+        # Loop over all classes and calculate entropy
         for i in range(self.num_classes):
             if n_in_class[i] == 0:  # To make sure we dont take log(0)
                 continue
@@ -436,20 +436,20 @@ cdef class Entropy(Criteria):
         start_idx = self.old_split
 
         for i in range(start_idx, new_split):  # loop over indices to be updated
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
                     self.n_in_class_left[j] += 1
                     break
-        
-        # Loop over all classes and calculate entropy 
+
+        # Loop over all classes and calculate entropy
         for i in range(self.num_classes):
             if self.n_in_class_left[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> self.n_in_class_left[i])/(<double> n_obs)
             sum += - (pp) * log2(pp)
-        return sum 
-    
+        return sum
+
     cdef double update_right(self, int[:] indices, int new_split):
         # All new values in node from before
         cdef:
@@ -460,19 +460,19 @@ cdef class Entropy(Criteria):
         start_idx = self.old_split
 
         for i in range(start_idx, new_split):  # loop over indices to be updated
-            tmp = self.y[indices[i]] 
+            tmp = self.y[indices[i]]
             for j in range(self.num_classes):
                 if tmp == self.class_labels[j]:
                     self.n_in_class_right[j] -= 1
                     break
-        
-        # Loop over all classes and calculate entropy 
+
+        # Loop over all classes and calculate entropy
         for i in range(self.num_classes):
             if self.n_in_class_right[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> self.n_in_class_right[i])/(<double> n_obs)
             sum += - (pp) * log2(pp)
-        return sum 
+        return sum
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
