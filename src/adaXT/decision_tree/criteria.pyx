@@ -100,7 +100,7 @@ cdef class Gini_index(Criteria):
         # n_in_class_left can be use as the int pointer as it will be cleared before and after this use
         return self._gini(indices, self.n_in_class_left)
 
-    cdef void reset_n_in_class(self,int* class_occurences):
+    cdef void reset_n_in_class(self, int* class_occurences):
         cdef int i
         for i in range(self.num_classes):
             class_occurences[i] = 0    
