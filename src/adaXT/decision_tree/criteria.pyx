@@ -130,9 +130,10 @@ cdef class Gini_index(Criteria):
             for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 if y[indices[i]] == class_labels[j]:
                     class_occurences[j] += 1
+                    break
 
         # Loop over all classes and calculate gini_index
-        for i in range(self.num_classes):
+        for j in range(self.num_classes):
             proportion_cls = (<double> class_occurences[i]) / (<double> n_obs)
             sum += proportion_cls * proportion_cls
 
@@ -210,8 +211,6 @@ cdef class Gini_index(Criteria):
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
-        return 1 - sum
-
 cdef class Entropy(Criteria):
     cdef:
         double[::1] class_labels
@@ -250,7 +249,7 @@ cdef class Entropy(Criteria):
         Parameters
         ----------
         indices : memoryview of NDArray
-            The indices to calculate the gini index for
+            The indices to calculate
 
         class_occurences : int pointer
             A pointer to an int array for the number of elements seen of each class
@@ -303,7 +302,7 @@ cdef class Entropy(Criteria):
             if self.n_in_class_left[i] == 0:  # To make sure we dont take log(0)
                 continue
             pp = (<double> self.n_in_class_left[i])/(<double> n_obs)
-            sum += - (pp) * log2(pp)
+            sum -= (pp) * log2(pp)
         return sum
 
     cdef double update_right(self, int[:] indices, int new_split):
@@ -445,7 +444,7 @@ cdef class Squared_error(Criteria):
         Parameters
         ----------
         indices : memoryview of NDArray
-            The indices to calculate the gini index for
+            The indices to calculate
 
         left_or_right : int
             An int indicating whether we are calculating on the left or right dataset
