@@ -1,13 +1,14 @@
 
 # General
-from scipy.sparse import issparse
 import numpy as np
 from numpy import float64 as DOUBLE
 import sys
 
 # Custom
-from .func_wrapper import FuncWrapper
 from .splitter import Splitter
+from .criteria import Criteria
+
+cdef double EPSILON = np.finfo('double').eps
 
 
 class Node:  # should just be a ctype struct in later implementation
@@ -118,7 +119,7 @@ class Tree:
             tree_type: str,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
-            min_samples: int = 2,
+            min_samples: int = 1,
             root: Node | None = None,
             n_nodes: int = -1,
             n_features: int = -1,
@@ -171,18 +172,9 @@ class Tree:
         self.classes = classes
 
     def check_input(self, X: object, Y: object):
-        if issparse(X):
-            X = X.tocsc()
-            X.sort_indices()
-
-            if X.data.dtype != DOUBLE:
-                X.data = np.ascontiguousarray(X, dtype=DOUBLE)
-
-        elif X.dtype != DOUBLE:
-            X = np.asfortranarray(X, dtype=DOUBLE)
-
-        if Y.dtype != DOUBLE:
-            Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
         return X, Y
 
@@ -190,7 +182,7 @@ class Tree:
             self,
             X: np.ndarray,
             Y: np.ndarray,
-            criteria: FuncWrapper,
+            criteria: Criteria,
             splitter: Splitter | None = None,
             feature_indices: np.ndarray | None = None,
             sample_indices: np.ndarray | None = None) -> None:
@@ -224,7 +216,7 @@ class Tree:
             Y,
             feature_indices,
             sample_indices,
-            criteria,
+            criteria(X, Y),
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)
@@ -270,7 +262,10 @@ class Tree:
 
     def weight_matrix(self) -> np.ndarray:
         """
-        Creates NxN matrix, where N is the number of observations. If a given value is 1, then they are in the same leaf, otherwise it is 0
+        Creates NxN matrix,
+        where N is the number of observations.
+        If a given value is 1, then they are in the same leaf,
+        otherwise it is 0
 
         Returns
         -------
@@ -333,9 +328,10 @@ class DepthTreeBuilder:
             Y: np.ndarray,
             feature_indices: np.ndarray,
             sample_indices: np.ndarray,
-            criteria: FuncWrapper,
+            criteria: Criteria,
             splitter: Splitter | None = None,
-            tol: float = 1e-9,
+            min_impurity: float = 0,
+            min_improvement: float = EPSILON,
             pre_sort: np.ndarray | None = None) -> None:
         """
         Parameters
@@ -352,8 +348,8 @@ class DepthTreeBuilder:
             Criteria function used for impurity calculations, wrapped in FuncWrapper class
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        tol : float, optional
-            Tolerance in impurity of leaf node, by default 1e-9
+        min_impurity : float, optional
+            Tolerance in impurity of leaf node, by default 0
         pre_sort : np.ndarray | None, optional
             Pre_sorted indicies in regards to features, by default None
         """
@@ -372,7 +368,8 @@ class DepthTreeBuilder:
             if pre_sort.dtype != np.int32:
                 pre_sort = np.ascontiguousarray(pre_sort, np.int32)
             self.splitter.set_pre_sort(pre_sort)
-        self.tol = tol
+        self.min_impurity = min_impurity
+        self.min_improvement = min_improvement
 
     def get_mean(
             self,
@@ -402,10 +399,9 @@ class DepthTreeBuilder:
             return [float(np.mean(node_response))]
         # create an empty list for each class type
         lst = [0.0 for _ in range(tree.n_classes)]
-        classes = self.classes
         for i in range(tree.n_classes):
             for idx in range(n_samples):
-                if node_response[idx] == classes[i]:
+                if node_response[idx] == self.classes[i]:
                     lst[i] += 1  # add 1, if the value is the same as class value
             # weight by the number of total samples in the leaf
             lst[i] = lst[i] / n_samples
@@ -427,19 +423,16 @@ class DepthTreeBuilder:
         features = self.features
         response = self.response
         splitter = self.splitter
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            classes = np.unique(response)
-            self.classes = classes
-            tree.classes = classes
-            n_classes = len(classes)
-
-            # Initialize c lists in splitter class
-            splitter.make_c_lists(n_classes)
-        tree.n_classes = n_classes
-        min_samples = tree.min_samples
         criteria = self.criteria
 
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            self.classes = np.unique(response)
+            tree.classes = self.classes
+            n_classes = self.classes.shape[0]
+
+        tree.n_classes = n_classes
+        min_samples = tree.min_samples
         max_depth = tree.max_depth
         root = None
 
@@ -455,10 +448,7 @@ class DepthTreeBuilder:
             queue_obj(
                 all_idx,
                 0,
-                criteria.crit_func(
-                    features,
-                    response,
-                    all_idx)))
+                criteria.impurity(all_idx)))
         n_nodes = 0
         while len(queue) > 0:
             obj = queue.pop()
@@ -466,14 +456,19 @@ class DepthTreeBuilder:
             n_samples = len(indices)
             # bool used to determine wheter a node is a leaf or not, feel free
             # to add or statements
-            is_leaf = (depth >= max_depth or impurity <=
-                       self.tol or n_samples < min_samples)
+            is_leaf = ((depth >= max_depth) or
+                       (abs(impurity - self.min_impurity) < EPSILON) or
+                       (n_samples <= min_samples))
+            # Check improvement
+            # if parent != None:
+            #     is_leaf = (abs(parent.impurity - impurity) <= self.min_improvement) or is_leaf
+
             # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
 
             if not is_leaf:
-                split, best_threshold, best_index, best_score, chil_imp = splitter.get_split(
+                split, best_threshold, best_index, _, chil_imp = splitter.get_split(
                     indices)
 
                 # Add the decision node to the list of nodes
@@ -525,9 +520,6 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
-        # Free the last calculated nodes lists
-        if tree.tree_type == "Classification":
-            splitter.free_c_lists()  # Free the last calculated nodes lists
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = features.shape[0]
