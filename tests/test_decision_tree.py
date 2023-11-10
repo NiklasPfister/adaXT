@@ -198,7 +198,8 @@ def test_prediction():
     tree.fit(X, Y_cla, Gini_index)
     prediction = tree.predict(X)
     for i in range(len(Y_cla)):
-        assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+        assert Y_cla[i] == prediction[
+            i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
 def test_NxN_matrix():
@@ -228,6 +229,7 @@ def test_NxN_matrix():
         for j in range(len(true_weight[0])):
             assert weight_matrix[i, j] == true_weight[i,
                                                       j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
+
 
 def test_entropy_single():
     X = np.array([[1, -1],
@@ -325,8 +327,9 @@ def sanity_regression(n, m):
     pred1 = tree1.predict(X)
     pred2 = tree2.predict(X)
     for i in range(n):
-        assert(Y1[i] == pred1[i]), f"Square: Expected {Y1[i]} Got {pred1[i]}"
-        assert(Y2[i] == pred2[i]), f"Square: Expected {Y2[i]} Got {pred2[i]}"
+        assert (Y1[i] == pred1[i]), f"Square: Expected {Y1[i]} Got {pred1[i]}"
+        assert (Y2[i] == pred2[i]), f"Square: Expected {Y2[i]} Got {pred2[i]}"
+
 
 def sanity_gini(n, m):
     X = np.random.uniform(0, 100, (n, m))
@@ -337,7 +340,8 @@ def sanity_gini(n, m):
 
     pred = tree.predict(X)
     for i in range(n):
-        assert(Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+        assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+
 
 def sanity_entropy(n, m):
     X = np.random.uniform(0, 100, (n, m))
@@ -348,7 +352,8 @@ def sanity_entropy(n, m):
 
     pred = tree.predict(X)
     for i in range(n):
-        assert(Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+        assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+
 
 def test_sanity():
     n = 10000
