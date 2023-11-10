@@ -3,6 +3,7 @@ import numpy as np
 
 # Plot an entire tree
 
+
 def plot_tree(tree: Tree):
     """
     Generates the tree as a subplot of plt. To show the plot,
