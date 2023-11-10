@@ -3,7 +3,6 @@ from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
 
-
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
     Used to check the depth value associated with nodes
@@ -372,4 +371,5 @@ if __name__ == "__main__":
     test_pre_sort()
     test_prediction()
     test_NxN_matrix()
+    test_sanity()
     print("done")
