@@ -320,8 +320,8 @@ def sanity_regression(n, m):
 
     tree1 = Tree("Regression")
     tree2 = Tree("Regression")
-    tree1.fit(X, Y1, Squared_error())
-    tree2.fit(X, Y2, Squared_error())
+    tree1.fit(X, Y1, Squared_error)
+    tree2.fit(X, Y2, Squared_error)
     pred1 = tree1.predict(X)
     pred2 = tree2.predict(X)
     for i in range(n):
@@ -333,7 +333,7 @@ def sanity_gini(n, m):
     Y = np.random.randint(0, 5, n)
 
     tree = Tree("Classification")
-    tree.fit(X, Y, Gini_index())
+    tree.fit(X, Y, Gini_index)
 
     pred = tree.predict(X)
     for i in range(n):
@@ -344,7 +344,7 @@ def sanity_entropy(n, m):
     Y = np.random.randint(0, 5, n)
 
     tree = Tree("Classification")
-    tree.fit(X, Y, Entropy())
+    tree.fit(X, Y, Entropy)
 
     pred = tree.predict(X)
     for i in range(n):
