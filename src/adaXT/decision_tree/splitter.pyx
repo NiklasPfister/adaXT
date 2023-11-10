@@ -132,6 +132,4 @@ cdef class Splitter:
                     if len(split) == 0:
                         print(best_feature, best_threshold, best_score, best_imp)
                         print(crit - best_score < EPSILON)
-        if len(split) == 0:
-            print("INDICES", N_i)
         return split, best_threshold, best_feature, best_score, best_imp
