@@ -130,10 +130,9 @@ cdef class Gini_index(Criteria):
             for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 if y[indices[i]] == class_labels[j]:
                     class_occurences[j] += 1
-                    break
 
         # Loop over all classes and calculate gini_index
-        for j in range(self.num_classes):
+        for i in range(self.num_classes):
             proportion_cls = (<double> class_occurences[i]) / (<double> n_obs)
             sum += proportion_cls * proportion_cls
 
