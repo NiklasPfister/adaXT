@@ -122,16 +122,19 @@ cdef class Splitter:
                         current_feature_values[sorted_index_list_feature[i + 1]]):
                     continue
                 # test the split
-                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(sorted_index_list_feature, i+1, feature)
+                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(
+                                                        sorted_index_list_feature, i+1,
+                                                        feature
+                                                        )
 
                 if best_score - crit > EPSILON:  # rounding error
                     # Save the best split
-                    # The index is given as the index of the first element of the right dataset
-                    best_feature, best_threshold, best_score, best_imp = feature, threshold, crit, [left_imp, right_imp]
+                    # The index is given as the index of the
+                    # first element of the right dataset
+                    best_feature, best_threshold = feature, threshold
+                    best_score, best_imp = crit, [left_imp, right_imp]
                     split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
                     if len(split) == 0:
                         print(best_feature, best_threshold, best_score, best_imp)
                         print(crit - best_score < EPSILON)
-        if len(split) == 0:
-            print("INDICES", N_i)
         return split, best_threshold, best_feature, best_score, best_imp

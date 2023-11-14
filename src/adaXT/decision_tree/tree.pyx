@@ -213,14 +213,12 @@ class Tree:
             sample_indices = np.arange(row)
         if feature_indices is None:
             feature_indices = np.arange(col)
-        criteria.set_x_y(X, Y)
-
         builder = DepthTreeBuilder(
             X,
             Y,
             feature_indices,
             sample_indices,
-            criteria,
+            criteria(X, Y),
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)
