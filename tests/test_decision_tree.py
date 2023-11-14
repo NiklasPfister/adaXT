@@ -1,9 +1,8 @@
 from adaXT.decision_tree.tree import Tree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
-from adaXT.decision_tree.tree_utils import plot_tree, pre_sort
-import matplotlib.pyplot as plt
-
+from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
+
 
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -199,9 +198,9 @@ def test_prediction():
     tree = Tree("Classification")
     tree.fit(X, Y_cla, Gini_index)
     prediction = tree.predict(X)
-    print(prediction)
-    # for i in range(len(Y_cla)):
-    # assert Y_cla[i] == prediction[i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+    for i in range(len(Y_cla)):
+        assert Y_cla[i] == prediction[
+            i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
 def test_NxN_matrix():
@@ -317,6 +316,54 @@ def test_entropy_multi():
     rec_node(root, 0)
 
 
+def sanity_regression(n, m):
+    X = np.random.uniform(0, 100, (n, m))
+    Y1 = np.random.randint(0, 5, n)
+    Y2 = np.random.uniform(0, 5, n)
+
+    tree1 = Tree("Regression")
+    tree2 = Tree("Regression")
+    tree1.fit(X, Y1, Squared_error)
+    tree2.fit(X, Y2, Squared_error)
+    pred1 = tree1.predict(X)
+    pred2 = tree2.predict(X)
+    for i in range(n):
+        assert (Y1[i] == pred1[i]), f"Square: Expected {Y1[i]} Got {pred1[i]}"
+        assert (Y2[i] == pred2[i]), f"Square: Expected {Y2[i]} Got {pred2[i]}"
+
+
+def sanity_gini(n, m):
+    X = np.random.uniform(0, 100, (n, m))
+    Y = np.random.randint(0, 5, n)
+
+    tree = Tree("Classification")
+    tree.fit(X, Y, Gini_index)
+
+    pred = tree.predict(X)
+    for i in range(n):
+        assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+
+
+def sanity_entropy(n, m):
+    X = np.random.uniform(0, 100, (n, m))
+    Y = np.random.randint(0, 5, n)
+
+    tree = Tree("Classification")
+    tree.fit(X, Y, Entropy)
+
+    pred = tree.predict(X)
+    for i in range(n):
+        assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+
+
+def test_sanity():
+    n = 10000
+    m = 5
+    sanity_regression(n, m)
+    sanity_gini(n, m)
+    sanity_entropy(n, m)
+
+
 if __name__ == "__main__":
     test_gini_single()
     test_gini_multi()
@@ -326,3 +373,5 @@ if __name__ == "__main__":
     test_pre_sort()
     test_prediction()
     test_NxN_matrix()
+    test_sanity()
+    print("done")

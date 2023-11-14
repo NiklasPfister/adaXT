@@ -12,14 +12,14 @@ cdef double mean(double[:] lst, int[:] indices):
 
         indices : memoryview of NDArray
             The indices to calculate the mean at
-        
+
         Returns
         -------
         double
             The mean of lst
     '''
     cdef double sum = 0.0
-    cdef int i 
+    cdef int i
     cdef int length = indices.shape[0]
 
     for i in range(length):
