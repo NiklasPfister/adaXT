@@ -282,6 +282,8 @@ class Tree:
             return data
         for node in leaf_nodes:
             data[np.ix_(node.indices, node.indices)] = 1
+
+        # TODO scale
         return data
 
     def predict_matrix(self, X: np.ndarray):
@@ -299,16 +301,6 @@ class Tree:
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            if isinstance(
-                    cur_node,
-                    LeafNode) and self.tree_type == "Regression":
-                Y[i] = cur_node.value[0]
-
-            elif isinstance(cur_node, LeafNode) and self.tree_type == "Classification":
-                values = np.array(cur_node.value)
-                idx = np.argmax(values)
-                if isinstance(self.classes, np.ndarray):
-                    Y[i] = self.classes[idx]
 
             # Add to the dict
             if isinstance(cur_node, LeafNode):
@@ -320,6 +312,8 @@ class Tree:
         for key in ht.keys():
             indices = ht[key]
             matrix[np.ix_(indices, indices)] = 1
+
+        # TODO scale
         return matrix
 
 class queue_obj:
@@ -354,7 +348,6 @@ class queue_obj:
         self.impurity = impurity
         self.parent = parent
         self.is_left = is_left
-
 
 class DepthTreeBuilder:
     """
