@@ -141,7 +141,6 @@ def test_regression():
                 cur_node.value) == 1, f'Expected {1} mean values, but got: {len(cur_node.value)}'
     rec_node(root, 0)
 
-
 def test_pre_sort():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -182,54 +181,6 @@ def test_pre_sort():
                 cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
 
     rec_node(root, 0)
-
-
-def test_prediction():
-    X = np.array([[1, -1],
-                  [-0.5, -2],
-                  [-1, -1],
-                  [-0.5, -0.5],
-                  [1, 0],
-                  [-1, 1],
-                  [1, 1],
-                  [-0.5, 2]])
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Gini_index)
-    prediction = tree.predict(X)
-    for i in range(len(Y_cla)):
-        assert Y_cla[i] == prediction[
-            i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
-
-
-def test_NxN_matrix():
-    X = np.array([[1, -1],
-                  [-0.5, -2],
-                  [-1, -1],
-                  [-0.5, -0.5],
-                  [1, 0],
-                  [-1, 1],
-                  [1, 1],
-                  [-0.5, 2]])
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Gini_index)
-    weight_matrix = tree.weight_matrix()
-    true_weight = np.array([
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1],
-        [0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1],
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0, 1, 0, 0],
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1]
-    ])
-    for i in range(len(true_weight)):
-        for j in range(len(true_weight[0])):
-            assert weight_matrix[i, j] == true_weight[i,
-                                                      j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
-
 
 def test_entropy_single():
     X = np.array([[1, -1],

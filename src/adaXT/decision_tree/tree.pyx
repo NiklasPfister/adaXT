@@ -285,6 +285,8 @@ class Tree:
         return data
 
     def predict_matrix(self, X: np.ndarray):
+        cdef:
+            int row, i
         row = X.shape[0]
         Y = np.empty(row)
         ht = {}
@@ -314,13 +316,11 @@ class Tree:
                     ht[cur_node.id] = [i]
                 else:
                     ht[cur_node.id] += [i]
-        matrix = np.empty(row, row)
+        matrix = np.zeros((row, row))
         for key in ht.keys():
-            for val in ht[key]:
-                matrix[np.ix_(val, val)] = 1
+            indices = ht[key]
+            matrix[np.ix_(indices, indices)] = 1
         return matrix
-
-
 
 class queue_obj:
     """
