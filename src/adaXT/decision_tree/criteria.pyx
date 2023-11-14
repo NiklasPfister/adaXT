@@ -1,4 +1,4 @@
-# cython: profile=False, boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+# cython: profile=True, boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 import cython
 from libc.math cimport log2
