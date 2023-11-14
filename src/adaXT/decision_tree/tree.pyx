@@ -81,6 +81,7 @@ class DecisionNode(Node):
 class LeafNode(Node):
     def __init__(
             self,
+            id: int,
             indices: np.ndarray,
             depth: int,
             impurity: float,
@@ -107,6 +108,7 @@ class LeafNode(Node):
         super().__init__(indices, depth, impurity, n_samples)
         self.value = value
         self.parent = parent
+        self.id = id
 
 
 class Tree:
@@ -236,7 +238,7 @@ class Tree:
         Returns
         -------
         np.ndarray
-            (N, M+1) numpy array with last column being the predicted y-values, or empty on fail
+            (N) numpy array with the prediction
         """
         # Check if node exists
         row, _ = X.shape
@@ -283,6 +285,43 @@ class Tree:
         for node in leaf_nodes:
             data[np.ix_(node.indices, node.indices)] = 1
         return data
+
+    def predict_matrix(self, X: np.ndarray):
+        row = X.shape[0]
+        Y = np.empty(row)
+        ht = {}
+        if not self.root:
+            return Y
+        for i in range(row):
+            cur_node = self.root
+            while isinstance(cur_node, DecisionNode):
+                if X[i, cur_node.split_idx] < cur_node.threshold:
+                    cur_node = cur_node.left_child
+                else:
+                    cur_node = cur_node.right_child
+            if isinstance(
+                    cur_node,
+                    LeafNode) and self.tree_type == "Regression":
+                Y[i] = cur_node.value[0]
+
+            elif isinstance(cur_node, LeafNode) and self.tree_type == "Classification":
+                values = np.array(cur_node.value)
+                idx = np.argmax(values)
+                if isinstance(self.classes, np.ndarray):
+                    Y[i] = self.classes[idx]
+
+            # Add to the dict
+            if isinstance(cur_node, LeafNode):
+                if cur_node.id not in ht.keys():
+                    ht[cur_node.id] = [i]
+                else:
+                    ht[cur_node.id] += [i]
+        matrix = np.empty(row, row)
+        for key in ht.keys():
+            for val in ht[key]:
+                matrix[np.ix_(val, val)] = 1
+        return matrix
+
 
 
 class queue_obj:
@@ -452,6 +491,7 @@ class DepthTreeBuilder:
                 0,
                 criteria.impurity(all_idx)))
         n_nodes = 0
+        leaf_count = 0  # Number of leaf nodes
         while len(queue) > 0:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
@@ -507,6 +547,7 @@ class DepthTreeBuilder:
             else:
                 mean_value = self.get_mean(tree, response[indices], n_samples)
                 new_node = LeafNode(
+                    leaf_count,
                     indices,
                     depth,
                     impurity,
@@ -518,6 +559,7 @@ class DepthTreeBuilder:
                 elif parent:
                     parent.right_child = new_node
                 leaf_node_list.append(new_node)
+                leaf_count += 1
             if n_nodes == 0:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
