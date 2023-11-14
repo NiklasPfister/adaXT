@@ -1,4 +1,3 @@
-
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
@@ -9,7 +8,6 @@ from .splitter import Splitter
 from .criteria import Criteria
 
 cdef double EPSILON = np.finfo('double').eps
-
 
 class Node:  # should just be a ctype struct in later implementation
     def __init__(
@@ -237,7 +235,10 @@ class Tree:
             (N, M+1) numpy array with last column being the predicted y-values, or empty on fail
         """
         # Check if node exists
-        row, _ = X.shape
+        cdef:
+            int row, i
+
+        row = X.shape[0]
         Y = np.empty(row)
         if not self.root:
             return Y
