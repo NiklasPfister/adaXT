@@ -254,12 +254,21 @@ class Tree:
                     LeafNode) and self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif isinstance(cur_node, LeafNode) and self.tree_type == "Classification":
+                #idx = self.find_max_val(cur_node.value)
+                my_idx = self.find_max_val(cur_node.value)
                 values = np.array(cur_node.value)
                 idx = np.argmax(values)
                 if isinstance(self.classes, np.ndarray):
                     Y[i] = self.classes[idx]
 
         return Y
+
+    def find_max_val(self, lst):
+        cur_max = 0
+        for i in range(1, len(lst)):
+            if lst[cur_max] > lst[i]:
+                cur_max = i 
+        return cur_max
 
     def weight_matrix(self) -> np.ndarray:
         """

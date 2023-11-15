@@ -4,6 +4,7 @@ from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
 
 
+
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
     Used to check the depth value associated with nodes
