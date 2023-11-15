@@ -30,9 +30,34 @@ def predict_run_time_full_dataset(tree_type, crit_func):
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
     
-    np.savetxt("predictions.csv", pred, delimiter=",")
-    
     return elapsed
+
+def profile_predict_run_time_full_dataset(tree_type, crit_func):
+    max_depth = 10
+    min_samples = 2
+    if tree_type == "Classification":
+        data = pd.read_csv(r'classification_data.csv')
+    elif tree_type == "Regression":
+        data = pd.read_csv(r'regression_data.csv')
+
+    data = data.to_numpy()
+    X = data[:, :-1]
+    Y = data[:, -1]
+    
+    tree = Tree(tree_type, max_depth=max_depth, min_samples=min_samples)
+    tree.fit(X, Y, crit_func)
+
+    profiler = cProfile.Profile()
+    profiler.enable()
+    ## Code to run
+    pred = tree.predict(X)
+    profiler.disable()
+    stats = Stats(profiler)
+    stats.sort_stats('tottime').print_stats(10)
+
+  
+
+
 
 
 def predict_run_time_full_dataset_sklearn(tree_type):
@@ -168,6 +193,9 @@ if __name__ == "__main__":
     #print("runtime prediction sklearn classification:", predict_run_time_full_dataset_sklearn("Classification"))
     #print("runtime prediction sklearn regression:", predict_run_time_full_dataset_sklearn("Regression"))
 
-    compare_pred_sklearn_adaxt_alt("Classification", Entropy)
-    compare_pred_sklearn_adaxt_alt("Classification", Gini_index)
+    #compare_pred_sklearn_adaxt_alt("Classification", Entropy)
+    #compare_pred_sklearn_adaxt_alt("Classification", Gini_index)
     #print("Correct percentage was", correct_per)
+
+
+    profile_predict_run_time_full_dataset("Classification", Gini_index)

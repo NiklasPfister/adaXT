@@ -510,7 +510,7 @@ def classification_table_change_num_classes():
 
 if __name__ == "__main__":
     # remember to create datasets for time testing, if they have not been previously created:
-    update_data_set("Classification", 1000, 15, 3)
+    update_data_set("Classification", 50000, 15, 3)
     update_data_set("Regression", 1000, 15, -1)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
     #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
