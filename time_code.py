@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import cProfile
 from pstats import Stats
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+import numpy as np
 
 
 def test_run_time_single_tree_classification(crit_func):
@@ -89,7 +90,7 @@ def test_run_time_multiple_tree_classification(num_trees_to_build, pre_sorted):
             "Classification",
             max_depth=max_depth,
             min_samples=min_samples,
-            pre_sort=pre_sorted_data
+            pre_sort=pre_sorted_data,
             criteria=Gini_index)
         tree.fit(X, Y)
     end_time = time.perf_counter()
