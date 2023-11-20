@@ -1,5 +1,5 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
+from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
 
@@ -306,6 +306,20 @@ def sanity_entropy(n, m):
     for i in range(n):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
+def sanity_linear_regression(n, m):
+    X = np.random.uniform(0, 100, (n, m))
+    Y1 = np.random.randint(0, 5, n)
+    Y2 = np.random.uniform(0, 5, n)
+
+    tree1 = DecisionTree("Regression", Linear_regression)
+    tree2 = DecisionTree("Regression", Linear_regression)
+    tree1.fit(X, Y1)
+    tree2.fit(X, Y2)
+    pred1 = tree1.predict(X)
+    pred2 = tree2.predict(X)
+    for i in range(n):
+        assert (Y1[i] == pred1[i]), f"Square: Expected {Y1[i]} Got {pred1[i]}"
+        assert (Y2[i] == pred2[i]), f"Square: Expected {Y2[i]} Got {pred2[i]}"
 
 def test_sanity():
     n = 10000
@@ -313,7 +327,7 @@ def test_sanity():
     sanity_regression(n, m)
     sanity_gini(n, m)
     sanity_entropy(n, m)
-
+    sanity_linear_regression(n, m)
 
 if __name__ == "__main__":
     test_gini_single()

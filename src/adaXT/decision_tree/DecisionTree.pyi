@@ -1,6 +1,6 @@
 import numpy as np
 from .splitter import Splitter
-
+from .criteria import Criteria
 class Node:
     def __init__(
             self,
