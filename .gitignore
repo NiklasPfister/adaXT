@@ -181,5 +181,3 @@ scrap.pyx
 *.c
 *.pyd
 *.html
-time_code.py
-time_predict.py
