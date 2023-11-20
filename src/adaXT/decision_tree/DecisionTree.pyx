@@ -11,7 +11,7 @@ from .criteria import Criteria
 cdef double EPSILON = np.finfo('double').eps
 
 
-class Node:  # should just be a ctype struct in later implementation
+class Node:
     def __init__(
             self,
             indices: np.ndarray,
@@ -319,6 +319,7 @@ class DecisionTree:
 
         return matrix
 
+
 class queue_obj:
     """
     Queue object for the splitter depthtree builder class
@@ -351,6 +352,7 @@ class queue_obj:
         self.impurity = impurity
         self.parent = parent
         self.is_left = is_left
+
 
 class DepthTreeBuilder:
     """
