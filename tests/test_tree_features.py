@@ -2,6 +2,7 @@ from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Gini_index, Squared_error
 import numpy as np
 
+
 def test_predict_matrix_classification():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -22,6 +23,7 @@ def test_predict_matrix_classification():
     for i in range(row):
         for j in range(col):
             assert res1[i, j] == res2[i, j]
+
 
 def test_predict_matrix_regression():
     X = np.array([[1, -1],
@@ -44,6 +46,7 @@ def test_predict_matrix_regression():
         for j in range(col):
             assert res1[i, j] == res2[i, j]
 
+
 def test_predict_matrix_regression():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -59,7 +62,7 @@ def test_predict_matrix_regression():
 
     res1 = tree.weight_matrix()
     for i in range(res1.shape[0]):
-        res1[i] = res1[i]/np.sum(res1[i])
+        res1[i] = res1[i] / np.sum(res1[i])
     res2 = tree.predict_matrix(X, scale=True)
     assert (res1.shape == res2.shape)
     row, col = res1.shape
