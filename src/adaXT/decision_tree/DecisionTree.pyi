@@ -1,5 +1,7 @@
 import numpy as np
 from .splitter import Splitter
+from .criteria import Criteria
+import sys
 
 class Node:
     def __init__(
