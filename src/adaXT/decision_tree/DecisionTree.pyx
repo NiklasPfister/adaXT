@@ -4,6 +4,8 @@ import numpy as np
 from numpy import float64 as DOUBLE
 import sys
 
+from typing import List
+
 # Custom
 from .splitter import Splitter
 from .criteria import Criteria
@@ -86,7 +88,7 @@ class LeafNode(Node):
             depth: int,
             impurity: float,
             n_samples: int,
-            value: list[float],
+            value: List[float],
             parent: DecisionNode) -> None:
         """
 
@@ -100,7 +102,7 @@ class LeafNode(Node):
             Impurity of leaf node
         n_samples : int
             Number of samples in leaf node
-        value : list[float]
+        value : List[float]
             The mean values of classes in leaf node
         parent : DecisionNode
             The parent node
@@ -128,7 +130,7 @@ class DecisionTree:
             n_features: int = -1,
             n_classes: int = -1,
             n_obs: int = -1,
-            leaf_nodes: list[Node] | None = None,
+            leaf_nodes: List[Node] | None = None,
             pre_sort: None | np.ndarray = None,
             classes: np.ndarray | None = None) -> None:
         """
@@ -152,7 +154,7 @@ class DecisionTree:
             number of classes in the dataset, by default -1, added after fitting
         n_obs : int | None
             number of observations in the dataset, by default -1, added after fitting
-        leaf_nodes : list[Node] | None
+        leaf_nodes : List[Node] | None
             number of leaf nodes in the tree, by default None, added after fitting
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
@@ -313,8 +315,9 @@ class DecisionTree:
         for key in ht.keys():
             indices = ht[key]
             val = 1
+            count = len(indices)
             if scale:
-                val = 1/np.sum(indices)
+                val = 1/count
             matrix[np.ix_(indices, indices)] = val
 
         return matrix
@@ -412,7 +415,7 @@ class DepthTreeBuilder:
             self,
             tree: DecisionTree,
             node_response: np.ndarray,
-            n_samples: int) -> list[float]:
+            n_samples: int) -> List[float]:
         """
         Calculates the mean of a leafnode
 
@@ -429,12 +432,12 @@ class DepthTreeBuilder:
 
         Returns
         -------
-        list[float]
-            A list of mean values for each class in the node
+        List[float]
+            A List of mean values for each class in the node
         """
         if tree.tree_type == "Regression":
             return [float(np.mean(node_response))]
-        # create an empty list for each class type
+        # create an empty List for each class type
         lst = [0.0 for _ in range(tree.n_classes)]
         for i in range(tree.n_classes):
             for idx in range(n_samples):
@@ -509,7 +512,7 @@ class DepthTreeBuilder:
                 split, best_threshold, best_index, _, chil_imp = splitter.get_split(
                     indices)
 
-                # Add the decision node to the list of nodes
+                # Add the decision node to the List of nodes
                 new_node = DecisionNode(
                     indices,
                     depth,
