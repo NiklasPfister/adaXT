@@ -4,7 +4,6 @@ from libc.math cimport log2
 from libc.stdlib cimport malloc, free
 import numpy as np
 from .crit_helpers cimport mean
-import cython
 
 cdef class Criteria:
     def __cinit__(self, double[:, ::1] x, double[::1] y):
@@ -504,15 +503,12 @@ cdef class Linear_regression(Criteria):
         denominator = 0.0
         numerator = 0.0
         muX, muY = self.custom_mean(indices)
-        print(muX, muY, length)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             numerator += (X_diff)*(self.y[indices[i]]*muY)
             denominator += (X_diff)*X_diff
-            print(X_diff, numerator, denominator)
         if denominator == 0.0:
-            print(muX, muY, indices.base, length)
-            exit(1)
+            return (0.0, 0.0)
         theta1 = numerator / denominator
         theta0 = muY - theta1*muX
         return (theta0, theta1)
