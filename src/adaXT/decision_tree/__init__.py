@@ -1,1 +1,1 @@
-from .tree import Tree  # make Tree part of decision_tree
+from .DecisionTree import DecisionTree  # make Tree part of decision_tree

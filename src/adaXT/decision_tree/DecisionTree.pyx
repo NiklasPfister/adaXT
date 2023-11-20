@@ -111,14 +111,15 @@ class LeafNode(Node):
         self.id = id
 
 
-class Tree:
+class DecisionTree:
     """
-    Tree object
+    DecisionTree object
     """
 
     def __init__(
             self,
             tree_type: str,
+            criteria: Criteria,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
@@ -161,6 +162,7 @@ class Tree:
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
+        self.criteria = criteria
         self.impurity_tol = impurity_tol
         self.min_samples = min_samples
         self.tree_type = tree_type
@@ -184,7 +186,6 @@ class Tree:
             self,
             X: np.ndarray,
             Y: np.ndarray,
-            criteria: Criteria,
             splitter: Splitter | None = None,
             feature_indices: np.ndarray | None = None,
             sample_indices: np.ndarray | None = None) -> None:
@@ -218,7 +219,7 @@ class Tree:
             Y,
             feature_indices,
             sample_indices,
-            criteria(X, Y),
+            self.criteria(X, Y),
             splitter,
             self.impurity_tol,
             pre_sort=self.pre_sort)
@@ -286,7 +287,7 @@ class Tree:
         # TODO scale
         return data
 
-    def predict_matrix(self, X: np.ndarray):
+    def predict_matrix(self, X: np.ndarray, scale: bool = False):
         cdef:
             int row, i
         row = X.shape[0]
@@ -311,9 +312,11 @@ class Tree:
         matrix = np.zeros((row, row))
         for key in ht.keys():
             indices = ht[key]
-            matrix[np.ix_(indices, indices)] = 1
+            val = 1
+            if scale:
+                val = 1/np.sum(indices)
+            matrix[np.ix_(indices, indices)] = val
 
-        # TODO scale
         return matrix
 
 class queue_obj:
@@ -405,7 +408,7 @@ class DepthTreeBuilder:
 
     def get_mean(
             self,
-            tree: Tree,
+            tree: DecisionTree,
             node_response: np.ndarray,
             n_samples: int) -> list[float]:
         """
@@ -413,7 +416,7 @@ class DepthTreeBuilder:
 
         Parameters
         ----------
-        tree : Tree
+        tree : DecisionTree
             The fille tree object
         node_response : np.ndarray
             outcome values in the node
@@ -439,13 +442,13 @@ class DepthTreeBuilder:
             lst[i] = lst[i] / n_samples
         return lst
 
-    def build_tree(self, tree: Tree):
+    def build_tree(self, tree: DecisionTree):
         """
         Builds the tree
 
         Parameters
         ----------
-        tree : Tree
+        tree : DecisionTree
             the tree to build
         Returns
         -------

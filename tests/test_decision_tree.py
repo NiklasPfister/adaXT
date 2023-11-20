@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import Tree, LeafNode, DecisionNode
+from adaXT.decision_tree.tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
@@ -33,7 +33,7 @@ def test_gini_single():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y_cla, Gini_index)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -75,7 +75,7 @@ def test_gini_multi():
                   [-0.5, 2]])
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y_multi, Gini_index)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
@@ -116,7 +116,7 @@ def test_regression():
                   [1, 1],
                   [-0.5, 2]])
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = Tree("Regression")
+    tree = DecisionTree("Regression")
     tree.fit(X, Y_reg, Squared_error)
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
@@ -153,7 +153,7 @@ def test_pre_sort():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
-    tree = Tree("Classification", pre_sort=pre_sorted)
+    tree = DecisionTree("Classification", pre_sort=pre_sorted)
     tree.fit(X, Y_cla, Gini_index)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -194,7 +194,7 @@ def test_entropy_single():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y_cla, Entropy)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -236,7 +236,7 @@ def test_entropy_multi():
                   [-0.5, 2]])
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y_multi, Entropy)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
@@ -272,8 +272,8 @@ def sanity_regression(n, m):
     Y1 = np.random.randint(0, 5, n)
     Y2 = np.random.uniform(0, 5, n)
 
-    tree1 = Tree("Regression")
-    tree2 = Tree("Regression")
+    tree1 = DecisionTree("Regression")
+    tree2 = DecisionTree("Regression")
     tree1.fit(X, Y1, Squared_error)
     tree2.fit(X, Y2, Squared_error)
     pred1 = tree1.predict(X)
@@ -287,7 +287,7 @@ def sanity_gini(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y, Gini_index)
 
     pred = tree.predict(X)
@@ -299,7 +299,7 @@ def sanity_entropy(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = Tree("Classification")
+    tree = DecisionTree("Classification")
     tree.fit(X, Y, Entropy)
 
     pred = tree.predict(X)
@@ -322,7 +322,5 @@ if __name__ == "__main__":
     test_entropy_multi()
     test_regression()
     test_pre_sort()
-    test_prediction()
-    test_NxN_matrix()
     test_sanity()
     print("done")
