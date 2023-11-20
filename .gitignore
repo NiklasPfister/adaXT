@@ -178,6 +178,8 @@ TODO_william.txt
 scrap.py
 scrap.pyx
 .gitignore
-*.c 
+*.c
 *.pyd
 *.html
+time_code.py
+time_predict.py
