@@ -4,7 +4,6 @@ from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
 
 
-
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
     Used to check the depth value associated with nodes
@@ -142,6 +141,7 @@ def test_regression():
                 cur_node.value) == 1, f'Expected {1} mean values, but got: {len(cur_node.value)}'
     rec_node(root, 0)
 
+
 def test_pre_sort():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -153,7 +153,10 @@ def test_pre_sort():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
-    tree = DecisionTree("Classification", criteria=Gini_index, pre_sort=pre_sorted)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        pre_sort=pre_sorted)
     tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -182,6 +185,7 @@ def test_pre_sort():
                 cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
 
     rec_node(root, 0)
+
 
 def test_entropy_single():
     X = np.array([[1, -1],

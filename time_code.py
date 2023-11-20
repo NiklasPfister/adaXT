@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree import *
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import cProfile
 from pstats import Stats
 from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
+import numpy as np
 
 
 def test_run_time_single_tree_classification(crit_func):
@@ -21,8 +22,12 @@ def test_run_time_single_tree_classification(crit_func):
     Y = data[:, -1]
 
     start_time = time.perf_counter()
-    tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, crit_func)
+    tree = DecisionTree(
+        "Classification",
+        max_depth=max_depth,
+        min_samples=min_samples,
+        criteria=crit_func)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -50,8 +55,12 @@ def test_run_time_single_tree_regression():
     Y = data[:, -1]
 
     start_time = time.perf_counter()
-    tree = Tree("Regression", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, Squared_error)
+    tree = DecisionTree(
+        "Regression",
+        max_depth=max_depth,
+        min_samples=min_samples,
+        criteria=Squared_error)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -85,12 +94,13 @@ def test_run_time_multiple_tree_classification(num_trees_to_build, pre_sorted):
         pre_sorted_data = None
 
     for i in range(num_trees_to_build):
-        tree = Tree(
+        tree = DecisionTree(
             "Classification",
             max_depth=max_depth,
             min_samples=min_samples,
-            pre_sort=pre_sorted_data)
-        tree.fit(X, Y, Gini_index)
+            pre_sort=pre_sorted_data,
+            criteria=Gini_index)
+        tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -125,12 +135,13 @@ def test_run_time_multiple_tree_regression(num_trees_to_build, pre_sorted):
         pre_sorted_data = None
 
     for i in range(num_trees_to_build):
-        tree = Tree(
+        tree = DecisionTree(
             "Regression",
             max_depth=max_depth,
             min_samples=min_samples,
-            pre_sort=pre_sorted_data)
-        tree.fit(X, Y, Squared_error)
+            pre_sort=pre_sorted_data,
+            criteria=Squared_error)
+        tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -236,12 +247,13 @@ def test_run_time_single_tree_classification_presort():
 
     start_time = time.perf_counter()
     pre_sorted = pre_sort(X).astype(int)
-    tree = Tree(
+    tree = DecisionTree(
         "Classification",
         max_depth=max_depth,
         min_samples=min_samples,
-        pre_sort=pre_sorted)
-    tree.fit(X, Y, Gini_index)
+        pre_sort=pre_sorted,
+        criteria=Gini_index)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -509,11 +521,12 @@ def classification_table_change_num_classes():
 
 
 if __name__ == "__main__":
-    # remember to create datasets for time testing, if they have not been previously created:
+    # remember to create datasets for time testing, if they have not been
+    # previously created:
     update_data_set("Classification", 1000, 15, 3)
     update_data_set("Regression", 1000, 15, -1)
-    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
-    #test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
+    # test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=False)
+    # test_run_time_multiple_tree_classification(num_trees_to_build=20, pre_sorted=True)
 
     # profiler = cProfile.Profile()
     # profiler.enable()
@@ -541,10 +554,10 @@ if __name__ == "__main__":
     # print("Sklearn time regression:", run_sklearn_regression())
     # print("Sklearn time classification:", run_sklearn_classification())
 
-    #regression_table()
-    #classification_table_gini()
-    #classification_table_entropy()
-    #classification_table_change_num_classes()
+    # regression_table()
+    # classification_table_gini()
+    # classification_table_entropy()
+    # classification_table_change_num_classes()
 
     # lst = []
     # for i in range(100):
