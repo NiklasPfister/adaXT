@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree import *
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
@@ -21,17 +21,17 @@ def predict_run_time_full_dataset(tree_type, crit_func):
     data = data.to_numpy()
     X = data[:, :-1]
     Y = data[:, -1]
-    
-    tree = Tree(tree_type, max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, crit_func)
+
+    tree = DecisionTree(tree_type, max_depth=max_depth, min_samples=min_samples, criteria=crit_func)
+    tree.fit(X, Y)
 
     start_time = time.perf_counter()
     pred = tree.predict(X)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000 # elapsed time in ms
-    
+
     np.savetxt("predictions.csv", pred, delimiter=",")
-    
+
     return elapsed
 
 
@@ -82,19 +82,19 @@ def compare_pred_sklearn_adaxt(tree_type, crit_func):
     sk_tree.fit(X, Y)
 
     # Fit adaXT
-    adaxt_tree = Tree(tree_type, max_depth=max_depth, min_samples=min_samples)
-    adaxt_tree.fit(X, Y, crit_func)
+    adaxt_tree = DecisionTree(tree_type, max_depth=max_depth, min_samples=min_samples, criteria=crit_func)
+    adaxt_tree.fit(X, Y)
 
     # predict with sklearn and adaxt
     sklearn_pred = sk_tree.predict(X)
     adaxt_pred = adaxt_tree.predict(X)
 
     np.savetxt("predictions.csv", adaxt_pred, delimiter=",")
-    
+
     # Assert same shape so nothing has gone wrong in predict method
     assert(sklearn_pred.shape == adaxt_pred.shape)
 
-    # Calculate squared sum of error between sklearn and adaXT 
+    # Calculate squared sum of error between sklearn and adaXT
     for i in range(sklearn_pred.shape[0]):
         print("AdaXT", adaxt_pred[i])
         print("SKlearn", sklearn_pred[i])
@@ -115,8 +115,8 @@ def compare_pred_sklearn_adaxt_alt(tree_type, crit_func):
     Y = data[:, -1]
 
     # Fit adaXT
-    adaxt_tree = Tree(tree_type, min_samples=min_samples)
-    adaxt_tree.fit(X, Y, crit_func)
+    adaxt_tree = DecisionTree(tree_type, min_samples=min_samples, criteria=crit_func)
+    adaxt_tree.fit(X, Y)
     adaxt_pred = adaxt_tree.predict(X)
     np.savetxt("predictions.csv", adaxt_pred, delimiter=",")
 

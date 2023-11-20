@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import *
+from adaXT.decision_tree import *
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import print_tree, pre_sort, plot_tree
 
@@ -21,8 +21,8 @@ def test_run_time_single_tree_classification(crit_func):
     Y = data[:, -1]
 
     start_time = time.perf_counter()
-    tree = Tree("Classification", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, crit_func)
+    tree = DecisionTree("Classification", max_depth=max_depth, min_samples=min_samples, criteria=crit_func)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -50,8 +50,8 @@ def test_run_time_single_tree_regression():
     Y = data[:, -1]
 
     start_time = time.perf_counter()
-    tree = Tree("Regression", max_depth=max_depth, min_samples=min_samples)
-    tree.fit(X, Y, Squared_error)
+    tree = DecisionTree("Regression", max_depth=max_depth, min_samples=min_samples, criteria=Squared_error)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -85,12 +85,13 @@ def test_run_time_multiple_tree_classification(num_trees_to_build, pre_sorted):
         pre_sorted_data = None
 
     for i in range(num_trees_to_build):
-        tree = Tree(
+        tree = DecisionTree(
             "Classification",
             max_depth=max_depth,
             min_samples=min_samples,
-            pre_sort=pre_sorted_data)
-        tree.fit(X, Y, Gini_index)
+            pre_sort=pre_sorted_data
+            criteria=Gini_index)
+        tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -125,12 +126,13 @@ def test_run_time_multiple_tree_regression(num_trees_to_build, pre_sorted):
         pre_sorted_data = None
 
     for i in range(num_trees_to_build):
-        tree = Tree(
+        tree = DecisionTree(
             "Regression",
             max_depth=max_depth,
             min_samples=min_samples,
-            pre_sort=pre_sorted_data)
-        tree.fit(X, Y, Squared_error)
+            pre_sort=pre_sorted_data,
+            criteria=Squared_error)
+        tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
@@ -236,12 +238,13 @@ def test_run_time_single_tree_classification_presort():
 
     start_time = time.perf_counter()
     pre_sorted = pre_sort(X).astype(int)
-    tree = Tree(
+    tree = DecisionTree(
         "Classification",
         max_depth=max_depth,
         min_samples=min_samples,
-        pre_sort=pre_sorted)
-    tree.fit(X, Y, Gini_index)
+        pre_sort=pre_sorted,
+        criteria=Gini_index)
+    tree.fit(X, Y)
     end_time = time.perf_counter()
     elapsed = (end_time - start_time) * 1000  # elapsed time in ms
 
