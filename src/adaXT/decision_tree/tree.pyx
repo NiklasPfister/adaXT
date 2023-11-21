@@ -1,3 +1,4 @@
+# cython: profile=True, boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
@@ -125,7 +126,7 @@ class Tree:
             n_obs: int = -1,
             leaf_nodes: list[Node] | None = None,
             pre_sort: None | np.ndarray = None,
-            classes: np.ndarray | None = None) -> None:
+            double[:] classes = None) -> None:
         """
         Parameters
         ----------
@@ -220,7 +221,7 @@ class Tree:
             pre_sort=self.pre_sort)
         builder.build_tree(self)
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, double[:, :] X):
         """
         Predicts a y-value for given X values
 
@@ -236,29 +237,28 @@ class Tree:
         """
         # Check if node exists
         cdef:
-            int row, i
+            int i, cur_split_idx, idx
+            double cur_threshold
+            int row = X.shape[0]
+            double[:] Y = np.empty(row)
+            object cur_node
 
-        row = X.shape[0]
-        Y = np.empty(row)
         if not self.root:
             return Y
         for i in range(row):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
-                if X[i, cur_node.split_idx] < cur_node.threshold:
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            if isinstance(
-                    cur_node,
-                    LeafNode) and self.tree_type == "Regression":
+            if self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
-            elif isinstance(cur_node, LeafNode) and self.tree_type == "Classification":
-                #idx = self.find_max_val(cur_node.value)
-                my_idx = self.find_max_val(cur_node.value)
-                values = np.array(cur_node.value)
-                idx = np.argmax(values)
-                if isinstance(self.classes, np.ndarray):
+            elif self.tree_type == "Classification":
+                idx = self.find_max_val(cur_node.value)
+                if self.classes is not None:
                     Y[i] = self.classes[idx]
 
         return Y
@@ -266,7 +266,7 @@ class Tree:
     def find_max_val(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):
-            if lst[cur_max] > lst[i]:
+            if lst[cur_max] < lst[i]:
                 cur_max = i 
         return cur_max
 
