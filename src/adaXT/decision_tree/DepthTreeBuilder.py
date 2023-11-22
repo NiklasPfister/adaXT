@@ -186,7 +186,8 @@ class DepthTreeBuilder:
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             n_samples = len(indices)
             # bool used to determine wheter a node is a leaf or not
-            # additional stopping criteria can be added with 'or' statements here
+            # additional stopping criteria can be added with 'or' statements
+            # here
             is_leaf = ((depth >= max_depth) or
                        (abs(impurity - self.min_impurity) < EPSILON) or
                        (n_samples <= min_samples))
