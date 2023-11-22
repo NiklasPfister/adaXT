@@ -1,6 +1,5 @@
 # cython: profile=True, boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-import cython
 from libc.math cimport log2
 from libc.stdlib cimport malloc, free
 import numpy as np
@@ -86,7 +85,7 @@ cdef class Gini_index(Criteria):
         self.n_in_class_right = <int *> malloc(sizeof(int) * self.num_classes)
         self.old_obs = -1
 
-    def __del__(self): # Called by garbage collector.
+    def __del__(self):  # Called by garbage collector.
         free(self.n_in_class_left)
         free(self.n_in_class_right)
 

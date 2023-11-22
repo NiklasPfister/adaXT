@@ -5,6 +5,7 @@ cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
 
+# EPSILON has to be a little larer
 cdef double EPSILON = 2*np.finfo('double').eps
 cdef double INFINITY = 1e20
 
