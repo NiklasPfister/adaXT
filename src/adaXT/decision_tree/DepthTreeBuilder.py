@@ -12,6 +12,7 @@ from .Nodes import Node, DecisionNode, LeafNode
 
 EPSILON = np.finfo('double').eps
 
+
 class queue_obj:
     """
     Queue object for the splitter depthtree builder class
