@@ -87,6 +87,24 @@ def test_prediction():
     for i in range(len(Y_cla)):
         assert Y_cla[i] == prediction[
             i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+    
+def test_prediction_get_probability():
+    X = np.array([[1, -1],
+                  [-0.5, -2],
+                  [-1, -1],
+                  [-0.5, -0.5],
+                  [1, 0],
+                  [-1, 1],
+                  [1, 1],
+                  [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    tree = DecisionTree("Classification", Gini_index)
+    tree.fit(X, Y_cla)
+    prediction = tree.predict_get_probability(X)
+    assert len(prediction) == X.shape[0]
+    for i in range(len(Y_cla)):
+        assert Y_cla[i] == max(prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+
 
 
 def test_NxN_matrix():
@@ -123,4 +141,5 @@ if __name__ == "__main__":
     test_predict_leaf_matrix_regression()
     test_predict_leaf_matrix_regression_with_scaling()
     test_prediction()
+    test_prediction_get_probability()
     test_NxN_matrix()

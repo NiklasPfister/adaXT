@@ -168,6 +168,30 @@ class DecisionTree:
                     Y[i] = self.classes[idx]
         return Y
 
+    def predict_get_probability(self, double[:, :] X):
+        cdef:
+            int i, cur_split_idx, idx
+            double cur_threshold
+            int row = X.shape[0]
+            list ret_val = []
+            object cur_node
+
+        if not self.root or self.tree_type != "Classification":
+            return ret_val
+
+        for i in range(row):
+            cur_node = self.root
+            while isinstance(cur_node, DecisionNode):
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
+                    cur_node = cur_node.left_child
+                else:
+                    cur_node = cur_node.right_child
+            if self.classes is not None:
+                ret_val.append(dict(zip(self.classes, cur_node.value)))
+        return ret_val
+
     def find_max_index(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):

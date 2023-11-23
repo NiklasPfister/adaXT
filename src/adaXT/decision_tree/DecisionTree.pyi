@@ -97,7 +97,23 @@ class DecisionTree:
         """
         pass
 
-    def weight_matrix(self) -> np.ndarray:
+    def predict_get_probability(self, X: np.ndarray):
+        """
+        Predicts a probability for each response for given X values
+
+        Parameters
+        ----------
+        X : np.ndarray
+            (N, M) numpy array with features to predict
+
+        Returns
+        -------
+        List[Dict]
+            Returns a list of dict with the lenght N. The keys are the response classes, and the values are the probability for this class.  
+        """
+        pass
+
+    def get_leaf_matrix(self) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations.
@@ -111,6 +127,6 @@ class DecisionTree:
         """
         pass
 
-    def predict_matrix(self, X: np.ndarray, scale: bool = False):
+    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
 
         pass
