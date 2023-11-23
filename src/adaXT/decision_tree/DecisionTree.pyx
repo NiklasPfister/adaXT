@@ -12,7 +12,6 @@ from .criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
 from .Nodes import Node, DecisionNode, LeafNode
 
-
 cdef double EPSILON = np.finfo('double').eps
 
 class DecisionTree:
@@ -164,21 +163,19 @@ class DecisionTree:
             if self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif self.tree_type == "Classification":
-                idx = self.find_max_val(cur_node.value)
-                my_idx = self.find_max_val(cur_node.value)
+                idx = self.find_max_index(cur_node.value)
                 if self.classes is not None:
                     Y[i] = self.classes[idx]
-
         return Y
 
-    def find_max_val(self, lst):
+    def find_max_index(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
                 cur_max = i 
         return cur_max
 
-    def weight_matrix(self) -> np.ndarray:
+    def get_leaf_matrix(self) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations.
@@ -202,28 +199,31 @@ class DecisionTree:
         # TODO scale
         return data
 
-    def predict_matrix(self, X: np.ndarray, scale: bool = False):
+    def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
         cdef:
-            int row, i
-        row = X.shape[0]
-        Y = np.empty(row)
-        ht = {}
+            int i
+            int row = X.shape[0]
+            double[:] Y = np.empty(row)
+            dict ht = {}
+            int cur_split_idx
+            double cur_threshold
+
         if not self.root:
             return Y
         for i in range(row):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
-                if X[i, cur_node.split_idx] < cur_node.threshold:
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
 
-            # Add to the dict
-            if isinstance(cur_node, LeafNode):
-                if cur_node.id not in ht.keys():
-                    ht[cur_node.id] = [i]
-                else:
-                    ht[cur_node.id] += [i]
+            if cur_node.id not in ht.keys():
+                ht[cur_node.id] = [i]
+            else:
+                ht[cur_node.id] += [i]
         matrix = np.zeros((row, row))
         for key in ht.keys():
             indices = ht[key]

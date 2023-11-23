@@ -2,16 +2,11 @@
 
 # General
 import numpy as np
-from numpy import float64 as DOUBLE
-import sys
 from typing import List
 
 # Custom
 from .splitter import Splitter
 from .criteria import Criteria
-
-cdef double EPSILON = np.finfo('double').eps
-
 
 class Node:
     def __init__(
