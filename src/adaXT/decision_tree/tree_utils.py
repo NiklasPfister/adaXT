@@ -2,6 +2,8 @@ from . import DecisionTree, LeafNode, DecisionNode
 import numpy as np
 
 # Plot an entire tree
+
+
 def plot_tree(tree: DecisionTree):
     """
     Generates the tree as a subplot of plt. To show the plot,
