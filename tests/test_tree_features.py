@@ -133,7 +133,7 @@ def test_NxN_matrix():
     for i in range(len(true_weight)):
         for j in range(len(true_weight[0])):
             assert leaf_matrix[i, j] == true_weight[i,
-                                                      j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
+                                                    j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
 
 
 if __name__ == "__main__":
