@@ -87,7 +87,8 @@ def test_prediction():
     for i in range(len(Y_cla)):
         assert Y_cla[i] == prediction[
             i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
-    
+
+
 def test_prediction_get_probability():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -103,8 +104,8 @@ def test_prediction_get_probability():
     prediction = tree.predict_get_probability(X)
     assert len(prediction) == X.shape[0]
     for i in range(len(Y_cla)):
-        assert Y_cla[i] == max(prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
-
+        assert Y_cla[i] == max(
+            prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
 def test_NxN_matrix():
