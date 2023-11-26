@@ -10,9 +10,10 @@ from typing import List
 from .splitter import Splitter
 from .criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
-from .Nodes import Node, DecisionNode, LeafNode
+from .Nodes import Node, DecisionNode
 
 cdef double EPSILON = np.finfo('double').eps
+
 
 class DecisionTree:
     """
@@ -24,7 +25,7 @@ class DecisionTree:
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = 1e-20,
+            impurity_tol: float = EPSILON,
             min_samples: int = 1,
             root: Node | None = None,
             n_nodes: int = -1,
@@ -170,7 +171,7 @@ class DecisionTree:
 
     def predict_get_probability(self, double[:, :] X):
         cdef:
-            int i, cur_split_idx, idx
+            int i, cur_split_idx
             double cur_threshold
             int row = X.shape[0]
             list ret_val = []
@@ -196,7 +197,7 @@ class DecisionTree:
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
-                cur_max = i 
+                cur_max = i
         return cur_max
 
     def get_leaf_matrix(self) -> np.ndarray:
