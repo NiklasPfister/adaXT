@@ -3,7 +3,7 @@ from adaXT.decision_tree.criteria import Gini_index, Squared_error
 import numpy as np
 
 
-def test_predict_matrix_classification():
+def test_predict_leaf_matrix_classification():
     X = np.array([[1, -1],
                   [-0.5, -2],
                   [-1, -1],
@@ -16,8 +16,8 @@ def test_predict_matrix_classification():
 
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    res1 = tree.weight_matrix()
-    res2 = tree.predict_matrix(X)
+    res1 = tree.get_leaf_matrix()
+    res2 = tree.predict_leaf_matrix(X)
     assert res1.shape == res2.shape
     row, col = res1.shape
     for i in range(row):
@@ -25,7 +25,7 @@ def test_predict_matrix_classification():
             assert res1[i, j] == res2[i, j]
 
 
-def test_predict_matrix_regression():
+def test_predict_leaf_matrix_regression():
     X = np.array([[1, -1],
                   [-0.5, -2],
                   [-1, -1],
@@ -38,8 +38,8 @@ def test_predict_matrix_regression():
     tree = DecisionTree("Regression", Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.weight_matrix()
-    res2 = tree.predict_matrix(X)
+    res1 = tree.get_leaf_matrix()
+    res2 = tree.predict_leaf_matrix(X)
     assert (res1.shape == res2.shape)
     row, col = res1.shape
     for i in range(row):
@@ -47,7 +47,7 @@ def test_predict_matrix_regression():
             assert res1[i, j] == res2[i, j]
 
 
-def test_predict_matrix_regression():
+def test_predict_leaf_matrix_regression_with_scaling():
     X = np.array([[1, -1],
                   [-0.5, -2],
                   [-1, -1],
@@ -60,10 +60,10 @@ def test_predict_matrix_regression():
     tree = DecisionTree("Regression", Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.weight_matrix()
+    res1 = tree.get_leaf_matrix()
     for i in range(res1.shape[0]):
         res1[i] = res1[i] / np.sum(res1[i])
-    res2 = tree.predict_matrix(X, scale=True)
+    res2 = tree.predict_leaf_matrix(X, scale=True)
     assert (res1.shape == res2.shape)
     row, col = res1.shape
     for i in range(row):
@@ -89,6 +89,25 @@ def test_prediction():
             i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
+def test_prediction_get_probability():
+    X = np.array([[1, -1],
+                  [-0.5, -2],
+                  [-1, -1],
+                  [-0.5, -0.5],
+                  [1, 0],
+                  [-1, 1],
+                  [1, 1],
+                  [-0.5, 2]])
+    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    tree = DecisionTree("Classification", Gini_index)
+    tree.fit(X, Y_cla)
+    prediction = tree.predict_get_probability(X)
+    assert len(prediction) == X.shape[0]
+    for i in range(len(Y_cla)):
+        assert Y_cla[i] == max(
+            prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+
+
 def test_NxN_matrix():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -101,7 +120,7 @@ def test_NxN_matrix():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    weight_matrix = tree.weight_matrix()
+    leaf_matrix = tree.get_leaf_matrix()
     true_weight = np.array([
         [1, 0, 0, 0, 1, 0, 1, 0],
         [0, 1, 0, 1, 0, 0, 0, 1],
@@ -114,9 +133,14 @@ def test_NxN_matrix():
     ])
     for i in range(len(true_weight)):
         for j in range(len(true_weight[0])):
-            assert weight_matrix[i, j] == true_weight[i,
-                                                      j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
+            assert leaf_matrix[i, j] == true_weight[i,
+                                                    j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
 
 
 if __name__ == "__main__":
-    test_predict_matrix_regression()
+    test_predict_leaf_matrix_classification()
+    test_predict_leaf_matrix_regression()
+    test_predict_leaf_matrix_regression_with_scaling()
+    test_prediction()
+    test_prediction_get_probability()
+    test_NxN_matrix()

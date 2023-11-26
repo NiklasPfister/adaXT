@@ -116,7 +116,7 @@ def test_regression():
                   [1, 1],
                   [-0.5, 2]])
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]

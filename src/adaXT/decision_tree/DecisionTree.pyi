@@ -1,92 +1,8 @@
 import numpy as np
 from .splitter import Splitter
 from .criteria import Criteria
+from .Nodes import Node
 import sys
-
-class Node:
-    def __init__(
-            self,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int) -> None:
-        """
-        Parameters
-        ----------
-        indices : np.ndarray
-            indices in node
-        depth : int
-            depth of noe
-        impurity : float
-            impurity of node
-        n_samples : int
-            number of samples in node
-        """
-        pass
-
-class DecisionNode(Node):
-    def __init__(
-            self,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int,
-            threshold: float,
-            split_idx: int,
-            left_child: "DecisionNode|LeafNode|None" = None,
-            right_child: "DecisionNode|LeafNode|None" = None,
-            parent: "DecisionNode|None" = None) -> None:
-        """
-        Parameters
-        ----------
-        indices : np.ndarray
-            indices ni node
-        depth : int
-            depth of node
-        impurity : float
-            impurity in node
-        n_samples : int
-            number of samples in node
-        threshold : float
-            the threshold value of a split
-        split_idx : int
-            the feature index to split on
-        left_child : DecisionNode|LeafNode|None, optional
-            the left child, by default None
-        right_child : DecisionNode|LeafNode|None, optional
-            the right child, by default None
-        parent : DecisionNode|None, optional
-            the parent node, by default None
-        """
-        pass
-
-class LeafNode(Node):
-    def __init__(
-            self,
-            id: int,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int,
-            value: list[float],
-            parent: DecisionNode) -> None:
-        """
-        Parameters
-        ----------
-        indices : np.ndarray
-            Indices of leaf node
-        depth : int
-            depth the leaf node is located at
-        impurity : float
-            Impurity of leaf node
-        n_samples : int
-            Number of samples in leaf node
-        value : list[float]
-            The mean values of classes in leaf node
-        parent : DecisionNode
-            The parent node
-        """
-        pass
 
 class DecisionTree:
     """
@@ -181,7 +97,23 @@ class DecisionTree:
         """
         pass
 
-    def weight_matrix(self) -> np.ndarray:
+    def predict_get_probability(self, X: np.ndarray):
+        """
+        Predicts a probability for each response for given X values
+
+        Parameters
+        ----------
+        X : np.ndarray
+            (N, M) numpy array with features to predict
+
+        Returns
+        -------
+        List[Dict]
+            Returns a list of dict with the lenght N. The keys are the response classes, and the values are the probability for this class.  
+        """
+        pass
+
+    def get_leaf_matrix(self) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations.
@@ -195,6 +127,6 @@ class DecisionTree:
         """
         pass
 
-    def predict_matrix(self, X: np.ndarray, scale: bool = False):
+    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
 
         pass
