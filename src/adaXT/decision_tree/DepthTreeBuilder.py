@@ -197,7 +197,7 @@ class DepthTreeBuilder:
             # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
-            if is_leaf == False:
+            if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
 
