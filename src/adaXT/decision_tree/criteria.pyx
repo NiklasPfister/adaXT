@@ -508,8 +508,9 @@ cdef class Linear_regression(Criteria):
             numerator += (X_diff)*(self.y[indices[i]]*muY)
             denominator += (X_diff)*X_diff
         if denominator == 0.0:
-            return (0.0, 0.0)
-        theta1 = numerator / denominator
+            theta1 = 0.0
+        else:
+            theta1 = numerator / denominator
         theta0 = muY - theta1*muX
         return (theta0, theta1)
 
@@ -519,8 +520,6 @@ cdef class Linear_regression(Criteria):
             int i, length
 
         length = indices.shape[0]
-        if length == 1:
-            return <double> 1e10
         theta0, theta1 = self.theta(indices)
         cur_sum = 0.0
         for i in range(length):
