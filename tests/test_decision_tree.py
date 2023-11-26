@@ -1,6 +1,8 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
-from adaXT.decision_tree.tree_utils import pre_sort
+from adaXT.decision_tree.tree_utils import pre_sort, plot_tree
+
+import matplotlib.pyplot as plt
 import numpy as np
 
 #TODO: test the different stopping criteria as well as feature indexing and so on
@@ -42,6 +44,7 @@ def test_gini_single():
         root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
+
     # Loop over all the nodes
     while len(queue) > 0:
         cur_node = queue.pop()
@@ -336,10 +339,10 @@ def test_sanity():
 
 if __name__ == "__main__":
     test_gini_single()
-    test_gini_multi()
-    test_entropy_single()
-    test_entropy_multi()
-    test_regression()
-    test_pre_sort()
-    test_sanity()
+    # test_gini_multi()
+    # test_entropy_single()
+    # test_entropy_multi()
+    # test_regression()
+    # test_pre_sort()
+    # test_sanity()
     print("done")
