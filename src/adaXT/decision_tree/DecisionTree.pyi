@@ -16,6 +16,7 @@ class DecisionTree:
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
+            min_improvement: float = 0, 
             root: Node | None = None,
             n_nodes: int = -1,
             n_features: int = -1,
@@ -35,6 +36,8 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 1e-20
         min_samples : int
             the minimum amount of samples in a leaf node, by deafult 2
+        min_improvement: float
+            the minimum improvement gained from performing a split, by default 0
         root : Node | None
             root node, by default None, added after fitting
         n_nodes : int | None

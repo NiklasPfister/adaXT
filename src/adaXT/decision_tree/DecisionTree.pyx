@@ -25,8 +25,9 @@ class DecisionTree:
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = EPSILON,
+            impurity_tol: float = 0,
             min_samples: int = 1,
+            min_improvement: float = 0, 
             root: Node | None = None,
             n_nodes: int = -1,
             n_features: int = -1,
@@ -46,6 +47,8 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 1e-20
         min_samples : int
             the minimum amount of samples in a leaf node, by deafult 2
+        min_improvement: float
+            the minimum improvement gained from performing a split, by default 0
         root : Node | None
             root node, by default None, added after fitting
         n_nodes : int | None
@@ -66,9 +69,10 @@ class DecisionTree:
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
-        self.criteria = criteria
         self.impurity_tol = impurity_tol
         self.min_samples = min_samples
+        self.min_improvement = min_improvement
+        self.criteria = criteria
         self.tree_type = tree_type
         self.leaf_nodes = leaf_nodes
         self.root = root
@@ -124,7 +128,6 @@ class DecisionTree:
             sample_indices,
             self.criteria(X, Y),
             splitter,
-            self.impurity_tol,
             pre_sort=self.pre_sort)
         builder.build_tree(self)
 
@@ -216,7 +219,7 @@ class DecisionTree:
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 
-        data = np.zeros((n_obs, n_obs))
+        matrix = np.zeros((n_obs, n_obs))
         if (not leaf_nodes):  # make sure that there are calculated observations
             return data
         for node in leaf_nodes:
