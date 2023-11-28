@@ -173,8 +173,8 @@ class DecisionTree:
             int i, cur_split_idx, idx
             double cur_threshold
             int row = X.shape[0]
-            list ret_val = []
             object cur_node
+            list ret_val = []
 
         if not self.root or self.tree_type != "Classification":
             return ret_val
@@ -189,8 +189,10 @@ class DecisionTree:
                 else:
                     cur_node = cur_node.right_child
             if self.classes is not None:
-                ret_val.append(dict(zip(self.classes, cur_node.value)))
-        return ret_val
+                ret_val.append(cur_node.value)
+        tuple_ret = (self.classes, np.asarray(ret_val))
+
+        return tuple_ret
 
     def find_max_index(self, lst):
         cur_max = 0

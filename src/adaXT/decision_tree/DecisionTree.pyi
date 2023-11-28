@@ -108,8 +108,8 @@ class DecisionTree:
 
         Returns
         -------
-        List[Dict]
-            Returns a list of dict with the lenght N. The keys are the response classes, and the values are the probability for this class.  
+        Tuple(np.ndarray, np.ndarray)
+            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.  
         """
         pass
 

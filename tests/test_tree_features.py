@@ -100,10 +100,23 @@ def test_prediction_get_probability():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    prediction = tree.predict_get_probability(X)
-    assert len(prediction) == X.shape[0]
+    classes, prediction = tree.predict_get_probability(X)
+    assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
-        assert Y_cla[i] == max(prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+        assert Y_cla[i] == classes[np.argmax(prediction[i, :])], f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+
+def test_prediction_get_probability_against_predict():
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+
+    tree = DecisionTree("Classification", Gini_index)
+    tree.fit(X, Y)
+
+    predict = tree.predict(X)
+    classes, predict_proba = tree.predict_get_probability(X)
+
+    for i in range(predict.shape[0]):
+        assert predict[i] == classes[np.argmax(predict_proba[i, :])], f"incorrect prediction at {i}, expected {predict[i]} got {classes[np.argmax(predict_proba[i, :])]}"
 
 
 
@@ -142,4 +155,5 @@ if __name__ == "__main__":
     test_predict_leaf_matrix_regression_with_scaling()
     test_prediction()
     test_prediction_get_probability()
+    test_prediction_get_probability_against_predict()
     test_NxN_matrix()
