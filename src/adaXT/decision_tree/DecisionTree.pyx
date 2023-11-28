@@ -168,7 +168,7 @@ class DecisionTree:
                     Y[i] = self.classes[idx]
         return Y
 
-    def predict_get_probability(self, double[:, :] X):
+    def predict_proba(self, double[:, :] X):
         cdef:
             int i, cur_split_idx
             double cur_threshold
@@ -216,17 +216,17 @@ class DecisionTree:
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 
-        data = np.zeros((n_obs, n_obs))
+        matrix = np.zeros((n_obs, n_obs))
         if (not leaf_nodes):  # make sure that there are calculated observations
-            return data
+            return matrix
         for node in leaf_nodes:
             if scale:
                 n_node = node.indices.shape[0]
-                data[np.ix_(node.indices, node.indices)] = 1/n_node
+                matrix[np.ix_(node.indices, node.indices)] = 1/n_node
             else:
-                data[np.ix_(node.indices, node.indices)] = 1
+                matrix[np.ix_(node.indices, node.indices)] = 1
 
-        return data
+        return matrix
 
     def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
         cdef:
