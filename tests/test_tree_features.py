@@ -104,7 +104,9 @@ def test_prediction_get_probability():
     classes, prediction = tree.predict_get_probability(X)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
-        assert Y_cla[i] == classes[np.argmax(prediction[i, :])], f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+        assert Y_cla[i] == classes[np.argmax(
+            prediction[i, :])], f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+
 
 def test_prediction_get_probability_against_predict():
     X = np.random.uniform(0, 100, (10000, 5))
@@ -117,8 +119,8 @@ def test_prediction_get_probability_against_predict():
     classes, predict_proba = tree.predict_get_probability(X)
 
     for i in range(predict.shape[0]):
-        assert predict[i] == classes[np.argmax(predict_proba[i, :])], f"incorrect prediction at {i}, expected {predict[i]} got {classes[np.argmax(predict_proba[i, :])]}"
-
+        assert predict[i] == classes[np.argmax(
+            predict_proba[i, :])], f"incorrect prediction at {i}, expected {predict[i]} got {classes[np.argmax(predict_proba[i, :])]}"
 
 
 def test_NxN_matrix():
