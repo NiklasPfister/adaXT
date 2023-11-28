@@ -10,9 +10,10 @@ from typing import List
 from .splitter import Splitter
 from .criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
-from .Nodes import Node, DecisionNode, LeafNode
+from .Nodes import Node, DecisionNode
 
 cdef double EPSILON = np.finfo('double').eps
+
 
 class DecisionTree:
     """
@@ -24,7 +25,7 @@ class DecisionTree:
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = 1e-20,
+            impurity_tol: float = EPSILON,
             min_samples: int = 1,
             root: Node | None = None,
             n_nodes: int = -1,
@@ -110,7 +111,6 @@ class DecisionTree:
         sample_indices : np.ndarray | None, optional
             which samples to use from the data X and Y, by default uses all
         """
-        # TODO: test feature and sample indexing
         X, Y = self.check_input(X, Y)
         row, col = X.shape
         if sample_indices is None:
@@ -170,7 +170,7 @@ class DecisionTree:
 
     def predict_get_probability(self, double[:, :] X):
         cdef:
-            int i, cur_split_idx, idx
+            int i, cur_split_idx
             double cur_threshold
             int row = X.shape[0]
             object cur_node
@@ -198,10 +198,10 @@ class DecisionTree:
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
-                cur_max = i 
+                cur_max = i
         return cur_max
 
-    def get_leaf_matrix(self) -> np.ndarray:
+    def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations.
@@ -220,9 +220,12 @@ class DecisionTree:
         if (not leaf_nodes):  # make sure that there are calculated observations
             return data
         for node in leaf_nodes:
-            data[np.ix_(node.indices, node.indices)] = 1
+            if scale:
+                n_node = node.indices.shape[0]
+                data[np.ix_(node.indices, node.indices)] = 1/n_node
+            else:
+                data[np.ix_(node.indices, node.indices)] = 1
 
-        # TODO scale
         return data
 
     def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):

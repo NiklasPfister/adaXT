@@ -6,6 +6,7 @@ from typing import List
 from .splitter import Splitter
 from .criteria import Criteria
 from .Nodes import Node, DecisionNode, LeafNode
+from . import DecisionTree
 
 
 EPSILON = np.finfo('double').eps
@@ -58,7 +59,7 @@ class DepthTreeBuilder:
             sample_indices: np.ndarray,
             criteria: Criteria,
             splitter: Splitter | None = None,
-            min_impurity: float = 0,
+            min_impurity: float = 0.0,
             min_improvement: float = EPSILON,
             pre_sort: np.ndarray | None = None) -> None:
         """
@@ -135,7 +136,7 @@ class DepthTreeBuilder:
             lst[i] = lst[i] / n_samples
         return lst
 
-    def build_tree(self, tree: object):
+    def build_tree(self, tree: DecisionTree):
         """
         Builds the tree
 
@@ -187,7 +188,7 @@ class DepthTreeBuilder:
             # additional stopping criteria can be added with 'or' statements
             # here
             is_leaf = ((depth >= max_depth) or
-                       (abs(impurity - self.min_impurity) < EPSILON) or
+                       (abs(impurity - self.min_impurity) <= EPSILON) or
                        (n_samples <= min_samples))
             # Check improvement
             # if parent != None:
@@ -196,9 +197,8 @@ class DepthTreeBuilder:
             # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
-
             if not is_leaf:
-                split, best_threshold, best_index, _, chil_imp = splitter.get_split(
+                split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
 
                 # Add the decision node to the List of nodes
@@ -221,7 +221,7 @@ class DepthTreeBuilder:
                     queue_obj(
                         left,
                         depth + 1,
-                        chil_imp[0],
+                        child_imp[0],
                         new_node,
                         1))
                 # Add the right node to the queue of nodes yet to be computed
@@ -229,9 +229,10 @@ class DepthTreeBuilder:
                     queue_obj(
                         right,
                         depth + 1,
-                        chil_imp[1],
+                        child_imp[1],
                         new_node,
                         0))
+
             else:
                 mean_value = self.get_mean(tree, response[indices], n_samples)
                 new_node = LeafNode(

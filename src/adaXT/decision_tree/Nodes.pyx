@@ -4,9 +4,6 @@
 import numpy as np
 from typing import List
 
-# Custom
-from .splitter import Splitter
-from .criteria import Criteria
 
 class Node:
     def __init__(
