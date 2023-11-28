@@ -189,8 +189,9 @@ class DepthTreeBuilder:
                        (impurity - impurity_tol < 0) or
                        (n_samples <= min_samples))
             # Check improvement
-            if parent != None:
-                is_leaf = (abs(parent.impurity - impurity) < min_improvement) or is_leaf
+            if parent is not None:
+                is_leaf = (abs(parent.impurity - impurity)
+                           < min_improvement) or is_leaf
 
             # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
