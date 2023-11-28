@@ -100,7 +100,7 @@ class DecisionTree:
         """
         pass
 
-    def predict_get_probability(self, X: np.ndarray):
+    def predict_proba(self, X: np.ndarray):
         """
         Predicts a probability for each response for given X values
 
@@ -112,7 +112,7 @@ class DecisionTree:
         Returns
         -------
         Tuple(np.ndarray, np.ndarray)
-            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.  
+            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
         """
         pass
 
