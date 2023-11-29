@@ -158,11 +158,15 @@ def test_max_depth_setting():
     Y = np.random.randint(0, 5, 10000)
     max_depth_desired = 20
 
-    tree = DecisionTree("Classification", criteria=Gini_index, max_depth=max_depth_desired)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        max_depth=max_depth_desired)
     tree.fit(X, Y)
-    
+
     for node in tree.leaf_nodes:
         assert node.depth <= max_depth_desired, f"Failed as node depth was,{node.depth} but should be at the most {max_depth_desired}"
+
 
 def test_impurity_tol_setting():
     np.random.seed(2023) #Set seed such that each run is the same
@@ -170,11 +174,14 @@ def test_impurity_tol_setting():
     Y = np.random.randint(0, 5, 10000)
     impurity_tol_desired = 0.75
 
-    tree = DecisionTree("Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        impurity_tol=impurity_tol_desired)
     tree.fit(X, Y)
-    
+
     for node in tree.leaf_nodes:
-        assert node.impurity < impurity_tol_desired, f"Failed as node impurity was: {node.impurity} but should be at the most {impurity_tol_desired}"
+        assert node.impurity < impurity_tol_desired, f"Failed as node impurity was,{node.impurity} but should be at the most {impurity_tol_desired}"
 
 def test_min_samples_split_setting():
     np.random.seed(2023) #Set seed such that each run is the same
@@ -184,7 +191,7 @@ def test_min_samples_split_setting():
 
     tree = DecisionTree("Classification", criteria=Gini_index, min_samples_split=min_samples_split_desired)
     tree.fit(X, Y)
-    
+
     for node in tree.leaf_nodes:
         assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
 
