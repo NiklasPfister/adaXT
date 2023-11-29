@@ -4,13 +4,12 @@
 import numpy as np
 from numpy import float64 as DOUBLE
 import sys
-from typing import List
 
 # Custom
 from .splitter import Splitter
 from .criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
-from .Nodes import Node, DecisionNode
+from .Nodes import DecisionNode
 
 cdef double EPSILON = np.finfo('double').eps
 
@@ -28,7 +27,7 @@ class DecisionTree:
             impurity_tol: float = EPSILON,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
-            min_improvement: float = 0, 
+            min_improvement: float = 0,
             pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters
