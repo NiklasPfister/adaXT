@@ -153,7 +153,7 @@ def test_NxN_matrix():
 
 
 def test_max_depth_setting():
-    np.random.seed(2023) #Set seed such that each run is the same
+    np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
     max_depth_desired = 20
@@ -169,7 +169,7 @@ def test_max_depth_setting():
 
 
 def test_impurity_tol_setting():
-    np.random.seed(2023) #Set seed such that each run is the same
+    np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
     impurity_tol_desired = 0.75
@@ -183,42 +183,54 @@ def test_impurity_tol_setting():
     for node in tree.leaf_nodes:
         assert node.impurity < impurity_tol_desired, f"Failed as node impurity was,{node.impurity} but should be at the most {impurity_tol_desired}"
 
+
 def test_min_samples_split_setting():
-    np.random.seed(2023) #Set seed such that each run is the same
+    np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
     min_samples_split_desired = 1000
 
-    tree = DecisionTree("Classification", criteria=Gini_index, min_samples_split=min_samples_split_desired)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_samples_split=min_samples_split_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
         assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
 
+
 def test_min_samples_leaf_setting():
-    np.random.seed(2023) #Set seed such that each run is the same
+    np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
     min_samples_leaf_desired = 20
 
-    tree = DecisionTree("Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_samples_leaf=min_samples_leaf_desired)
     tree.fit(X, Y)
-    
+
     for node in tree.leaf_nodes:
         assert min_samples_leaf_desired <= node.n_samples, f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a lead node"
 
 
 def test_min_improvement_setting():
-    np.random.seed(2023) #Set seed such that each run is the same
+    np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.randint(0, 100, (10000, 5))
     Y = np.random.randint(0, 10, 10000)
     min_improvement_desired = 0.000008
 
-    tree = DecisionTree("Classification", criteria=Gini_index, min_improvement=min_improvement_desired)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_improvement=min_improvement_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert abs(node.parent.impurity - node.impurity) >  min_improvement_desired, f"Failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
+        assert abs(node.parent.impurity -
+                   node.impurity) > min_improvement_desired, f"Failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
 
 
 if __name__ == "__main__":

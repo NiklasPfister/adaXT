@@ -193,7 +193,7 @@ class DepthTreeBuilder:
 
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
-            
+
             # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
@@ -201,12 +201,12 @@ class DepthTreeBuilder:
                 # Check the after conditions for being a leaf
                 is_leaf = (
                     (abs(impurity - child_imp[0]) < min_improvement) or
-                    (abs(impurity - child_imp[1]) < min_improvement) or 
-                    len(split[0]) < min_samples_leaf or 
+                    (abs(impurity - child_imp[1]) < min_improvement) or
+                    len(split[0]) < min_samples_leaf or
                     len(split[1]) < min_samples_leaf or
                     is_leaf
-                    )
-                
+                )
+
             if not is_leaf:
                 # Add the decision node to the List of nodes
                 new_node = DecisionNode(
