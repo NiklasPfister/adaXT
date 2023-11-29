@@ -156,7 +156,8 @@ class DepthTreeBuilder:
 
         tree.n_classes = n_classes
 
-        min_samples = tree.min_samples
+        min_samples_split = tree.min_samples_split
+        min_samples_leaf = tree.min_samples_leaf
         max_depth = tree.max_depth
         impurity_tol = tree.impurity_tol
         min_improvement = tree.min_improvement
@@ -182,23 +183,31 @@ class DepthTreeBuilder:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             n_samples = len(indices)
+
             # bool used to determine wheter a node is a leaf or not
             # additional stopping criteria can be added with 'or' statements
-            # here
+            # Conditions evaluated before finding a potential split
             is_leaf = ((depth >= max_depth) or
                        (impurity - impurity_tol < 0) or
-                       (n_samples <= min_samples))
-            # Check improvement
-            if parent != None:
-                is_leaf = (abs(parent.impurity - impurity) < min_improvement) or is_leaf
+                       (n_samples <= min_samples_split))
 
-            # TODO: possible impurity improvement tolerance.
             if depth > max_depth_seen:  # keep track of the max depth seen
                 max_depth_seen = depth
+            
+            # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
-
+                # Check the after conditions for being a leaf
+                is_leaf = (
+                    (abs(impurity - child_imp[0]) < min_improvement) or
+                    (abs(impurity - child_imp[1]) < min_improvement) or 
+                    len(split[0]) < min_samples_leaf or 
+                    len(split[1]) < min_samples_leaf or
+                    is_leaf
+                    )
+                
+            if not is_leaf:
                 # Add the decision node to the List of nodes
                 new_node = DecisionNode(
                     indices,

@@ -25,17 +25,11 @@ class DecisionTree:
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
-            min_samples: int = 1,
+            impurity_tol: float = EPSILON,
+            min_samples_split: int = 1,
+            min_samples_leaf: int = 1,
             min_improvement: float = 0, 
-            root: Node | None = None,
-            n_nodes: int = -1,
-            n_features: int = -1,
-            n_classes: int = -1,
-            n_obs: int = -1,
-            leaf_nodes: List[Node] | None = None,
-            pre_sort: None | np.ndarray = None,
-            double[:] classes = None) -> None:
+            pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters
         ----------
@@ -49,39 +43,26 @@ class DecisionTree:
             the minimum amount of samples in a leaf node, by deafult 2
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
-        root : Node | None
-            root node, by default None, added after fitting
-        n_nodes : int | None
-            number of nodes in the tree, by default -1, added after fitting
-        n_features : int | None
-            number of features in the dataset, by default -1, added after fitting
-        n_classes : int | None
-            number of classes in the dataset, by default -1, added after fitting
-        n_obs : int | None
-            number of observations in the dataset, by default -1, added after fitting
-        leaf_nodes : List[Node] | None
-            number of leaf nodes in the tree, by default None, added after fitting
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
-        classes : np.ndarray | None
-            the different classes in response, by default None, added after fitting
         """
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
-        self.min_samples = min_samples
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
         self.criteria = criteria
         self.tree_type = tree_type
-        self.leaf_nodes = leaf_nodes
-        self.root = root
-        self.n_nodes = n_nodes
-        self.n_features = n_features
-        self.n_classes = n_classes
-        self.n_obs = n_obs
+        self.leaf_nodes = None
+        self.root = None
+        self.n_nodes = -1
+        self.n_features = -1
+        self.n_classes = -1
+        self.n_obs = -1
         self.pre_sort = pre_sort
-        self.classes = classes
+        self.classes = None
 
     def check_input(self, X: object, Y: object):
         # Make sure input arrays are c contigous

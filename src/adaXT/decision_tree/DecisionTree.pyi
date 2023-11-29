@@ -17,14 +17,7 @@ class DecisionTree:
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
             min_improvement: float = 0, 
-            root: Node | None = None,
-            n_nodes: int = -1,
-            n_features: int = -1,
-            n_classes: int = -1,
-            n_obs: int = -1,
-            leaf_nodes: list[Node] | None = None,
-            pre_sort: None | np.ndarray = None,
-            classes: np.ndarray | None = None) -> None:
+            pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters
         ----------
@@ -38,22 +31,8 @@ class DecisionTree:
             the minimum amount of samples in a leaf node, by deafult 2
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
-        root : Node | None
-            root node, by default None, added after fitting
-        n_nodes : int | None
-            number of nodes in the tree, by default -1, added after fitting
-        n_features : int | None
-            number of features in the dataset, by default -1, added after fitting
-        n_classes : int | None
-            number of classes in the dataset, by default -1, added after fitting
-        n_obs : int | None
-            number of observations in the dataset, by default -1, added after fitting
-        leaf_nodes : list[Node] | None
-            number of leaf nodes in the tree, by default None, added after fitting
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
-        classes : np.ndarray | None
-            the different classes in response, by default None, added after fitting
         """
         pass
 
