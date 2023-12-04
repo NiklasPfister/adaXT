@@ -1,14 +1,28 @@
 import numpy as np
 from .splitter import Splitter
 from .criteria import Criteria
-from .Nodes import Node
+from .Nodes import *
 import sys
 
 class DecisionTree:
     """
     DecisionTree object
     """
-
+    max_depth: int
+    impurity_tol: float
+    min_samples_split: int
+    min_samples_leaf: int
+    min_improvement: float
+    criteria: Criteria
+    tree_type: str
+    leaf_nodes: list[LeafNode]
+    root: Node
+    n_nodes: int
+    n_features: int
+    n_classes: int
+    n_obs: int
+    pre_sort: np.ndarray
+    classes: np.ndarray
     def __init__(
             self,
             tree_type: str,
@@ -16,7 +30,7 @@ class DecisionTree:
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
-            min_improvement: float = 0, 
+            min_improvement: float = 0,
             pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters

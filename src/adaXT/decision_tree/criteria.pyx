@@ -525,5 +525,4 @@ cdef class Linear_regression(Criteria):
         for i in range(length):
             step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
             cur_sum += step_calc*step_calc
-
         return cur_sum

@@ -5,6 +5,8 @@ from adaXT.decision_tree.tree_utils import pre_sort, plot_tree
 import matplotlib.pyplot as plt
 import numpy as np
 
+from itertools import groupby
+
 #TODO: test the different stopping criteria as well as feature indexing and so on
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -315,19 +317,30 @@ def sanity_entropy(n, m):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
 def sanity_linear_regression(n, m):
-    X = np.random.uniform(0, 100, (n, m))
-    Y1 = np.random.randint(0, 5, n)
-    Y2 = np.random.uniform(0, 10, n)
-
+    X1 = np.random.randint(0, 20, (n, m))
+    X2 = np.random.uniform(0, 100, (n,m))
+    Y = np.random.uniform(0, 10, n)
     tree1 = DecisionTree("Regression", Linear_regression)
     tree2 = DecisionTree("Regression", Linear_regression)
-    tree1.fit(X, Y1)
-    tree2.fit(X, Y2)
-    pred1 = tree1.predict(X)
-    pred2 = tree2.predict(X)
-    for i in range(n):
-        assert (Y1[i] == pred1[i]), f"Linear regression: Expected {Y1[i]} Got {pred1[i]}"
-        assert (Y2[i] == pred2[i]), f"Linear regression: Expected {Y2[i]} Got {pred2[i]}"
+    tree1.fit(X1, Y)
+    tree2.fit(X2, Y)
+    for node in tree1.leaf_nodes:
+        assert isinstance(node, LeafNode)
+        # Linear regression fits on the X[:, 0] values,
+        # so the final product should stop splitting when X[indices, 0] are all equal
+        # or when there is only a single element
+        if (len(node.indices) > 1):
+            g = groupby(X1[node.indices, 0])
+            assert next(g, True) and not next(g, False)
+
+    for node in tree2.leaf_nodes:
+        assert isinstance(node, LeafNode)
+        # Linear regression fits on the X[:, 0] values,
+        # so the final product should stop splitting when X[indices, 0] are all equal
+        # or when there is only a single element
+        if (len(node.indices) > 1):
+            g = groupby(X2[node.indices, 0])
+            assert next(g, True) and not next(g, False)
 
 def test_sanity():
     n = 10000
@@ -338,11 +351,12 @@ def test_sanity():
     sanity_linear_regression(n, m)
 
 if __name__ == "__main__":
-    test_gini_single()
-    test_gini_multi()
-    test_entropy_single()
-    test_entropy_multi()
-    test_regression()
-    test_pre_sort()
-    test_sanity()
+    # test_gini_single()
+    # test_gini_multi()
+    # test_entropy_single()
+    # test_entropy_multi()
+    # test_regression()
+    # test_pre_sort()
+    # test_sanity()
+    sanity_linear_regression(10000, 5)
     print("Done.")
