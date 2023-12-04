@@ -89,7 +89,7 @@ def test_prediction():
             i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
 
 
-def test_prediction_get_probability():
+def test_predict_proba_probability():
     X = np.array([[1, -1],
                   [-0.5, -2],
                   [-1, -1],
@@ -101,11 +101,26 @@ def test_prediction_get_probability():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    prediction = tree.predict_get_probability(X)
-    assert len(prediction) == X.shape[0]
+    classes, prediction = tree.predict_proba(X)
+    assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
-        assert Y_cla[i] == max(
-            prediction[i], key=prediction[i].get), f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
+        assert Y_cla[i] == classes[np.argmax(
+            prediction[i, :])], f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+
+
+def test_predict_proba_against_predict():
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+
+    tree = DecisionTree("Classification", Gini_index)
+    tree.fit(X, Y)
+
+    predict = tree.predict(X)
+    classes, predict_proba = tree.predict_proba(X)
+
+    for i in range(predict.shape[0]):
+        assert predict[i] == classes[np.argmax(
+            predict_proba[i, :])], f"incorrect prediction at {i}, expected {predict[i]} got {classes[np.argmax(predict_proba[i, :])]}"
 
 
 def test_NxN_matrix():
@@ -137,10 +152,98 @@ def test_NxN_matrix():
                                                     j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
 
 
+def test_max_depth_setting():
+    np.random.seed(2023)  # Set seed such that each run is the same
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+    max_depth_desired = 20
+
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        max_depth=max_depth_desired)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert node.depth <= max_depth_desired, f"Failed as node depth was,{node.depth} but should be at the most {max_depth_desired}"
+
+
+def test_impurity_tol_setting():
+    np.random.seed(2023)  # Set seed such that each run is the same
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+    impurity_tol_desired = 0.75
+
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        impurity_tol=impurity_tol_desired)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert node.impurity < impurity_tol_desired, f"Failed as node impurity was,{node.impurity} but should be at the most {impurity_tol_desired}"
+
+
+def test_min_samples_split_setting():
+    np.random.seed(2023)  # Set seed such that each run is the same
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+    min_samples_split_desired = 1000
+
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_samples_split=min_samples_split_desired)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
+
+
+def test_min_samples_leaf_setting():
+    np.random.seed(2023)  # Set seed such that each run is the same
+    X = np.random.uniform(0, 100, (10000, 5))
+    Y = np.random.randint(0, 5, 10000)
+    min_samples_leaf_desired = 20
+
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_samples_leaf=min_samples_leaf_desired)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert min_samples_leaf_desired <= node.n_samples, f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a lead node"
+
+
+def test_min_improvement_setting():
+    np.random.seed(2023)  # Set seed such that each run is the same
+    X = np.random.randint(0, 100, (10000, 5))
+    Y = np.random.randint(0, 10, 10000)
+    min_improvement_desired = 0.000008
+
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        min_improvement=min_improvement_desired)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert abs(node.parent.impurity -
+                   node.impurity) > min_improvement_desired, f"Failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
+
+
 if __name__ == "__main__":
     test_predict_leaf_matrix_classification()
     test_predict_leaf_matrix_regression()
     test_predict_leaf_matrix_regression_with_scaling()
     test_prediction()
-    test_prediction_get_probability()
+    test_predict_proba_probability()
+    test_predict_proba_against_predict()
     test_NxN_matrix()
+    test_max_depth_setting()
+    test_impurity_tol_setting()
+    test_min_samples_split_setting()
+    test_min_samples_leaf_setting()
+    test_min_improvement_setting()
+    print("Done.")

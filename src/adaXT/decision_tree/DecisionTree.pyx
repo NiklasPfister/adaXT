@@ -4,13 +4,12 @@
 import numpy as np
 from numpy import float64 as DOUBLE
 import sys
-from typing import List
 
 # Custom
 from .splitter import Splitter
 from .criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
-from .Nodes import Node, DecisionNode
+from .Nodes import DecisionNode
 
 cdef double EPSILON = np.finfo('double').eps
 
@@ -26,15 +25,10 @@ class DecisionTree:
             criteria: Criteria,
             max_depth: int = sys.maxsize,
             impurity_tol: float = EPSILON,
-            min_samples: int = 1,
-            root: Node | None = None,
-            n_nodes: int = -1,
-            n_features: int = -1,
-            n_classes: int = -1,
-            n_obs: int = -1,
-            leaf_nodes: List[Node] | None = None,
-            pre_sort: None | np.ndarray = None,
-            double[:] classes = None) -> None:
+            min_samples_split: int = 1,
+            min_samples_leaf: int = 1,
+            min_improvement: float = 0,
+            pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters
         ----------
@@ -46,38 +40,28 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 1e-20
         min_samples : int
             the minimum amount of samples in a leaf node, by deafult 2
-        root : Node | None
-            root node, by default None, added after fitting
-        n_nodes : int | None
-            number of nodes in the tree, by default -1, added after fitting
-        n_features : int | None
-            number of features in the dataset, by default -1, added after fitting
-        n_classes : int | None
-            number of classes in the dataset, by default -1, added after fitting
-        n_obs : int | None
-            number of observations in the dataset, by default -1, added after fitting
-        leaf_nodes : List[Node] | None
-            number of leaf nodes in the tree, by default None, added after fitting
+        min_improvement: float
+            the minimum improvement gained from performing a split, by default 0
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
-        classes : np.ndarray | None
-            the different classes in response, by default None, added after fitting
         """
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
-        self.criteria = criteria
         self.impurity_tol = impurity_tol
-        self.min_samples = min_samples
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_improvement = min_improvement
+        self.criteria = criteria
         self.tree_type = tree_type
-        self.leaf_nodes = leaf_nodes
-        self.root = root
-        self.n_nodes = n_nodes
-        self.n_features = n_features
-        self.n_classes = n_classes
-        self.n_obs = n_obs
+        self.leaf_nodes = None
+        self.root = None
+        self.n_nodes = -1
+        self.n_features = -1
+        self.n_classes = -1
+        self.n_obs = -1
         self.pre_sort = pre_sort
-        self.classes = classes
+        self.classes = None
 
     def check_input(self, X: object, Y: object):
         # Make sure input arrays are c contigous
@@ -124,7 +108,6 @@ class DecisionTree:
             sample_indices,
             self.criteria(X, Y),
             splitter,
-            self.impurity_tol,
             pre_sort=self.pre_sort)
         builder.build_tree(self)
 
@@ -168,13 +151,13 @@ class DecisionTree:
                     Y[i] = self.classes[idx]
         return Y
 
-    def predict_get_probability(self, double[:, :] X):
+    def predict_proba(self, double[:, :] X):
         cdef:
             int i, cur_split_idx
             double cur_threshold
             int row = X.shape[0]
-            list ret_val = []
             object cur_node
+            list ret_val = []
 
         if not self.root or self.tree_type != "Classification":
             return ret_val
@@ -189,8 +172,10 @@ class DecisionTree:
                 else:
                     cur_node = cur_node.right_child
             if self.classes is not None:
-                ret_val.append(dict(zip(self.classes, cur_node.value)))
-        return ret_val
+                ret_val.append(cur_node.value)
+        tuple_ret = (self.classes, np.asarray(ret_val))
+
+        return tuple_ret
 
     def find_max_index(self, lst):
         cur_max = 0
@@ -214,17 +199,17 @@ class DecisionTree:
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 
-        data = np.zeros((n_obs, n_obs))
+        matrix = np.zeros((n_obs, n_obs))
         if (not leaf_nodes):  # make sure that there are calculated observations
-            return data
+            return matrix
         for node in leaf_nodes:
             if scale:
                 n_node = node.indices.shape[0]
-                data[np.ix_(node.indices, node.indices)] = 1/n_node
+                matrix[np.ix_(node.indices, node.indices)] = 1/n_node
             else:
-                data[np.ix_(node.indices, node.indices)] = 1
+                matrix[np.ix_(node.indices, node.indices)] = 1
 
-        return data
+        return matrix
 
     def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
         cdef:

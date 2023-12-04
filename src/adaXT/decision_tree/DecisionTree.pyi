@@ -16,14 +16,8 @@ class DecisionTree:
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
-            root: Node | None = None,
-            n_nodes: int = -1,
-            n_features: int = -1,
-            n_classes: int = -1,
-            n_obs: int = -1,
-            leaf_nodes: list[Node] | None = None,
-            pre_sort: None | np.ndarray = None,
-            classes: np.ndarray | None = None) -> None:
+            min_improvement: float = 0, 
+            pre_sort: None | np.ndarray = None) -> None:
         """
         Parameters
         ----------
@@ -35,22 +29,10 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 1e-20
         min_samples : int
             the minimum amount of samples in a leaf node, by deafult 2
-        root : Node | None
-            root node, by default None, added after fitting
-        n_nodes : int | None
-            number of nodes in the tree, by default -1, added after fitting
-        n_features : int | None
-            number of features in the dataset, by default -1, added after fitting
-        n_classes : int | None
-            number of classes in the dataset, by default -1, added after fitting
-        n_obs : int | None
-            number of observations in the dataset, by default -1, added after fitting
-        leaf_nodes : list[Node] | None
-            number of leaf nodes in the tree, by default None, added after fitting
+        min_improvement: float
+            the minimum improvement gained from performing a split, by default 0
         pre_sort: np.ndarray | None
             a sorted index matrix for the dataset
-        classes : np.ndarray | None
-            the different classes in response, by default None, added after fitting
         """
         pass
 
@@ -97,7 +79,7 @@ class DecisionTree:
         """
         pass
 
-    def predict_get_probability(self, X: np.ndarray):
+    def predict_proba(self, X: np.ndarray):
         """
         Predicts a probability for each response for given X values
 
@@ -108,8 +90,8 @@ class DecisionTree:
 
         Returns
         -------
-        List[Dict]
-            Returns a list of dict with the lenght N. The keys are the response classes, and the values are the probability for this class.  
+        Tuple(np.ndarray, np.ndarray)
+            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
         """
         pass
 
