@@ -8,7 +8,9 @@ import numpy as np
 from itertools import groupby
 import scipy
 
-#TODO: test the different stopping criteria as well as feature indexing and so on
+# TODO: test the different stopping criteria as well as feature indexing
+# and so on
+
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """
@@ -317,8 +319,9 @@ def sanity_entropy(n, m):
     for i in range(n):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
+
 def sanity_linear_regression(n, m):
-    X = np.random.uniform(0, 100, (n,m))
+    X = np.random.uniform(0, 100, (n, m))
     Y = np.random.uniform(0, 10, n)
     tree = DecisionTree("Regression", Linear_regression)
     tree.fit(X, Y)
@@ -326,10 +329,12 @@ def sanity_linear_regression(n, m):
     for node in tree.leaf_nodes:
         assert isinstance(node, LeafNode)
         # Linear regression fits on the X[:, 0] values,
-        # so for the final node X[:, 0] should have a correlation of 1 with Y in the node
+        # so for the final node X[:, 0] should have a correlation of 1 with Y
+        # in the node
         if node.indices.shape[0] > 1:
             corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
             assert abs(corr) == 1.0
+
 
 def test_sanity():
     n = 10000
@@ -338,6 +343,7 @@ def test_sanity():
     sanity_gini(n, m)
     sanity_entropy(n, m)
     sanity_linear_regression(n, m)
+
 
 if __name__ == "__main__":
     # test_gini_single()
