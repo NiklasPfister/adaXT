@@ -318,7 +318,7 @@ def sanity_entropy(n, m):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
 def sanity_linear_regression(n, m):
-    X = np.random.randint(0, 100, (n,m))
+    X = np.random.uniform(0, 100, (n,m))
     Y = np.random.uniform(0, 10, n)
     tree = DecisionTree("Regression", Linear_regression)
     tree.fit(X, Y)
