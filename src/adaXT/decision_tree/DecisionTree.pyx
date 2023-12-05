@@ -131,7 +131,7 @@ class DecisionTree:
             int row = X.shape[0]
             double[:] Y = np.empty(row)
             object cur_node
-        X = np.array(X, dtype=np.double) # Convert to double
+        X = np.array(X, dtype=np.double)  # Convert to double
 
         if not self.root:
             return Y
