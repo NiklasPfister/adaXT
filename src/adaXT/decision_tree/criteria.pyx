@@ -505,7 +505,7 @@ cdef class Linear_regression(Criteria):
         muX, muY = self.custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
-            numerator += (X_diff)*(self.y[indices[i]]*muY)
+            numerator += (X_diff)*(self.y[indices[i]]-muY)
             denominator += (X_diff)*X_diff
         if denominator == 0.0:
             theta1 = 0.0

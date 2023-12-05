@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from itertools import groupby
+import scipy
 
 #TODO: test the different stopping criteria as well as feature indexing and so on
 
@@ -317,30 +318,18 @@ def sanity_entropy(n, m):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
 def sanity_linear_regression(n, m):
-    X1 = np.random.randint(0, 20, (n, m))
-    X2 = np.random.uniform(0, 100, (n,m))
+    X = np.random.randint(0, 100, (n,m))
     Y = np.random.uniform(0, 10, n)
-    tree1 = DecisionTree("Regression", Linear_regression)
-    tree2 = DecisionTree("Regression", Linear_regression)
-    tree1.fit(X1, Y)
-    tree2.fit(X2, Y)
-    for node in tree1.leaf_nodes:
-        assert isinstance(node, LeafNode)
-        # Linear regression fits on the X[:, 0] values,
-        # so the final product should stop splitting when X[indices, 0] are all equal
-        # or when there is only a single element
-        if (len(node.indices) > 1):
-            g = groupby(X1[node.indices, 0])
-            assert next(g, True) and not next(g, False)
+    tree = DecisionTree("Regression", Linear_regression)
+    tree.fit(X, Y)
 
-    for node in tree2.leaf_nodes:
+    for node in tree.leaf_nodes:
         assert isinstance(node, LeafNode)
         # Linear regression fits on the X[:, 0] values,
-        # so the final product should stop splitting when X[indices, 0] are all equal
-        # or when there is only a single element
-        if (len(node.indices) > 1):
-            g = groupby(X2[node.indices, 0])
-            assert next(g, True) and not next(g, False)
+        # so for the final node X[:, 0] should have a correlation of 1 with Y in the node
+        if node.indices.shape[0] > 1:
+            corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
+            assert abs(corr) == 1.0
 
 def test_sanity():
     n = 10000
