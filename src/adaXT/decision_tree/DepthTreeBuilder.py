@@ -199,7 +199,8 @@ class DepthTreeBuilder:
                     indices)
                 # Stopping Conditions - AFTER:
                 # boolean used to determine wheter 'parent node' is a leaf or not
-                # additional stopping criteria can be added with 'or' statements
+                # additional stopping criteria can be added with 'or'
+                # statements
                 is_leaf = (
                     n_samples / n_obs * (impurity - best_crit_score_split) < min_improvement + EPSILON or
                     len(split[0]) < min_samples_leaf or
