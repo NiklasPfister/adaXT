@@ -200,7 +200,7 @@ class DepthTreeBuilder:
                     indices)
                 # Check the after conditions for being a leaf
                 is_leaf = (
-                    n_samples / n_obs * (impurity - best_crit_score_split) < min_improvement + EPSILON or 
+                    n_samples / n_obs * (impurity - best_crit_score_split) < min_improvement + EPSILON or
                     len(split[0]) < min_samples_leaf or
                     len(split[1]) < min_samples_leaf or
                     is_leaf
