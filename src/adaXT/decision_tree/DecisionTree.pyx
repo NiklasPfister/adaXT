@@ -48,7 +48,7 @@ class DecisionTree:
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
-        self.impurity_tol = impurity_tol 
+        self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
