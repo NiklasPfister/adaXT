@@ -57,7 +57,7 @@ cdef class Criteria:
         # calculate criteria value on the left dataset
         if n_left != 0.0:
             left_imp = self.impurity(left_indices)
-        crit = left_imp * (<double > n_left)/ (<double> n_indices)
+        crit = left_imp * (<double > n_left)/(<double> n_indices)
 
         # calculate criteria value on the right dataset
         if n_right != 0.0:

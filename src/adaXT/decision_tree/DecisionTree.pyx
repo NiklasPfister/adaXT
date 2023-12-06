@@ -24,7 +24,7 @@ class DecisionTree:
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = EPSILON,
+            impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
@@ -48,7 +48,7 @@ class DecisionTree:
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
-        self.impurity_tol = impurity_tol
+        self.impurity_tol = impurity_tol 
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement

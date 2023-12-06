@@ -188,7 +188,7 @@ class DepthTreeBuilder:
             # additional stopping criteria can be added with 'or' statements
             # Conditions evaluated before finding a potential split
             is_leaf = ((depth >= max_depth) or
-                       (impurity - impurity_tol < 0) or
+                       (impurity <= impurity_tol + EPSILON) or
                        (n_samples <= min_samples_split))
 
             if depth > max_depth_seen:  # keep track of the max depth seen
@@ -196,12 +196,11 @@ class DepthTreeBuilder:
 
             # If it is not a leaf, find the best split
             if not is_leaf:
-                split, best_threshold, best_index, _, child_imp = splitter.get_split(
+                split, best_threshold, best_index, best_crit_score_split, child_imp = splitter.get_split(
                     indices)
                 # Check the after conditions for being a leaf
                 is_leaf = (
-                    (abs(impurity - child_imp[0]) < min_improvement) or
-                    (abs(impurity - child_imp[1]) < min_improvement) or
+                    n_samples / n_obs * (impurity - best_crit_score_split) < min_improvement + EPSILON or 
                     len(split[0]) < min_samples_leaf or
                     len(split[1]) < min_samples_leaf or
                     is_leaf
