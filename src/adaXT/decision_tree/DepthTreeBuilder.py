@@ -196,13 +196,15 @@ class DepthTreeBuilder:
 
             # If it is not a leaf, find the best split
             if not is_leaf:
-                split, best_threshold, best_index, best_crit_score_split, child_imp = splitter.get_split(
+                split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
                 # Check the after conditions for being a leaf
+                N_t_L = len(split[0])
+                N_t_R = len(split[1])
                 is_leaf = (
-                    n_samples / n_obs * (impurity - best_crit_score_split) < min_improvement + EPSILON or
-                    len(split[0]) < min_samples_leaf or
-                    len(split[1]) < min_samples_leaf or
+                    n_samples / n_obs * (impurity - (N_t_L / n_samples) * child_imp[0] - (N_t_R / n_samples) * child_imp[1]) < min_improvement + EPSILON or
+                    N_t_L < min_samples_leaf or
+                    N_t_R < min_samples_leaf or
                     is_leaf
                 )
 
