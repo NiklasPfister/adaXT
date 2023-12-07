@@ -1,17 +1,17 @@
-from .tree import Tree, LeafNode, DecisionNode
+from . import DecisionTree, LeafNode, DecisionNode
 import numpy as np
 
 # Plot an entire tree
 
 
-def plot_tree(tree: Tree):
+def plot_tree(tree: DecisionTree):
     """
     Generates the tree as a subplot of plt. To show the plot,
     the user needs to call mathplotlib.pyplot.show().
 
     Parameters
     ----------
-    tree : Tree
+    tree : DecisionTree
         The tree to plot
 
     Returns
@@ -33,7 +33,7 @@ def plot_tree(tree: Tree):
 
 def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
     """
-    helper function used to plot each node of a Tree
+    helper function used to plot each node of a DecisionTree
 
     Parameters
     ----------
@@ -112,7 +112,7 @@ def calculate_node_positions(
 # Function to print the information of a tree
 
 
-def print_tree(tree: Tree):
+def print_tree(tree: DecisionTree):
     queue = []
     queue.append(tree.root)
     while len(queue) > 0:

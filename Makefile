@@ -7,3 +7,5 @@ build_ext:
 clean:
 	rm src/adaXT/decision_tree/*.so src/adaXT/decision_tree/*.html src/adaXT/decision_tree/*.c
 
+lint:
+	cython-lint src/* --max-line-length=127

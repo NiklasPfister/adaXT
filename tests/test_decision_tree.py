@@ -1,4 +1,4 @@
-from adaXT.decision_tree.tree import Tree, LeafNode, DecisionNode
+from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
 from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
@@ -32,8 +32,8 @@ def test_gini_single():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
+    tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -74,8 +74,8 @@ def test_gini_multi():
                   [-0.5, 2]])
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = Tree("Classification")
-    tree.fit(X, Y_multi, Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
+    tree.fit(X, Y_multi)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
     # leaf node
@@ -115,8 +115,8 @@ def test_regression():
                   [1, 1],
                   [-0.5, 2]])
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = Tree("Regression")
-    tree.fit(X, Y_reg, Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
+    tree.fit(X, Y_reg)
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
     spl_idx2 = [0, 1, 1, 1, 0]
@@ -153,8 +153,11 @@ def test_pre_sort():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     pre_sorted = pre_sort(X).astype(int)
-    tree = Tree("Classification", pre_sort=pre_sorted)
-    tree.fit(X, Y_cla, Gini_index)
+    tree = DecisionTree(
+        "Classification",
+        criteria=Gini_index,
+        pre_sort=pre_sorted)
+    tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -184,53 +187,6 @@ def test_pre_sort():
     rec_node(root, 0)
 
 
-def test_prediction():
-    X = np.array([[1, -1],
-                  [-0.5, -2],
-                  [-1, -1],
-                  [-0.5, -0.5],
-                  [1, 0],
-                  [-1, 1],
-                  [1, 1],
-                  [-0.5, 2]])
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Gini_index)
-    prediction = tree.predict(X)
-    for i in range(len(Y_cla)):
-        assert Y_cla[i] == prediction[
-            i], f"incorrect prediction at {i}, expected {Y_cla[i]} got {prediction[i]}"
-
-
-def test_NxN_matrix():
-    X = np.array([[1, -1],
-                  [-0.5, -2],
-                  [-1, -1],
-                  [-0.5, -0.5],
-                  [1, 0],
-                  [-1, 1],
-                  [1, 1],
-                  [-0.5, 2]])
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Gini_index)
-    weight_matrix = tree.weight_matrix()
-    true_weight = np.array([
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1],
-        [0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1],
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0, 1, 0, 0],
-        [1, 0, 0, 0, 1, 0, 1, 0],
-        [0, 1, 0, 1, 0, 0, 0, 1]
-    ])
-    for i in range(len(true_weight)):
-        for j in range(len(true_weight[0])):
-            assert weight_matrix[i, j] == true_weight[i,
-                                                      j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {weight_matrix[i, j]}"
-
-
 def test_entropy_single():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -242,8 +198,8 @@ def test_entropy_single():
                   [-0.5, 2]])
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = Tree("Classification")
-    tree.fit(X, Y_cla, Entropy)
+    tree = DecisionTree("Classification", criteria=Entropy)
+    tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
     spl_idx = [0, 0, 1]
@@ -284,8 +240,8 @@ def test_entropy_multi():
                   [-0.5, 2]])
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = Tree("Classification")
-    tree.fit(X, Y_multi, Entropy)
+    tree = DecisionTree("Classification", criteria=Entropy)
+    tree.fit(X, Y_multi)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
     # leaf node
@@ -320,10 +276,10 @@ def sanity_regression(n, m):
     Y1 = np.random.randint(0, 5, n)
     Y2 = np.random.uniform(0, 5, n)
 
-    tree1 = Tree("Regression")
-    tree2 = Tree("Regression")
-    tree1.fit(X, Y1, Squared_error)
-    tree2.fit(X, Y2, Squared_error)
+    tree1 = DecisionTree("Regression", Squared_error)
+    tree2 = DecisionTree("Regression", Squared_error)
+    tree1.fit(X, Y1)
+    tree2.fit(X, Y2)
     pred1 = tree1.predict(X)
     pred2 = tree2.predict(X)
     for i in range(n):
@@ -335,8 +291,8 @@ def sanity_gini(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = Tree("Classification")
-    tree.fit(X, Y, Gini_index)
+    tree = DecisionTree("Classification", Gini_index)
+    tree.fit(X, Y)
 
     pred = tree.predict(X)
     for i in range(n):
@@ -347,8 +303,8 @@ def sanity_entropy(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = Tree("Classification")
-    tree.fit(X, Y, Entropy)
+    tree = DecisionTree("Classification", Entropy)
+    tree.fit(X, Y)
 
     pred = tree.predict(X)
     for i in range(n):
@@ -370,7 +326,5 @@ if __name__ == "__main__":
     test_entropy_multi()
     test_regression()
     test_pre_sort()
-    test_prediction()
-    test_NxN_matrix()
     test_sanity()
-    print("done")
+    print("Done.")

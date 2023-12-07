@@ -1,9 +1,15 @@
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
 
+
 cdef double EPSILON = 2*np.finfo('double').eps
+# The rounding error for a criteria function is larger than that in DepthTreeBuilder.
+# This is most likely doe to the fact that the criteria does multiple calculations before returing the critical value,
+# where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
 cdef double INFINITY = 1e20
 
 cdef class Splitter:

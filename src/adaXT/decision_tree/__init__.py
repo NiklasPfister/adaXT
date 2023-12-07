@@ -1,2 +1,3 @@
-from . import criteria  # make criteria visible
-from .tree import Tree  # make Tree part of decision_tree
+# make Tree part of decision_tree
+from .DecisionTree import DecisionTree
+from .Nodes import LeafNode, DecisionNode, Node
