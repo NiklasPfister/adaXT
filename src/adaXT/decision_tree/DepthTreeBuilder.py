@@ -183,10 +183,9 @@ class DepthTreeBuilder:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             n_samples = len(indices)
-
-            # bool used to determine wheter a node is a leaf or not
+            # Stopping Conditions - BEFORE:
+            # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
-            # Conditions evaluated before finding a potential split
             is_leaf = ((depth >= max_depth) or
                        (impurity <= impurity_tol + EPSILON) or
                        (n_samples <= min_samples_split))
@@ -198,7 +197,10 @@ class DepthTreeBuilder:
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
-                # Check the after conditions for being a leaf
+                # Stopping Conditions - AFTER:
+                # boolean used to determine wheter 'parent node' is a leaf or not
+                # additional stopping criteria can be added with 'or'
+                # statements
                 N_t_L = len(split[0])
                 N_t_R = len(split[1])
                 is_leaf = (
