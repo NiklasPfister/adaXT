@@ -140,6 +140,7 @@ def test_regression():
                 cur_node.value) == 1, f'Expected {1} mean values, but got: {len(cur_node.value)}'
     rec_node(root, 0)
 
+
 def test_entropy_single():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -236,8 +237,10 @@ def sanity_regression(n, m):
     pred1 = tree1.predict(X)
     pred2 = tree2.predict(X)
     for i in range(n):
-        assert abs(Y1[i] - pred1[i]) < 0.00001, f"Square: Expected {Y1[i]} Got {pred1[i]}"
-        assert abs(Y2[i] - pred2[i]) < 0.00001, f"Square: Expected {Y2[i]} Got {pred2[i]}"
+        assert abs(
+            Y1[i] - pred1[i]) < 0.00001, f"Square: Expected {Y1[i]} Got {pred1[i]}"
+        assert abs(
+            Y2[i] - pred2[i]) < 0.00001, f"Square: Expected {Y2[i]} Got {pred2[i]}"
 
 
 def sanity_gini(n, m):
