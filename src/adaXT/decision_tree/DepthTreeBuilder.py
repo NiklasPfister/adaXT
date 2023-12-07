@@ -58,8 +58,7 @@ class DepthTreeBuilder:
             feature_indices: np.ndarray,
             sample_indices: np.ndarray,
             criteria: Criteria,
-            splitter: Splitter | None = None,
-            pre_sort: np.ndarray | None = None) -> None:
+            splitter: Splitter | None = None) -> None:
         """
         Parameters
         ----------
@@ -75,8 +74,6 @@ class DepthTreeBuilder:
             Criteria function used for impurity calculations, wrapped in FuncWrapper class
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        pre_sort : np.ndarray | None, optional
-            Pre_sorted indicies in regards to features, by default None
         """
         self.features = X[np.ix_(sample_indices, feature_indices)]
         self.response = Y[sample_indices]
@@ -88,11 +85,6 @@ class DepthTreeBuilder:
             self.splitter = splitter
         else:
             self.splitter = Splitter(self.features, self.response, criteria)
-
-        if isinstance(pre_sort, np.ndarray):
-            if pre_sort.dtype != np.int32:
-                pre_sort = np.ascontiguousarray(pre_sort, np.int32)
-            self.splitter.set_pre_sort(pre_sort)
 
     def get_mean(
             self,

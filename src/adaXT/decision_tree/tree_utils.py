@@ -129,16 +129,3 @@ def print_tree(tree: DecisionTree):
             if isinstance(node, DecisionNode):
                 queue.append(node.left_child)
                 queue.append(node.right_child)
-
-
-def pre_sort(X: np.ndarray) -> np.ndarray:
-    """
-    Used to pre sort the features given the full dataset
-
-    Returns
-    -------
-    List[List]
-        sorted index matrix, sorted per feature
-    """
-    sorted_list = np.argsort(X, axis=0)
-    return sorted_list

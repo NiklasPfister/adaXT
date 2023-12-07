@@ -33,20 +33,7 @@ cdef class Splitter:
         self.response = Y
         self.n_features = X.shape[1]
         self.criteria = criteria
-        self.pre_sort = None
         self.n_class = len(np.unique(Y))
-
-    def set_pre_sort(self, pre_sort):
-        '''
-        Function to set a presort array for the feature values
-        ----------------
-
-        Parameters
-        ----------
-        pre_sort: np.ndarray
-            The pre sort array to set
-        '''
-        self.pre_sort = pre_sort
 
     cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
         """
@@ -108,17 +95,9 @@ cdef class Splitter:
         # For all features
         for feature in range(n_features):
             current_feature_values = features[:, feature]
-            if self.pre_sort is None:
-                sorted_index_list_feature = self.sort_feature(
+            sorted_index_list_feature = self.sort_feature(
                     indices, current_feature_values
                     )
-            else:
-                pre_sort = self.pre_sort.base
-
-                # Mask only current node
-                mask = np.isin(pre_sort[:, feature], indices)
-                # Use the mask to retrieve values from presort
-                sorted_index_list_feature = np.asarray(pre_sort[:, feature])[mask]
 
             # Loop over sorted feature list
             for i in range(N_i):
