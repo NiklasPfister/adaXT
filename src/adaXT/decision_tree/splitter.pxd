@@ -14,7 +14,6 @@ cdef class Splitter:
         double[:, ::1] features
         double[:] response
         int n_features
-        int[:, ::1] pre_sort
         int[:] indices
         int n_indices
         Criteria criteria

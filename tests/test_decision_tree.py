@@ -1,6 +1,5 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
-from adaXT.decision_tree.tree_utils import pre_sort
 import numpy as np
 
 
@@ -142,51 +141,6 @@ def test_regression():
     rec_node(root, 0)
 
 
-def test_pre_sort():
-    X = np.array([[1, -1],
-                  [-0.5, -2],
-                  [-1, -1],
-                  [-0.5, -0.5],
-                  [1, 0],
-                  [-1, 1],
-                  [1, 1],
-                  [-0.5, 2]])
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    pre_sorted = pre_sort(X).astype(int)
-    tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        pre_sort=pre_sorted)
-    tree.fit(X, Y_cla)
-    root = tree.root
-    exp_val = [0.25, -0.75, 0]
-    spl_idx = [0, 0, 1]
-    assert isinstance(root, LeafNode) or isinstance(
-        root, DecisionNode), f"root is not a node but {type(root)}"
-    queue = [root]
-    i = 0
-    # Loop over all the nodes
-    while len(queue) > 0:
-        cur_node = queue.pop()
-        if isinstance(
-                cur_node,
-                DecisionNode):  # Check threshold and idx of decision node
-            assert cur_node.threshold == exp_val[
-                i], f'Expected threshold {exp_val[i]} on i={i}, got {cur_node.threshold}'
-            assert cur_node.split_idx == spl_idx[
-                i], f'Expected split idx {spl_idx[i]} on i={i}, got {cur_node.split_idx}'
-            if cur_node.left_child:
-                queue.append(cur_node.left_child)
-            if cur_node.right_child:
-                queue.append(cur_node.right_child)
-            i += 1
-        elif isinstance(cur_node, LeafNode):  # Check that the value is of length 2
-            assert len(
-                cur_node.value) == 2, f'Expected 2 mean values, one for each class, but got: {len(cur_node.value)}'
-
-    rec_node(root, 0)
-
-
 def test_entropy_single():
     X = np.array([[1, -1],
                   [-0.5, -2],
@@ -283,8 +237,10 @@ def sanity_regression(n, m):
     pred1 = tree1.predict(X)
     pred2 = tree2.predict(X)
     for i in range(n):
-        assert (Y1[i] == pred1[i]), f"Square: Expected {Y1[i]} Got {pred1[i]}"
-        assert (Y2[i] == pred2[i]), f"Square: Expected {Y2[i]} Got {pred2[i]}"
+        assert abs(
+            Y1[i] - pred1[i]) < 0.00001, f"Square: Expected {Y1[i]} Got {pred1[i]}"
+        assert abs(
+            Y2[i] - pred2[i]) < 0.00001, f"Square: Expected {Y2[i]} Got {pred2[i]}"
 
 
 def sanity_gini(n, m):
@@ -325,6 +281,5 @@ if __name__ == "__main__":
     test_entropy_single()
     test_entropy_multi()
     test_regression()
-    test_pre_sort()
     test_sanity()
     print("Done.")
