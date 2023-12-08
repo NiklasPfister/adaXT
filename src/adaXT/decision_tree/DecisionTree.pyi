@@ -30,8 +30,7 @@ class DecisionTree:
             max_depth: int = sys.maxsize,
             impurity_tol: float = 1e-20,
             min_samples: int = 1,
-            min_improvement: float = 0,
-            pre_sort: None | np.ndarray = None) -> None:
+            min_improvement: float = 0) -> None:
         """
         Parameters
         ----------
@@ -45,8 +44,6 @@ class DecisionTree:
             the minimum amount of samples in a leaf node, by deafult 2
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
-        pre_sort: np.ndarray | None
-            a sorted index matrix for the dataset
         """
         pass
 

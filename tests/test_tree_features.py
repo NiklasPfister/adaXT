@@ -181,7 +181,7 @@ def test_impurity_tol_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert node.impurity < impurity_tol_desired, f"Failed as node impurity was,{node.impurity} but should be at the most {impurity_tol_desired}"
+        assert node.impurity <= impurity_tol_desired, f"Failed as node impurity was, {node.impurity} but should be at the most {impurity_tol_desired}"
 
 
 def test_min_samples_split_setting():

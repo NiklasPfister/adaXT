@@ -58,8 +58,7 @@ class DepthTreeBuilder:
             feature_indices: np.ndarray,
             sample_indices: np.ndarray,
             criteria: Criteria,
-            splitter: Splitter | None = None,
-            pre_sort: np.ndarray | None = None) -> None:
+            splitter: Splitter | None = None) -> None:
         """
         Parameters
         ----------
@@ -75,8 +74,6 @@ class DepthTreeBuilder:
             Criteria function used for impurity calculations, wrapped in FuncWrapper class
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        pre_sort : np.ndarray | None, optional
-            Pre_sorted indicies in regards to features, by default None
         """
         self.features = X[np.ix_(sample_indices, feature_indices)]
         self.response = Y[sample_indices]
@@ -88,11 +85,6 @@ class DepthTreeBuilder:
             self.splitter = splitter
         else:
             self.splitter = Splitter(self.features, self.response, criteria)
-
-        if isinstance(pre_sort, np.ndarray):
-            if pre_sort.dtype != np.int32:
-                pre_sort = np.ascontiguousarray(pre_sort, np.int32)
-            self.splitter.set_pre_sort(pre_sort)
 
     def get_mean(
             self,
@@ -183,12 +175,11 @@ class DepthTreeBuilder:
             obj = queue.pop()
             indices, depth, impurity, parent, is_left = obj.indices, obj.depth, obj.impurity, obj.parent, obj.is_left
             n_samples = len(indices)
-
-            # bool used to determine wheter a node is a leaf or not
+            # Stopping Conditions - BEFORE:
+            # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
-            # Conditions evaluated before finding a potential split
             is_leaf = ((depth >= max_depth) or
-                       (impurity - impurity_tol < 0) or
+                       (impurity <= impurity_tol + EPSILON) or
                        (n_samples <= min_samples_split))
 
             if depth > max_depth_seen:  # keep track of the max depth seen
@@ -198,17 +189,26 @@ class DepthTreeBuilder:
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
                     indices)
-                # check if we could find a split
+                # If we were unable to find a split, this must be a leaf.
                 if len(split) == 0:
-                    is_leaf = True
+                    is_leaf = False
                 else:
-                    is_leaf = (
-                        (abs(impurity - child_imp[0]) < min_improvement) or
-                        (abs(impurity - child_imp[1]) < min_improvement) or
-                        len(split[0]) < min_samples_leaf or
-                        len(split[1]) < min_samples_leaf or
-                        is_leaf
-                    )
+                    # Stopping Conditions - AFTER:
+                    # boolean used to determine wheter 'parent node' is a leaf or not
+                    # additional stopping criteria can be added with 'or'
+                    # statements
+                    N_t_L = len(split[0])
+                    N_t_R = len(split[1])
+                    is_leaf = (n_samples /
+                            n_obs *
+                            (impurity -
+                                (N_t_L /
+                                n_samples) *
+                                child_imp[0] -
+                                (N_t_R /
+                                n_samples) *
+                                child_imp[1]) < min_improvement +
+                            EPSILON or N_t_L < min_samples_leaf or N_t_R < min_samples_leaf or is_leaf)
 
             if not is_leaf:
                 # Add the decision node to the List of nodes
