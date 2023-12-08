@@ -200,15 +200,15 @@ class DepthTreeBuilder:
                     N_t_L = len(split[0])
                     N_t_R = len(split[1])
                     is_leaf = (n_samples /
-                            n_obs *
-                            (impurity -
+                               n_obs *
+                               (impurity -
                                 (N_t_L /
-                                n_samples) *
+                                 n_samples) *
                                 child_imp[0] -
                                 (N_t_R /
-                                n_samples) *
+                                 n_samples) *
                                 child_imp[1]) < min_improvement +
-                            EPSILON or N_t_L < min_samples_leaf or N_t_R < min_samples_leaf or is_leaf)
+                               EPSILON or N_t_L < min_samples_leaf or N_t_R < min_samples_leaf or is_leaf)
 
             if not is_leaf:
                 # Add the decision node to the List of nodes
