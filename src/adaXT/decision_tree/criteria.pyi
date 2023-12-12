@@ -1,11 +1,13 @@
 class Criteria:
     """
-    Criteria abstract function used to calculate splits
+    Criteria abstract class used to calculate splits
     """
-
-class Gini_index:
     pass
-class Entropy:
+class Gini_index(Criteria):
     pass
-class Squared_error:
+class Entropy(Criteria):
+    pass
+class Squared_error(Criteria):
+    pass
+class Linear_regression(Criteria):
     pass

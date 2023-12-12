@@ -1,6 +1,12 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy
+from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
+
+from itertools import groupby
+import scipy
+
+# TODO: test the different stopping criteria as well as feature indexing
+# and so on
 
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -40,6 +46,7 @@ def test_gini_single():
         root, DecisionNode), f"root is not a node but {type(root)}"
     queue = [root]
     i = 0
+
     # Loop over all the nodes
     while len(queue) > 0:
         cur_node = queue.pop()
@@ -267,12 +274,29 @@ def sanity_entropy(n, m):
         assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
 
 
+def sanity_linear_regression(n, m):
+    X = np.random.uniform(0, 100, (n, m))
+    Y = np.random.uniform(0, 10, n)
+    tree = DecisionTree("Regression", Linear_regression)
+    tree.fit(X, Y)
+
+    for node in tree.leaf_nodes:
+        assert isinstance(node, LeafNode)
+        # Linear regression fits on the X[:, 0] values,
+        # so for the final node X[:, 0] should have a correlation of 1 with Y
+        # in the node
+        if node.indices.shape[0] > 1:
+            corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
+            assert abs(corr) == 1.0
+
+
 def test_sanity():
     n = 10000
     m = 5
     sanity_regression(n, m)
     sanity_gini(n, m)
     sanity_entropy(n, m)
+    sanity_linear_regression(n, m)
 
 
 if __name__ == "__main__":

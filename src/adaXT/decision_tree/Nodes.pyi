@@ -4,6 +4,11 @@ from .criteria import Criteria
 import sys
 
 class Node:
+    indices: np.ndarray
+    depth: int
+    impurity: float
+    n_samples: int
+
     def __init__(
             self,
             indices: np.ndarray,
@@ -25,6 +30,11 @@ class Node:
         pass
 
 class DecisionNode(Node):
+    threshold: float
+    split_indx: int
+    left_child: Node|None
+    right_child: Node|None
+    parent: DecisionNode|None
     def __init__(
             self,
             indices: np.ndarray,
@@ -61,6 +71,9 @@ class DecisionNode(Node):
         pass
 
 class LeafNode(Node):
+    value: list[float]
+    parent: DecisionNode|None
+    id: int
     def __init__(
             self,
             id: int,

@@ -106,7 +106,7 @@ class DecisionTree:
             splitter)
         builder.build_tree(self)
 
-    def predict(self, double[:, :] X):
+    def predict(self, X):
         """
         Predicts a y-value for given X values
 
@@ -126,6 +126,7 @@ class DecisionTree:
             int row = X.shape[0]
             double[:] Y = np.empty(row)
             object cur_node
+        X = np.array(X, dtype=np.double)  # Convert to double
 
         if not self.root:
             return Y

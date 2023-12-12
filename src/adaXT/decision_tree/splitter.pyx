@@ -111,7 +111,6 @@ cdef class Splitter:
                                                         sorted_index_list_feature, i+1,
                                                         feature
                                                         )
-
                 if best_score - crit > EPSILON:  # rounding error
                     # Save the best split
                     # The index is given as the index of the
@@ -119,7 +118,5 @@ cdef class Splitter:
                     best_feature, best_threshold = feature, threshold
                     best_score, best_imp = crit, [left_imp, right_imp]
                     split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
-                    if len(split) == 0:
-                        print(best_feature, best_threshold, best_score, best_imp)
-                        print(crit - best_score < EPSILON)
+
         return split, best_threshold, best_feature, best_score, best_imp
