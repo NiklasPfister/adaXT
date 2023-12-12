@@ -2,17 +2,10 @@ cimport numpy as cnp
 from .criteria cimport Criteria
 cnp.import_array()
 
-cdef class test_obj:
-    cdef:
-        double crit
-        list[:, :] idx_split
-        double[2] imp
-        double split_val
-
 cdef class Splitter:
     cdef:
         double[:, ::1] features
-        double[:] response
+        double[::1] response
         int n_features
         int[:] indices
         int n_indices

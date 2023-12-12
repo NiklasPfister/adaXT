@@ -15,10 +15,6 @@ cdef double EPSILON = np.finfo('double').eps
 
 
 class DecisionTree:
-    """
-    DecisionTree object
-    """
-
     def __init__(
             self,
             tree_type: str,
@@ -28,20 +24,7 @@ class DecisionTree:
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0) -> None:
-        """
-        Parameters
-        ----------
-        tree_type : str
-            Classification or Regression
-        max_depth : int
-            maximum depth of the tree, by default int(np.inf)
-        impurity_tol : float
-            the tolerance of impurity in a leaf node, by default 1e-20
-        min_samples : int
-            the minimum amount of samples in a leaf node, by deafult 2
-        min_improvement: float
-            the minimum improvement gained from performing a split, by default 0
-        """
+
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
         self.max_depth = max_depth
@@ -60,6 +43,19 @@ class DecisionTree:
         self.classes = None
 
     def check_input(self, X: object, Y: object):
+        # Check if X and Y has same number of rows
+        if X.shape[0] != Y.shape[0]:
+            raise ValueError("X and Y should have the same number of rows")
+
+        # Check if Y has dimensions (n, 1) or (n,)
+        if 2 < Y.ndim:
+            raise ValueError("Y should have dimensions (n,1) or (n,)")
+        elif 2 == Y.ndim:
+            if 1 < Y.shape[1]:
+                raise ValueError("Y should have dimensions (n,1) or (n,)")
+            else:
+                Y = Y.reshape(-1)
+
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
@@ -73,24 +69,7 @@ class DecisionTree:
             splitter: Splitter | None = None,
             feature_indices: np.ndarray | None = None,
             sample_indices: np.ndarray | None = None) -> None:
-        """
-        Function used to fit the data on the tree using the DepthTreeBuilder
 
-        Parameters
-        ----------
-        X : np.ndarray
-            feature values
-        Y : np.ndarray
-            outcome values
-        criteria : FuncWrapper
-            Callable criteria function used to calculate impurity wrapped in Funcwrapper class.
-        splitter : Splitter | None, optional
-            Splitter class if None uses premade Splitter class
-        feature_indices : np.ndarray | None, optional
-            which features to use from the data X, by default uses all
-        sample_indices : np.ndarray | None, optional
-            which samples to use from the data X and Y, by default uses all
-        """
         X, Y = self.check_input(X, Y)
         row, col = X.shape
         if sample_indices is None:
@@ -106,30 +85,18 @@ class DecisionTree:
             splitter)
         builder.build_tree(self)
 
-    def predict(self, X):
-        """
-        Predicts a y-value for given X values
-
-        Parameters
-        ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
-
-        Returns
-        -------
-        np.ndarray
-            (N) numpy array with the prediction
-        """
+    # QUESTION: Should we do any checking on X?
+    def predict(self, double[:, :] X):
         cdef:
             int i, cur_split_idx, idx
             double cur_threshold
             int row = X.shape[0]
             double[:] Y = np.empty(row)
             object cur_node
-        X = np.array(X, dtype=np.double)  # Convert to double
 
         if not self.root:
-            return Y
+            raise ValueError("The tree has not been trained before trying to predict")
+
         for i in range(row):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
@@ -142,11 +109,12 @@ class DecisionTree:
             if self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif self.tree_type == "Classification":
-                idx = self.find_max_index(cur_node.value)
+                idx = self._find_max_index(cur_node.value)
                 if self.classes is not None:
                     Y[i] = self.classes[idx]
         return Y
 
+    # QUESTION: Should we do any checking on X?
     def predict_proba(self, double[:, :] X):
         cdef:
             int i, cur_split_idx
@@ -155,8 +123,11 @@ class DecisionTree:
             object cur_node
             list ret_val = []
 
-        if not self.root or self.tree_type != "Classification":
-            return ret_val
+        if not self.root:
+            raise ValueError("The tree has not been trained before trying to predict")
+        
+        if self.tree_type != "Classification":
+            raise ValueError("predict_proba can only be called on a Classification tree")
 
         for i in range(row):
             cur_node = self.root
@@ -173,7 +144,7 @@ class DecisionTree:
 
         return tuple_ret
 
-    def find_max_index(self, lst):
+    def _find_max_index(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
@@ -181,17 +152,6 @@ class DecisionTree:
         return cur_max
 
     def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
-        """
-        Creates NxN matrix,
-        where N is the number of observations.
-        If a given value is 1, then they are in the same leaf,
-        otherwise it is 0
-
-        Returns
-        -------
-        np.ndarray
-            NxN matrix
-        """
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 

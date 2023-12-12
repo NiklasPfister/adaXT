@@ -455,7 +455,7 @@ cdef class Squared_error(Criteria):
         """
         cdef:
             double cur_sum = 0.0
-            double[:] y = self.y
+            double[::1] y = self.y
             double mu = mean(y, indices)  # set mu to be the mean of the dataset
             double square_err, tmp
             int i

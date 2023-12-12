@@ -1,1 +1,1 @@
-cdef double mean(double[:], int[:])
+cdef double mean(double[::1], int[:])

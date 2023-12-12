@@ -21,27 +21,32 @@ class DecisionTree:
     n_features: int
     n_classes: int
     n_obs: int
-    pre_sort: np.ndarray
     classes: np.ndarray
+
     def __init__(
             self,
             tree_type: str,
             criteria: Criteria,
             max_depth: int = sys.maxsize,
-            impurity_tol: float = 1e-20,
-            min_samples: int = 1,
+            impurity_tol: float = 0,
+            min_samples_split: int = 1,
+            min_samples_leaf: int = 1,
             min_improvement: float = 0) -> None:
         """
         Parameters
         ----------
         tree_type : str
             Classification or Regression
+        criteria: Criteria
+            The Criteria class to use, should be of the type Criteria implemented by AdaXT
         max_depth : int
-            maximum depth of the tree, by default int(np.inf)
+            maximum depth of the tree, by default maximum system size
         impurity_tol : float
-            the tolerance of impurity in a leaf node, by default 1e-20
-        min_samples : int
-            the minimum amount of samples in a leaf node, by deafult 2
+            the tolerance of impurity in a leaf node, by default 0
+        min_samples_split : int
+            the minimum amount of samples in a split, by default 1
+        min_samples_split : int
+            the minimum amount of samples in a leaf node, by default 1
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
         """
@@ -62,9 +67,7 @@ class DecisionTree:
         X : np.ndarray
             feature values
         Y : np.ndarray
-            outcome values
-        criteria : FuncWrapper
-            Callable criteria function used to calculate impurity wrapped in Funcwrapper class.
+            response values
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         feature_indices : np.ndarray | None, optional
@@ -106,7 +109,7 @@ class DecisionTree:
         """
         pass
 
-    def get_leaf_matrix(self) -> np.ndarray:
+    def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations.
@@ -121,5 +124,6 @@ class DecisionTree:
         pass
 
     def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
+        # QUESTION: What does this function do?
 
         pass

@@ -2,12 +2,7 @@ from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
 
-from itertools import groupby
 import scipy
-
-# TODO: test the different stopping criteria as well as feature indexing
-# and so on
-
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """

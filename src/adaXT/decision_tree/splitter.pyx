@@ -8,15 +8,18 @@ from .criteria cimport Criteria
 
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is larger than that in DepthTreeBuilder.
-# This is most likely doe to the fact that the criteria does multiple calculations before returing the critical value,
+# This is most likely needed due to the fact that the criteria does multiple calculations before returing the critical value,
 # where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
+
+# QUESTION: Could this be np.inf instead?
 cdef double INFINITY = 1e20
+
 
 cdef class Splitter:
     """
     Splitter class used to create splits of the data
     """
-    def __init__(self, double[:, ::1] X, double[:] Y, criteria: Criteria):
+    def __init__(self, double[:, ::1] X, double[::1] Y, criteria: Criteria):
         '''
         Class initializer
         ----------------
@@ -26,8 +29,8 @@ cdef class Splitter:
                 The feature values of the dataset
             y: memoryview of NDArray
                 The response values of the dataset
-            criteria: FuncWrapper object
-                A FuncWrapper object containing the criteria function
+            criteria: Criteria
+                The criteria class used to find the impurity of a split
         '''
         self.features = X
         self.response = Y
@@ -57,7 +60,7 @@ cdef class Splitter:
         temp = feature.base[indices]
         return np.array(indices.base[np.argsort(temp)], dtype=np.int32)
 
-    # Gets split given the indices in the given node
+
     cpdef get_split(self, int[:] indices):
         """
         Function that finds the best split of the dataset

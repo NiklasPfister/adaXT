@@ -25,7 +25,6 @@ class queue_obj:
             parent: Node | None = None,
             is_left: bool | None = None) -> None:
         """
-
         Parameters
         ----------
         indices : np.ndarray
@@ -39,6 +38,7 @@ class queue_obj:
         is_left : bool | None, optional
             whether the object is left or right, by default None
         """
+
         self.indices = indices
         self.depth = depth
         self.impurity = impurity
@@ -70,11 +70,13 @@ class DepthTreeBuilder:
             Which features to use
         sample_indices : np.ndarray
             Indicies of the samples to use.
-        criteria : FuncWrapper
-            Criteria function used for impurity calculations, wrapped in FuncWrapper class
+        criteria : Criteria
+            Criteria class used for impurity calculations
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
+
+        # QUESTION: what is the np.ix_ used for in the initialiser, can it be deleted? 
         self.features = X[np.ix_(sample_indices, feature_indices)]
         self.response = Y[sample_indices]
         self.feature_indices = feature_indices
@@ -97,13 +99,11 @@ class DepthTreeBuilder:
         Parameters
         ----------
         tree : DecisionTree
-            The fille tree object
+            The filled tree object
         node_response : np.ndarray
-            outcome values in the node
+            response values in the node
         n_samples : int
             number of samples in the node
-        n_classes : int
-            number of different classes in the node
 
         Returns
         -------
@@ -160,7 +160,7 @@ class DepthTreeBuilder:
         max_depth_seen = 0
 
         n_obs = len(response)
-        queue = []  # queue of elements queue objects that need to be built
+        queue = []  # queue for objects that need to be built
 
         # root node contains all indices
         all_idx = np.arange(n_obs, dtype=np.int32)
@@ -199,16 +199,13 @@ class DepthTreeBuilder:
                     # statements
                     N_t_L = len(split[0])
                     N_t_R = len(split[1])
-                    is_leaf = (n_samples /
-                               n_obs *
-                               (impurity -
-                                (N_t_L /
-                                 n_samples) *
-                                child_imp[0] -
-                                (N_t_R /
-                                 n_samples) *
-                                child_imp[1]) < min_improvement +
-                               EPSILON or N_t_L < min_samples_leaf or N_t_R < min_samples_leaf)
+                    is_leaf = ((n_samples / n_obs *
+                              (impurity - 
+                              (N_t_L / n_samples) * child_imp[0] -
+                              (N_t_R / n_samples) * child_imp[1]) <
+                              min_improvement + EPSILON) or
+                              (N_t_L < min_samples_leaf) or
+                              (N_t_R < min_samples_leaf))
 
             if not is_leaf:
                 # Add the decision node to the List of nodes
@@ -269,4 +266,6 @@ class DepthTreeBuilder:
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
+        
+        # QUESTION: do we use this return value anywhere? can it be deleted?
         return 0
