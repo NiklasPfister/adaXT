@@ -11,7 +11,6 @@ cdef double EPSILON = 2*np.finfo('double').eps
 # This is most likely needed due to the fact that the criteria does multiple calculations before returing the critical value,
 # where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
 
-# QUESTION: Could this be np.inf instead?
 cdef double INFINITY = np.inf
 
 
