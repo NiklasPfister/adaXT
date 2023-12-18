@@ -62,6 +62,15 @@ class DecisionTree:
 
         return X, Y
 
+    def check_dimensions(self, double[:, :] X):
+        # If there is only a single point
+        if X.ndim == 1:
+            if (X.shape[0] != self.n_features):
+                raise ValueError(f"Number of features should be {self.n_features}, got {X.shape[0]}")
+        else:
+            if X.shape[1] != self.n_features:
+                raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
+
     def fit(
             self,
             X: np.ndarray,
@@ -85,7 +94,6 @@ class DecisionTree:
             splitter)
         builder.build_tree(self)
 
-    # QUESTION: Should we do any checking on X?
     def predict(self, double[:, :] X):
         cdef:
             int i, cur_split_idx, idx
@@ -93,9 +101,11 @@ class DecisionTree:
             int row = X.shape[0]
             double[:] Y = np.empty(row)
             object cur_node
-
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
+
+        # Make sure that x fits the dimensions.
+        self.check_dimensions(X)
 
         for i in range(row):
             cur_node = self.root
@@ -114,7 +124,6 @@ class DecisionTree:
                     Y[i] = self.classes[idx]
         return Y
 
-    # QUESTION: Should we do any checking on X?
     def predict_proba(self, double[:, :] X):
         cdef:
             int i, cur_split_idx
@@ -125,9 +134,12 @@ class DecisionTree:
 
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
-        
+
         if self.tree_type != "Classification":
             raise ValueError("predict_proba can only be called on a Classification tree")
+
+        # Make sure that x fits the dimensions.
+        self.check_dimensions(X)
 
         for i in range(row):
             cur_node = self.root
@@ -152,6 +164,9 @@ class DecisionTree:
         return cur_max
 
     def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
+        if not self.root:
+            raise ValueError("The tree has not been trained before trying to predict")
+
         leaf_nodes = self.leaf_nodes
         n_obs = self.n_obs
 
@@ -170,14 +185,18 @@ class DecisionTree:
     def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
         cdef:
             int i
-            int row = X.shape[0]
-            double[:] Y = np.empty(row)
-            dict ht = {}
+            int row
+            dict ht
             int cur_split_idx
             double cur_threshold
 
         if not self.root:
-            return Y
+            raise ValueError("The tree has not been trained before trying to predict")
+
+        # Make sure that x fits the dimensions.
+        self.check_dimensions(X)
+        row = X.shape[0]
+        ht = {}
         for i in range(row):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):

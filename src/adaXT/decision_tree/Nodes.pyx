@@ -3,6 +3,7 @@
 import numpy as np
 from typing import List
 
+
 class Node:
     def __init__(
             self,

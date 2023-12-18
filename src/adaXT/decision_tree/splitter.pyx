@@ -12,7 +12,7 @@ cdef double EPSILON = 2*np.finfo('double').eps
 # where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
 
 # QUESTION: Could this be np.inf instead?
-cdef double INFINITY = 1e20
+cdef double INFINITY = np.inf
 
 
 cdef class Splitter:
@@ -55,11 +55,11 @@ cdef class Splitter:
         memoryview of NDArray
             A list of the sorted indices
         """
-        cdef:
-            double[:] temp
-        temp = feature.base[indices]
-        return np.array(indices.base[np.argsort(temp)], dtype=np.int32)
 
+        cdef:
+            long[:] temp
+        temp = np.argsort(feature.base[indices])
+        return indices.base[temp]
 
     cpdef get_split(self, int[:] indices):
         """

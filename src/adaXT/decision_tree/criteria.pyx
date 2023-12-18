@@ -437,7 +437,7 @@ cdef class Squared_error(Criteria):
 
     cdef double _square_error(self, int[:] indices, int left_or_right = -1):
         """
-        Function that calculates the variance of a dataset
+        Function used to calculate the square error of y[indices]
         ----------
 
         Parameters
@@ -479,6 +479,7 @@ cdef class Squared_error(Criteria):
 
 cdef class Linear_regression(Criteria):
 
+    # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) custom_mean(self, int[:] indices):
         cdef:
             double sumX, sumY
@@ -493,6 +494,21 @@ cdef class Linear_regression(Criteria):
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
     cdef (double, double) theta(self, int[:] indices):
+        """
+        Calculate theta0 and theta1 used for a Linear Regression
+        on X[:, 0] and Y
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            The indices to calculate
+
+        Returns
+        -------
+        (double, double)
+            where the first element is theta0 and second element is theta1
+        """
         cdef:
             double muX, muY, theta0, theta1
             int length, i
@@ -515,6 +531,21 @@ cdef class Linear_regression(Criteria):
         return (theta0, theta1)
 
     cpdef double impurity(self, int[:] indices):
+        """
+        Calculates the impurity of a Node by:
+        L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            The indices to calculate
+
+        Returns
+        -------
+        double
+            The impurity evaluation
+        """
         cdef:
             double step_calc, theta0, theta1, cur_sum
             int i, length
