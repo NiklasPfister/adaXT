@@ -267,5 +267,4 @@ class DepthTreeBuilder:
         tree.root = root
         tree.leaf_nodes = leaf_node_list
 
-        # QUESTION: do we use this return value anywhere? can it be deleted?
         return 0
