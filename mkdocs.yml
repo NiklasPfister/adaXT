@@ -1,0 +1,30 @@
+site_name: adaXT
+
+plugins:
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          options:
+            docstring_style: numpy
+            show_bases: false
+            filters: ["!__.*"]
+
+theme:
+  name: "material"
+
+nav:
+  - welcome: index.md
+  - criteria: decision_tree/criteria/criteria.md
+
+
+# For setting up math
+markdown_extensions:
+  - pymdownx.arithmatex:
+      generic: true
+
+# Also for math
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
