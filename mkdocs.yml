@@ -1,5 +1,6 @@
 site_name: adaXT
 
+# Filters off all private methods defined with __, when importing
 plugins:
   - mkdocstrings:
       default_handler: python
@@ -13,9 +14,11 @@ plugins:
 theme:
   name: "material"
 
+# Navigation bar on the left
 nav:
   - welcome: index.md
   - criteria: decision_tree/criteria/criteria.md
+  - tree: decision_tree/tree/DecisionTree.md
 
 
 # For setting up math
