@@ -1,30 +1,53 @@
 site_name: adaXT
 
+repo_url: https://github.com/NiklasPfister/adaXT
+edit_uri: '?query=root/path/docs/'
 # Filters off all private methods defined with __, when importing
 plugins:
+  - search:
   - mkdocstrings:
       default_handler: python
       handlers:
         python:
+          paths: [src]
           options:
             docstring_style: numpy
             show_bases: false
             filters: ["!__.*"]
+            show_source: false
 
 theme:
   name: "material"
+  features:
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
 
 # Navigation bar on the left
 nav:
   - welcome: index.md
-  - criteria: decision_tree/criteria/criteria.md
-  - tree: decision_tree/tree/DecisionTree.md
+  - API reference:
+    - criteria: decision_tree/criteria/criteria.md
+    - tree: decision_tree/tree/DecisionTree.md
+  - User Guide:
+    - Decision Tree:
+      - Creating a tree: decision_tree/examples/creatingATree
 
 
-# For setting up math
+# For setting up math and code blocks
 markdown_extensions:
+  # Math block setup
   - pymdownx.arithmatex:
       generic: true
+
+  # Code block setup
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 # Also for math
 extra_javascript:

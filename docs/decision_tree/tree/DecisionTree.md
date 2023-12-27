@@ -1,2 +1,2 @@
-# Decision tree object
+# The Decision Tree
 ::: adaXT.decision_tree.DecisionTree
