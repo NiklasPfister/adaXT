@@ -56,7 +56,7 @@ cdef class Splitter:
         """
 
         cdef:
-            long[:] temp
+            long long[:] temp
         temp = np.argsort(feature.base[indices])
         return indices.base[temp]
 
