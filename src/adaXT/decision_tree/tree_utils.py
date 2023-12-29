@@ -29,6 +29,8 @@ def plot_tree(tree: DecisionTree):
     return fig, ax
 
 # Plot a node
+
+
 def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
     """
     helper function used to plot each node of a DecisionTree
@@ -81,6 +83,8 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
             plot_node(ax, node.right_child, node_positions)
 
 # Calculate where to add nodes when plotting a tree
+
+
 def calculate_node_positions(
         node: LeafNode | DecisionNode,
         x: float,
@@ -106,6 +110,8 @@ def calculate_node_positions(
     return node_positions
 
 # Function to print the information of a tree
+
+
 def print_tree(tree: DecisionTree):
     queue = []
     queue.append(tree.root)
