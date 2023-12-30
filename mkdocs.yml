@@ -31,8 +31,8 @@ nav:
     - tree: decision_tree/tree/DecisionTree.md
   - User Guide:
     - Decision Tree:
-      - Creating a tree: decision_tree/examples/creatingATree
-
+      - Creating a tree: decision_tree/examples/creatingATree.md
+      - Create a criteria: decision_tree/examples/creatingACriteria.md
 
 # For setting up math and code blocks
 markdown_extensions:
