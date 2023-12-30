@@ -5,7 +5,6 @@ edit_uri: '?query=root/path/docs/'
 watch: [mkdocs.yml, src/adaXT]
 site_description: adaptable Decision Trees and Random Forests
 
-# Filters off all private methods defined with __, when importing
 plugins:
   - search:
   - mkdocstrings:
@@ -16,6 +15,7 @@ plugins:
           options:
             docstring_style: numpy
             show_bases: false
+            # Filters off all private methods defined with __, when importing
             filters: ["!__.*"]
             show_source: false
             show_root_heading: false
