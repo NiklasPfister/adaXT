@@ -2,6 +2,9 @@ site_name: adaXT
 
 repo_url: https://github.com/NiklasPfister/adaXT
 edit_uri: '?query=root/path/docs/'
+watch: [mkdocs.yml, src/adaXT]
+site_description: adaptable Decision Trees and Random Forests
+
 # Filters off all private methods defined with __, when importing
 plugins:
   - search:
@@ -15,17 +18,41 @@ plugins:
             show_bases: false
             filters: ["!__.*"]
             show_source: false
+            show_root_heading: false
 
 theme:
   name: "material"
   features:
     - navigation.sections
     - navigation.expand
+    - content.code.annotate
     - content.code.copy
+    - content.tooltips
+
+  # Adding dark mode
+  palette:
+  - media: "(prefers-color-scheme)"
+    toggle:
+      icon: material/brightness-auto
+      name: Switch to light mode
+  - media: "(prefers-color-scheme: light)"
+    scheme: default
+    primary: teal
+    accent: purple
+    toggle:
+      icon: material/weather-sunny
+      name: Switch to dark mode
+  - media: "(prefers-color-scheme: dark)"
+    scheme: slate
+    primary: black
+    accent: lime
+    toggle:
+      icon: material/weather-night
+      name: Switch to system preference
 
 # Navigation bar on the left
 nav:
-  - welcome: index.md
+  - Welcome: index.md
   - API reference:
     - criteria: decision_tree/criteria/criteria.md
     - tree: decision_tree/tree/DecisionTree.md

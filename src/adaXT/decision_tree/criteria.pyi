@@ -6,7 +6,7 @@ class Criteria:
 
 
 class Gini_index(Criteria):
-    """
+    r"""
     Calculates the gini index given:
     $$
     Gini Index = 1 - \sum_{i=1}^n (P_i)^2
@@ -16,7 +16,7 @@ class Gini_index(Criteria):
     """
     pass
 class Entropy(Criteria):
-    """
+    r"""
     Calculates the Entropy given:
     $$
     E = - \sum_{i = 1}^n p_i \log_2 (p_i)
@@ -28,10 +28,10 @@ class Entropy(Criteria):
 class Squared_error(Criteria):
     pass
 class Linear_regression(Criteria):
-    """
+    r"""
     Calculates the impurity of a Node by:
     $$
-    L = sum_{i \in indices} (Y[i] - \\theta_0 - \\theta_1 X[i, 0])^2
+    L = \sum_{i \in indices} (Y[i] - \\theta_0 - \\theta_1 X[i, 0])^2
     $$
     """
     pass
