@@ -169,4 +169,4 @@ tree.fit(X, Y)
 plot_tree(tree)
 plt.show()
 ```
-This just creates a regression tree with our new Linear Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assests/examples/LinearRegressionExample).
+This just creates a regression tree with our new Linear Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/tree_utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assests/examples/linear_regression).

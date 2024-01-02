@@ -11,8 +11,12 @@ tree.fit(X, Y)
 In the example above we are creating and fitting a Classification
 tree with the [Gini Index](../criteria/criteria.md) criteria function, and then fitting the tree with the X and Y data specified.
 
+
+### Using the fitted tree
+
 After the fitting we can predict new values using the tree such as:
 ```py
 result = tree.predict(np.array([5, 0]))
 print(result) # prints [1.]
 ```
+You can also make use of a wide array of other methods, which can be seen in [DecisionTree](../tree/DecisionTree.md) class documentation.
