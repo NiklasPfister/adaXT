@@ -36,7 +36,8 @@ setup(
     description=DESCRIPTION,
     long_description= LONG_DESCRIPTION,
     project_urls = PROJECT_URLS,
-    packages=find_packages(),
+    packages=find_packages(where="src"),
+    package_dir={"adaXT": "./src/adaXT"},
     ext_modules=extensions,
     classifiers=[
         "Programming Language :: Python :: 3",
