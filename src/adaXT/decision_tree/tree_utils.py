@@ -1,5 +1,4 @@
 from . import DecisionTree, LeafNode, DecisionNode
-import numpy as np
 
 # Plot an entire tree
 
@@ -29,9 +28,12 @@ def plot_tree(tree: DecisionTree):
     return fig, ax
 
 # Plot a node
+
+
 def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
     """
     helper function used to plot each node of a DecisionTree
+
 
     Parameters
     ----------
@@ -62,7 +64,8 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
         ax.text(
             position[0],
             position[1],
-            f"Decision WITH x{node.split_idx} <= {node.threshold:.3f}\n Impurity: {node.impurity:.3f} \n samples: {node.n_samples}",
+            f"""Decision WITH x{node.split_idx} <= {node.threshold:.3f}\n
+            Impurity: {node.impurity:.3f} \n samples: {node.n_samples}""",
             ha='center',
             va='center',
             bbox=dict(
@@ -79,6 +82,7 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
             ax.plot([position[0], node_positions[node.right_child][0]], [
                     position[1], node_positions[node.right_child][1]], color='black')
             plot_node(ax, node.right_child, node_positions)
+
 
 # Calculate where to add nodes when plotting a tree
 def calculate_node_positions(
@@ -104,6 +108,7 @@ def calculate_node_positions(
     node_positions = {**left_positions, **right_positions, node: position}
 
     return node_positions
+
 
 # Function to print the information of a tree
 def print_tree(tree: DecisionTree):
