@@ -4,29 +4,34 @@ class Criteria:
     """
     pass
 
-
 class Gini_index(Criteria):
     r"""
     Calculates the gini index given:
     $$
-    Gini Index = 1 - \sum_{i=1}^n (P_i)^2
+    Gini Index = 1 - \sum_{i=1}^n (P[i])^2
     $$
     Where $P_i$ denotes the probability of an element
     being classified for a distinct class.
     """
     pass
+
 class Entropy(Criteria):
     r"""
     Calculates the Entropy given:
     $$
-    E = - \sum_{i = 1}^n p_i \log_2 (p_i)
+    E = - \sum_{i = 1}^n P[i] \log_2 (P[i])
     $$
-    Where $p_i$ denotes the probability of randomly selecting an example
+    Where $P[i]$ denotes the probability of randomly selecting an example
     in class i.
     """
     pass
+
 class Squared_error(Criteria):
+    r"""
+    (y[i] - u)^2/n_obs
+    """
     pass
+
 class Linear_regression(Criteria):
     r"""
     Calculates the impurity of a Node by:

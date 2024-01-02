@@ -54,13 +54,13 @@ theme:
 nav:
   - Welcome: index.md
   - API reference:
+    - DecisionTree: decision_tree/tree/DecisionTree.md
     - criteria: decision_tree/criteria/criteria.md
-    - tree: decision_tree/tree/DecisionTree.md
     - tree_utils: decision_tree/utils/tree_utils.md
   - User Guide:
     - Decision Tree:
       - Creating a tree: decision_tree/examples/creatingATree.md
-      - Create a criteria: decision_tree/examples/creatingACriteria.md
+      - Creating a criteria: decision_tree/examples/creatingACriteria.md
 
 # For setting up math and code blocks
 markdown_extensions:
