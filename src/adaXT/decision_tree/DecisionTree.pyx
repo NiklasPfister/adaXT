@@ -23,7 +23,9 @@ class DecisionTree:
             impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
-            min_improvement: float = 0) -> None:
+            min_improvement: float = 0,
+            feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None) -> None:
 
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -41,6 +43,8 @@ class DecisionTree:
         self.n_classes = -1
         self.n_obs = -1
         self.classes = None
+        self.feature_indices = feature_indices
+        self.sample_indices = sample_indices
 
     def check_input(self, X: object, Y: object):
         # Check if X and Y has same number of rows
@@ -75,21 +79,19 @@ class DecisionTree:
             self,
             X: np.ndarray,
             Y: np.ndarray,
-            splitter: Splitter | None = None,
-            feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None) -> None:
+            splitter: Splitter | None = None) -> None:
 
         X, Y = self.check_input(X, Y)
         row, col = X.shape
-        if sample_indices is None:
-            sample_indices = np.arange(row)
-        if feature_indices is None:
-            feature_indices = np.arange(col)
+        if self.sample_indices is None:
+            self.sample_indices = np.arange(row)
+        if self.feature_indices is None:
+            self.feature_indices = np.arange(col)
         builder = DepthTreeBuilder(
             X,
             Y,
-            feature_indices,
-            sample_indices,
+            self.feature_indices,
+            self.sample_indices,
             self.criteria(X, Y),
             splitter)
         builder.build_tree(self)

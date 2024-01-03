@@ -75,11 +75,8 @@ class DepthTreeBuilder:
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
-
-        # QUESTION: what is the np.ix_ used for in the initialiser, can it be
-        # deleted?
-        self.features = X[np.ix_(sample_indices, feature_indices)]
-        self.response = Y[sample_indices]
+        self.features = X
+        self.response = Y
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
         self.criteria = criteria
@@ -160,11 +157,11 @@ class DepthTreeBuilder:
         leaf_node_list = []
         max_depth_seen = 0
 
-        n_obs = len(response)
+        n_obs = len(self.sample_indices)
         queue = []  # queue for objects that need to be built
 
-        # root node contains all indices
-        all_idx = np.arange(n_obs, dtype=np.int32)
+        # root node contains all indices from sample_indices
+        all_idx = self.sample_indices
         queue.append(
             queue_obj(
                 all_idx,
@@ -189,7 +186,7 @@ class DepthTreeBuilder:
             # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
-                    indices)
+                    indices, self.feature_indices)
                 # If we were unable to find a split, this must be a leaf.
                 if len(split) == 0:
                     is_leaf = True
