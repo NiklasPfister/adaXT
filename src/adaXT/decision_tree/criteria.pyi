@@ -38,6 +38,7 @@ class Squared_error(Criteria):
     For a faster calculation it is calculated as:
     $$
     \text{Squared Error} = \frac{\sum_{i = 1}^n y[i]^2}{n_obs} - \mu_y^2
+    $$
     """
     pass
 
