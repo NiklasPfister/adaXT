@@ -20,7 +20,9 @@ ext = '.pyx' if USE_CYTHON else ".c"
 include_dir = np.get_include()
 extensions = [Extension("adaXT.decision_tree.*",
                         ["src/adaXT/decision_tree/*" + ext],
-                        include_dirs=[include_dir])]
+                        include_dirs=[include_dir],
+                        language="c++",
+                        extra_compile_args=['-O3'])]
 
 # If we are using cython, then compile, otherwise use the c files
 if USE_CYTHON:
