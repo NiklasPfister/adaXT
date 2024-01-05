@@ -1,10 +1,12 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False, linetrace=True
+# distutils: define_macros=CYTHON_TRACE_NOGIL=1
 
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
 
+import line_profiler
 
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is larger than that in DepthTreeBuilder.
@@ -56,9 +58,11 @@ cdef class Splitter:
         """
 
         cdef:
-            long[:] temp
-        temp = np.argsort(feature.base[indices])
-        return indices.base[temp]
+            cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
+            cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
+            cnp.ndarray[long, ndim=1] temp
+        temp = np.argsort(feat_temp[idx])
+        return memoryview(idx[temp])
 
     cpdef get_split(self, int[:] indices):
         """
