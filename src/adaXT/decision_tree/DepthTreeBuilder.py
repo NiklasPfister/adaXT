@@ -122,6 +122,7 @@ class DepthTreeBuilder:
             lst[i] = lst[i] / n_samples
         return lst
 
+    # TODO: improving this function with cython could bring around 2% increase in speed I think.
     def build_tree(self, tree: DecisionTree):
         """
         Builds the tree
