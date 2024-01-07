@@ -7,8 +7,8 @@ from .criteria cimport Criteria
 
 
 cdef double EPSILON = 2*np.finfo('double').eps
-# The rounding error for a criteria function is larger than that in DepthTreeBuilder.
-# This is most likely needed due to the fact that the criteria does multiple calculations before returing the critical value,
+# The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.
+# This is needed due to the fact that the criteria does multiple calculations before returing the critical value,
 # where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
 
 cdef double INFINITY = np.inf
