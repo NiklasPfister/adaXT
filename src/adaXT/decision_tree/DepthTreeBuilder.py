@@ -77,8 +77,8 @@ class DepthTreeBuilder:
         """
         self.features = X
         self.response = Y
-        self.feature_indices = feature_indices
-        self.sample_indices = sample_indices
+        self.feature_indices = np.array(feature_indices, np.int32)
+        self.sample_indices = np.array(sample_indices, np.int32)
         self.criteria = criteria
 
         if splitter:
