@@ -6,8 +6,6 @@ cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
 
-import line_profiler
-
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is larger than that in DepthTreeBuilder.
 # This is most likely needed due to the fact that the criteria does multiple calculations before returing the critical value,

@@ -12,6 +12,8 @@ PROJECT_URLS = {
 with open("README.md", 'r') as f:
     LONG_DESCRIPTION = f.read()
 
+with open("requirements.txt", 'r') as f:
+    REQUIRES = f.read()
 
 USE_CYTHON = True  # TODO: get commandline input, such that a user can choose whether to compile with cython always when installing, or just the already compiled c files
 
@@ -38,6 +40,7 @@ setup(
     description=DESCRIPTION,
     long_description= LONG_DESCRIPTION,
     project_urls = PROJECT_URLS,
+    install_requires=REQUIRES,
     packages=find_packages(where="src"),
     package_dir={"adaXT": "./src/adaXT"},
     ext_modules=extensions,
