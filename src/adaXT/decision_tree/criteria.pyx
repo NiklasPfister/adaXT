@@ -437,7 +437,7 @@ cdef class Squared_error(Criteria):
 
     cdef double _square_error(self, int[:] indices, int left_or_right = -1):
         """
-        Function used to calculate the square error of y[indices]
+        Function used to calculate the squared error of y[indices]
         ----------
 
         Parameters
