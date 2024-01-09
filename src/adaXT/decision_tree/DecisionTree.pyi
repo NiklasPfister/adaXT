@@ -79,7 +79,15 @@ class DecisionTree:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predicts a y-value for given X values
+        Works in two ways depending on if the tree is a Classification or Regression tree.
+
+        Classification:
+        ----------
+        Returns the class with the highest proportion within the final leaf node
+
+        Regression:
+        ----------
+        Returns the mean value of the outcomes within the final leaf node.
 
         Parameters
         ----------
@@ -95,7 +103,7 @@ class DecisionTree:
 
     def predict_proba(self, X: np.ndarray):
         """
-        Predicts a probability for each response for given X values
+        Predicts a probability for each response for given X values. Only useable by the Classification Tree.
 
         Parameters
         ----------
