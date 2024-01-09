@@ -37,7 +37,7 @@ cdef class Splitter:
         self.criteria = criteria
         self.n_class = len(np.unique(Y))
 
-    cdef int[:] sort_feature(self, int[:] indices, double[:] feature):
+    cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
         """
         Function to sort an array at given indices.
 
@@ -56,9 +56,11 @@ cdef class Splitter:
         """
 
         cdef:
-            long long[:] temp
-        temp = np.argsort(feature.base[indices])
-        return indices.base[temp]
+            cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
+            cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
+            cnp.ndarray[long, ndim=1] temp
+        temp = np.argsort(feat_temp[idx])
+        return idx[temp]
 
     cpdef get_split(self, int[:] indices):
         """
@@ -88,7 +90,7 @@ cdef class Splitter:
             int best_feature = 0
             double[:] current_feature_values
             int i, feature  # variables for loop
-            int[:] sorted_index_list_feature
+            cnp.ndarray[int, ndim=1] sorted_index_list_feature
             int[:] best_sorted
             int best_split_idx
             double best_left_imp, best_right_imp
@@ -116,7 +118,7 @@ cdef class Splitter:
                     continue
                 # test the split
                 crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(
-                                                        sorted_index_list_feature.base, i+1,
+                                                        sorted_index_list_feature, i+1,
                                                         feature
                                                         )
 
@@ -133,6 +135,6 @@ cdef class Splitter:
 
         # We found a best split
         if best_sorted is not None:
-            split = [best_sorted.base[:best_split_idx], best_sorted.base[best_split_idx:]]
+            split = [best_sorted[0:best_split_idx], best_sorted[best_split_idx:self.n_indices]]
             best_imp = [best_left_imp, best_right_imp]
         return split, best_threshold, best_feature, best_score, best_imp
