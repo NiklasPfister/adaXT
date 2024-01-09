@@ -49,6 +49,10 @@ class DecisionTree:
         self.splitter = splitter
 
     def check_input(self, X: object, Y: object):
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+
         # Check if X and Y has same number of rows
         if X.shape[0] != Y.shape[0]:
             raise ValueError("X and Y should have the same number of rows")
@@ -62,20 +66,21 @@ class DecisionTree:
             else:
                 Y = Y.reshape(-1)
 
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
         return X, Y
 
-    def check_dimensions(self, double[:, :] X):
+    def check_dimensions(self, X: object):
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
         # If there is only a single point
         if X.ndim == 1:
             if (X.shape[0] != self.n_features):
                 raise ValueError(f"Number of features should be {self.n_features}, got {X.shape[0]}")
+
+            # expand the dimensions
+            X = np.expand_dims(X, axis=0)
         else:
             if X.shape[1] != self.n_features:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
+        return X
 
     def fit(
             self,
@@ -97,18 +102,19 @@ class DecisionTree:
             self.splitter)
         builder.build_tree(self)
 
-    def predict(self, double[:, :] X):
+    def predict(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx, idx
+            int i, cur_split_idx, idx, row
             double cur_threshold
-            int row = X.shape[0]
-            double[:] Y = np.empty(row)
             object cur_node
+            double[:] Y
         if not self.root:
             raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
+        row = X.shape[0]
+        Y = np.empty(row)
 
         for i in range(row):
             cur_node = self.root
@@ -122,16 +128,15 @@ class DecisionTree:
             if self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif self.tree_type == "Classification":
-                idx = self._find_max_index(cur_node.value)
+                idx = self.__find_max_index(cur_node.value)
                 if self.classes is not None:
                     Y[i] = self.classes[idx]
-        return Y
+        return np.asarray(Y)
 
-    def predict_proba(self, double[:, :] X):
+    def predict_proba(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx
+            int i, cur_split_idx, row
             double cur_threshold
-            int row = X.shape[0]
             object cur_node
             list ret_val = []
 
@@ -142,7 +147,8 @@ class DecisionTree:
             raise ValueError("predict_proba can only be called on a Classification tree")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
+        row = X.shape[0]
 
         for i in range(row):
             cur_node = self.root
@@ -159,7 +165,7 @@ class DecisionTree:
 
         return tuple_ret
 
-    def _find_max_index(self, lst):
+    def __find_max_index(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
@@ -185,7 +191,7 @@ class DecisionTree:
 
         return matrix
 
-    def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
+    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
         cdef:
             int i
             int row
@@ -197,8 +203,9 @@ class DecisionTree:
             raise ValueError("The tree has not been trained before trying to predict")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
         row = X.shape[0]
+
         ht = {}
         for i in range(row):
             cur_node = self.root
