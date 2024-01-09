@@ -33,7 +33,8 @@ class DecisionTree:
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
             feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None) -> None:
+            sample_indices: np.ndarray | None = None,
+            splitter: Splitter | None = None) -> None:
         """
         Parameters
         ----------
@@ -47,7 +48,7 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 0
         min_samples_split : int
             the minimum amount of samples in a split, by default 1
-        min_samples_split : int
+        min_samples_leaf : int
             the minimum amount of samples in a leaf node, by default 1
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
@@ -55,14 +56,15 @@ class DecisionTree:
             which features to use from the data X, by default uses all
         sample_indices : np.ndarray | None, optional
             which samples to use from the data X and Y, by default uses all
+        splitter : Splitter | None, optional
+            Splitter class if None uses premade Splitter class
         """
         pass
 
     def fit(
             self,
             X: np.ndarray,
-            Y: np.ndarray,
-            splitter: Splitter | None = None) -> None:
+            Y: np.ndarray) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
@@ -72,8 +74,6 @@ class DecisionTree:
             feature values
         Y : np.ndarray
             response values
-        splitter : Splitter | None, optional
-            Splitter class if None uses premade Splitter class
         """
         pass
 

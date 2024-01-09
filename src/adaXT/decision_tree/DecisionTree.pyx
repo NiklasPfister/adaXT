@@ -25,7 +25,8 @@ class DecisionTree:
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
             feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None) -> None:
+            sample_indices: np.ndarray | None = None,
+            splitter: Splitter | None = None) -> None:
 
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -45,6 +46,7 @@ class DecisionTree:
         self.classes = None
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
+        self.splitter = splitter
 
     def check_input(self, X: object, Y: object):
         # Check if X and Y has same number of rows
@@ -78,8 +80,7 @@ class DecisionTree:
     def fit(
             self,
             X: np.ndarray,
-            Y: np.ndarray,
-            splitter: Splitter | None = None) -> None:
+            Y: np.ndarray) -> None:
 
         X, Y = self.check_input(X, Y)
         row, col = X.shape
@@ -93,7 +94,7 @@ class DecisionTree:
             self.feature_indices,
             self.sample_indices,
             self.criteria(X, Y),
-            splitter)
+            self.splitter)
         builder.build_tree(self)
 
     def predict(self, double[:, :] X):
@@ -104,7 +105,7 @@ class DecisionTree:
             double[:] Y = np.empty(row)
             object cur_node
         if not self.root:
-            raise ValueError("The tree has not been trained before trying to predict")
+            raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
         self.check_dimensions(X)
@@ -135,7 +136,7 @@ class DecisionTree:
             list ret_val = []
 
         if not self.root:
-            raise ValueError("The tree has not been trained before trying to predict")
+            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
 
         if self.tree_type != "Classification":
             raise ValueError("predict_proba can only be called on a Classification tree")
