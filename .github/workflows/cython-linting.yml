@@ -35,4 +35,4 @@ jobs:
 
         - name: Cython Linting
           run: |
-            cython-lint src/*
+            cython-lint src/* --max-line-length=127

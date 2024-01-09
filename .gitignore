@@ -182,6 +182,3 @@ scrap.pyx
 *.pyd
 *.html
 src/adaXT/decision_tree/setup.py
-
-# Ignore built cpp files
-src/adaXT/decision_tree/*.cpp

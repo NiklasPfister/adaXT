@@ -1,6 +1,7 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
+
 import scipy
 
 

@@ -1,4 +1,4 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+# cython: boundscheck=False, wraparound=False, cdivision=True
 
 cdef double mean(double[::1] lst, int[:] indices):
     '''
