@@ -75,9 +75,6 @@ class DepthTreeBuilder:
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
-
-        # QUESTION: what is the np.ix_ used for in the initialiser, can it be
-        # deleted?
         self.features = X[np.ix_(sample_indices, feature_indices)]
         self.response = Y[sample_indices]
         self.feature_indices = feature_indices
