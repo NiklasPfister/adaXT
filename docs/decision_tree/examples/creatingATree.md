@@ -12,7 +12,7 @@ tree = DecisionTree("Classification", criteria=Gini_index)
 tree.fit(X, Y)
 ```
 In the example above we are creating and fitting a Classification
-tree with the [Gini Index](../criteria/criteria.md) criteria function, and then fitting the tree with the X and Y data specified.
+tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function, and then fitting the tree with the X and Y data specified.
 
 ## Regression Trees
 Regression trees work in much the same way the classification tree works, with some key differences:
