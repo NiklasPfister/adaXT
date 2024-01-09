@@ -1,19 +1,11 @@
 [build-system]
 requires = ["setuptools", "Cython", "numpy", "wheel"]
-build-backend = "setuptools.build_meta"
 
-[project]
-name = "adaXT"
-version = "0.0.1"
-description = "temp"
-requires-python = ">=3.10"
+[tool.cython-lint]
+max-line-length = 127
 
-dependencies = [
-  "scipy",
-  "matplotlib",
-  "Cython",
-  "numpy"
+[tool.flake8]
+max-line-length = 127
+per-file-ignores = [
+    '__init__.py:F401',
 ]
-
-[tool.setuptools.packages.find]
-where = ["src"]
