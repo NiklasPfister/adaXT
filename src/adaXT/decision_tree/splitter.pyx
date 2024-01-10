@@ -57,7 +57,7 @@ cdef class Splitter:
         cdef:
             cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
             cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
-            cnp.ndarray[long, ndim=1] temp
+            cnp.ndarray[long long, ndim=1] temp
         temp = np.argsort(feat_temp[idx])
         return idx[temp]
 
@@ -96,7 +96,6 @@ cdef class Splitter:
             double crit
 
         features = self.features.base
-        n_features = self.n_features
         split, best_imp = [], []
         best_right_imp, best_left_imp = 0.0, 0.0
         best_split_idx = -1
