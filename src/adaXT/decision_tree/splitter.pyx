@@ -5,7 +5,6 @@ cimport numpy as cnp
 cnp.import_array()
 from .criteria cimport Criteria
 
-
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.
 # This is needed due to the fact that the criteria does multiple calculations before returing the critical value,
@@ -60,7 +59,7 @@ cdef class Splitter:
         temp = np.argsort(feature.base[indices])
         return indices.base[temp]
 
-    cpdef get_split(self, int[:] indices):
+    cpdef get_split(self, int[:] indices, int[:] feature_indices):
         """
         Function that finds the best split of the dataset
         ----------
@@ -101,7 +100,7 @@ cdef class Splitter:
         best_split_idx = -1
         best_sorted = None
         # For all features
-        for feature in range(n_features):
+        for feature in feature_indices:
             current_feature_values = features[:, feature]
             sorted_index_list_feature = self.sort_feature(
                     indices, current_feature_values

@@ -16,4 +16,4 @@ cdef class Splitter:
 
     cdef int[:] sort_feature(self, int[:], double[:])
 
-    cpdef get_split(self, int[:])
+    cpdef get_split(self, int[:], int[:])
