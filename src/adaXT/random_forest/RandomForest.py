@@ -1,4 +1,4 @@
-from multiprocessing import Pool
+from multiprocessing import Pool, cpu_count
 from multiprocessing.shared_memory import SharedMemory
 
 from ..decision_tree import DecisionTree
@@ -83,7 +83,7 @@ class RandomForrest:
         bootstrap : bool, default=True
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
-            The number of processes created to train the forrest, -1 means using all proccesors
+            The number of processes used to fit, and predict for the forrest, -1 means using all proccesors
         max_samples : int, default=None
             The number of samples drawn from the feature values
         max_depth : int
@@ -103,7 +103,7 @@ class RandomForrest:
         self.n_estimators = n_estimators
         self.criterion = criterion
         self.bootstrap = bootstrap
-        self.n_jobs = n_jobs
+        self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
