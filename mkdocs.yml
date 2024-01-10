@@ -56,12 +56,14 @@ nav:
   - Welcome: index.md
   - API reference:
     - DecisionTree: decision_tree/tree/DecisionTree.md
-    - criteria: decision_tree/criteria/criteria.md
-    - tree_utils: decision_tree/utils/tree_utils.md
+    - Criteria: decision_tree/criteria/criteria.md
+    - Tree utilities: decision_tree/utils/tree_utils.md
   - User Guide:
     - Decision Tree:
       - Creating a tree: decision_tree/examples/creatingATree.md
       - Creating a criteria: decision_tree/examples/creatingACriteria.md
+    - Random Forrest:
+      - Chosing n_jobs parameter: RandomForrest/user_guide/chosing_n_jobs.md
 
 # For setting up math and code blocks
 markdown_extensions:
