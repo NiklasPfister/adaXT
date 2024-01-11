@@ -23,7 +23,10 @@ class DecisionTree:
             impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
-            min_improvement: float = 0) -> None:
+            min_improvement: float = 0,
+            feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
+            splitter: Splitter | None = None) -> None:
 
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -41,8 +44,15 @@ class DecisionTree:
         self.n_classes = -1
         self.n_obs = -1
         self.classes = None
+        self.feature_indices = feature_indices
+        self.sample_indices = sample_indices
+        self.splitter = splitter
 
     def check_input(self, X: object, Y: object):
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+
         # Check if X and Y has same number of rows
         if X.shape[0] != Y.shape[0]:
             raise ValueError("X and Y should have the same number of rows")
@@ -56,13 +66,10 @@ class DecisionTree:
             else:
                 Y = Y.reshape(-1)
 
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
         return X, Y
 
     def check_dimensions(self, double[:, :] X):
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
         # If there is only a single point
         if X.ndim == 1:
             if (X.shape[0] != self.n_features):
@@ -70,28 +77,26 @@ class DecisionTree:
         else:
             if X.shape[1] != self.n_features:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
+        return X
 
     def fit(
             self,
             X: np.ndarray,
-            Y: np.ndarray,
-            splitter: Splitter | None = None,
-            feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None) -> None:
+            Y: np.ndarray) -> None:
 
         X, Y = self.check_input(X, Y)
         row, col = X.shape
-        if sample_indices is None:
-            sample_indices = np.arange(row)
-        if feature_indices is None:
-            feature_indices = np.arange(col)
+        if self.sample_indices is None:
+            self.sample_indices = np.arange(row)
+        if self.feature_indices is None:
+            self.feature_indices = np.arange(col)
         builder = DepthTreeBuilder(
             X,
             Y,
-            feature_indices,
-            sample_indices,
+            self.feature_indices,
+            self.sample_indices,
             self.criteria(X, Y),
-            splitter)
+            self.splitter)
         builder.build_tree(self)
 
     def predict(self, double[:, :] X):
@@ -102,10 +107,10 @@ class DecisionTree:
             double[:] Y = np.empty(row)
             object cur_node
         if not self.root:
-            raise ValueError("The tree has not been trained before trying to predict")
+            raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
 
         for i in range(row):
             cur_node = self.root
@@ -119,7 +124,7 @@ class DecisionTree:
             if self.tree_type == "Regression":
                 Y[i] = cur_node.value[0]
             elif self.tree_type == "Classification":
-                idx = self._find_max_index(cur_node.value)
+                idx = self.__find_max_index(cur_node.value)
                 if self.classes is not None:
                     Y[i] = self.classes[idx]
         return Y
@@ -133,13 +138,13 @@ class DecisionTree:
             list ret_val = []
 
         if not self.root:
-            raise ValueError("The tree has not been trained before trying to predict")
+            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
 
         if self.tree_type != "Classification":
             raise ValueError("predict_proba can only be called on a Classification tree")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
 
         for i in range(row):
             cur_node = self.root
@@ -156,7 +161,7 @@ class DecisionTree:
 
         return tuple_ret
 
-    def _find_max_index(self, lst):
+    def __find_max_index(self, lst):
         cur_max = 0
         for i in range(1, len(lst)):
             if lst[cur_max] < lst[i]:
@@ -194,7 +199,7 @@ class DecisionTree:
             raise ValueError("The tree has not been trained before trying to predict")
 
         # Make sure that x fits the dimensions.
-        self.check_dimensions(X)
+        X = self.check_dimensions(X)
         row = X.shape[0]
         ht = {}
         for i in range(row):
