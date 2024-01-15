@@ -126,12 +126,12 @@ cdef (double, double) theta(self, int[:] indices):
     return (theta0, theta1)
 ```
 Again the majority of the cython is not needed and are mainly just for speedup.
-on line 26 we access our previously defined custom mean function, which returns the mean of the X indices and the mean of the Y indices as described previously. Then at line 27 we loop over all the indices a second time where we calculate the $\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)$ and $\sum_{i \in I} (X[i, 0] - \mu_X)^2$ which is the numerator and denominator respectively. These are the two values used to calculate $\theta_1$. Now note that on line 31 we have a check to make sure that the denominator is not 0.0. As we are telling cython to use c division and not python diviison, then we could end up with odd values if we don't include this check. If that is the case, we simply set $theta_1$ to 0.0 as this will give an L value of 0 in the end. We finish off by returning the two $\theta$ values.
+on line 26 we access our previously defined custom mean function, which returns the mean of the X indices and the mean of the Y indices as described previously. Then at line 27 we loop over all the indices a second time where we calculate the $\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)$ and $\sum_{i \in I} (X[i, 0] - \mu_X)^2$ which is the numerator and denominator respectively. These are the two values used to calculate $\theta_1$. Now note that on line 31 we have a check to make sure that the denominator is not 0.0. As we are telling cython to use c division and not python division, then we could end up with odd values if we don't include this check. If that is the case, we simply set $theta_1$ to 0.0 as this will give an L value of 0 in the end. We finish off by returning the two $\theta$ values.
 
 
 
 ### The impurity function
-Atlast we reach the crux of the problem. Creating the impurity function.
+At last, we reach the crux of the problem. Creating the impurity function.
 ```cython linenums="1"
 cpdef double impurity(self, int[:] indices):
     cdef:
@@ -170,4 +170,4 @@ tree.fit(X, Y)
 plot_tree(tree)
 plt.show()
 ```
-This just creates a regression tree with our new Linear Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/tree_utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assests/examples/linear_regression).
+This just creates a regression tree with our new Linear Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/tree_utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/linear_regression).
