@@ -1,5 +1,5 @@
 # Decision Trees
-[Decision Trees](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data can be used to predict future outcomes. It takes on a tree like structure, where each internal node splits the data set based upon some threshold value on a given feature index.
+A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data can be used to predict future outcomes. It takes on a tree like structure, where each internal node splits the data set based upon some threshold value on a given feature index.
 
 ## Classification Trees
 The [DecisionTree](../tree/DecisionTree.md) class is used when creating both a Regression and Classification tree.

@@ -1,7 +1,7 @@
 # How to create your own Criteria Function
 
 ### Installing cython and adaXT
-First make sure you are setup in a virtual environment. You could for example make use of [virtualenv](https://virtualenv.pypa.io/en/latest/). Then run ```pip install adaXT``` which installs adaXT along with all the requirements needed.
+First make sure you are set up in a virtual environment. You could for example make use of [virtualenv](https://virtualenv.pypa.io/en/latest/). Then run ```pip install adaXT``` which installs adaXT along with all the requirements needed.
 
 ### Creating a pyx file
 In your working folder create a .pyx file and import the Criteria "super" class and create your new Criteria class, that is going to inherit from the "super" Criteria class. As an example here is the definition of the Linear_regression.
@@ -46,7 +46,7 @@ $$
 L = \sum_{i \in I} (Y[i] - \theta_0 - \theta_1 X[i, 0])^2 \\
 $$
 $$
-\theta_1 = \frac{\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)}{\sum_{i \in I} (X[i, 0] - \mu_X)^2 } \\
+\theta_1 = \frac{\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)}{\sum_{i \in I} (X[i, 0] - \mu_X)^2} \\
 $$
 $$
 \theta_0 = \mu_Y - \theta_1 \mu_X
