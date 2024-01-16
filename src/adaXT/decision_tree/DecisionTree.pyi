@@ -63,17 +63,17 @@ class DecisionTree:
 
     def fit(
             self,
-            X: np.ndarray,
-            Y: np.ndarray) -> None:
+            X: object,
+            Y: object) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
         Parameters
         ----------
-        X : np.ndarray
-            feature values
-        Y : np.ndarray
-            response values
+        X : array-like of shape n_samples, n_features
+            feature values, will internally be converted to np.ndarray with dtype=np.float64
+        Y : array-like of shape n_samples,
+            response values, will internally be converted to np.ndarray with dtype=np.float64
         """
         pass
 
