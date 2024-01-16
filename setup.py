@@ -9,6 +9,20 @@ PROJECT_URLS = {
     "Documentation": "",
     "Source Code": "https://github.com/NiklasPfister/adaXT"
 }
+
+# Test dependencies
+TEST_DEP = [
+    "scipy",
+    "flake8",
+    "pytest"
+]
+
+# Such that it can be pip installed:
+extras = {
+    "test": TEST_DEP
+}
+
+
 with open("README.md", 'r') as f:
     LONG_DESCRIPTION = f.read()
 
@@ -38,8 +52,8 @@ setup(
     name=NAME,
     version=VERSION,
     description=DESCRIPTION,
-    long_description= LONG_DESCRIPTION,
-    project_urls = PROJECT_URLS,
+    long_description=LONG_DESCRIPTION,
+    project_urls=PROJECT_URLS,
     install_requires=REQUIRES,
     packages=find_packages(where="src"),
     package_dir={"adaXT": "./src/adaXT"},
@@ -50,4 +64,6 @@ setup(
         "License :: GNU GENERAL PUBLIC LICENSE",
         "Operating System :: OS Independent",
     ],
+    tests_require=TEST_DEP,
+    extras_require=extras,
 )
