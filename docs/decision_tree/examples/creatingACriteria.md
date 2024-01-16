@@ -1,25 +1,25 @@
 # How to create your own Criteria Function
+Here we will walk you through how to create your own criteria function. We start by creating .pyx file.
 
-### Installing cython and adaXT
-First make sure you are set up in a virtual environment. You could for example make use of [virtualenv](https://virtualenv.pypa.io/en/latest/). Then run ```pip install adaXT``` which installs adaXT along with all the requirements needed.
-
-### Creating a pyx file
-In your working folder create a .pyx file and import the Criteria "super" class and create your new Criteria class, that is going to inherit from the "super" Criteria class. As an example here is the definition of the Linear_regression.
+### Creating a .pyx file
+In your working folder create a .pyx file and in this remember to import the Criteria "super" class. Then create your new Criteria class, and make sure it inherits from the imported Criteria class. As an example here is the definition of the Linear_regression.
 ```cython
 from adaXT.decision_tree.criteria cimport Criteria
 
 cdef class Linear_regression(Criteria):
+    # Your implementation here
 ```
-The class type of Criteria is a cdef class, which works in much of the same fashion as your regular Python class, but with faster performance. To read more on cdef classes checkout [cython Extension types](https://cython.readthedocs.io/en/latest/src/tutorial/cdef_classes.html).
+The class type of Criteria is a cdef class, which works in much of the same fashion as your regular Python class, but with faster performance. To read more on cdef classes checkout cython [Extension types](https://cython.readthedocs.io/en/latest/src/tutorial/cdef_classes.html).
 
-Now for the criteria to work with the library you have to create the impurity method. The impurity method has to follow the type specified within [criteria.pxd](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/decision_tree/criteria.pxd). Which is the following:
+Now for the criteria to work with adaXT you have to implement the impurity method inherited from the Criteria class. The impurity method has to follow the type specified within [criteria.pxd](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/decision_tree/criteria.pxd). Which is the following:
 ```cython
     cpdef double impurity(self, int[:] indices):
 ```
-Here the indices refer to the sample indices that you have to calculate the impurity value for. To access the feature values and sample values you can make use of the ```self.x``` and ```self.y```, which stores all the feature values for the entire tree. Such that ```cython self.x[indices] ``` and ```cython self.y[indices]``` would be the specific feature values and sample values you have to calculate the impurity for. From here you should now be able to build the cython file, by either following [building cython code](https://cython.readthedocs.io/en/latest/src/quickstart/build.html). Or we will show you an approach in the following sections.
+Here the indices refer to the sample indices that you have to calculate the impurity value for. To access the feature- and the response values you can make use of the ```self.x``` and ```self.y```. Such that ```self.x[indices] ``` and ```self.y[indices]``` would be the specific feature- and response values you have to calculate the impurity for.  
+With this in place you should be able to build the cython file. This can be done either by following [building cython code](https://cython.readthedocs.io/en/latest/src/quickstart/build.html), or following the approach showed in the following sections. Now that you have created and implemented your own criteria function, we will show you how it is used.
 
 ### Using the Criteria
-Within the same folder as you create the **.pxd**, you can now create your **.py** file. But you have to do a little more work. If you wish to not manually recompile the cython file every time you make changes to it, you can within the python file tell cython to compile the cython source file whenever you run the file:
+Within the same folder as you create the **.pyx**, you can now create your **.py** file. But you have to do a little more work. If you wish to not manually recompile the cython file every time you make changes to it, you can within the python file tell cython to compile the cython source file whenever you run the file:
 ```python
 from adaXT.decision_tree import DecisionTree
 import pyximport; pyximport.install()
@@ -36,7 +36,7 @@ m = 4
 
 X = np.random.uniform(0, 100, (n, m))
 Y = np.random.uniform(0, 10, n)
-tree = DecisionTree("Regression", <your .pyx filename>.<your cdef class>, max_depth=3)
+tree = DecisionTree("Regression", criteria=<your .pyx filename>.<your cdef class>, max_depth=3)
 tree.fit(X, Y)
 ```
 
@@ -51,7 +51,7 @@ $$
 $$
 \theta_0 = \mu_Y - \theta_1 \mu_X
 $$
-Where $I$ denotes the indices of the samples within a given node, X is the feature values, Y is the outcomes values and $\mu$ denotes the mean.
+Where $I$ denotes the indices of the samples within a given node, X is the feature values, Y is the outcome values and $\mu$ denotes the mean.
 
 
 When creating a new criteria function we import and define the class as described above, such that we have:
@@ -85,7 +85,7 @@ You might notice that the syntax is a little different than the default python. 
 Another important note is, we are freely able to create any new methods on our criteria function, even if they are not defined in the standard parent Criteria class. You are not limited by the parent, and as such can extend it with however many methods you want, as long as you don't overwrite the evaluate split (unless that is your intention).
 
 ### Calculating theta
-Now that we have a method for getting the mean, then we might aswell create a method for calculating the theta values, such that our code is more manageable.
+Now that we have a method for getting the mean, then we might as well create a method for calculating the theta values, such that our code is more manageable.
 
 ```cython linenums="1"
 cdef (double, double) theta(self, int[:] indices):
@@ -149,7 +149,7 @@ cpdef double impurity(self, int[:] indices):
 Making sure it follows the same signature as described previously we simply calculate L as described and return the value. One important thing to note is, that cur_sum is defined on line 3 to have the type double. That is because the impurity function is defined to have a double as the return value. When creating the impurity function you must uphold this return type.
 
 ### Finishing up
-And that is it. You have now created your first Criteria function, and can freely use it within your own python code. Using the described method previously of compiling the cython file every time we run the python file, then we could end up with a file that looks like this:
+And that is it. You have now created your first Criteria function, and can freely use it within your own python code. Using the method previously described to compile the cython file every time we run the python file, then we could end up with a file that looks like this:
 ```python
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.tree_utils import plot_tree
@@ -164,10 +164,10 @@ m = 4
 
 X = np.random.uniform(0, 100, (n, m))
 Y = np.random.uniform(0, 10, n)
-tree = DecisionTree("Regression", testCrit.Linear, max_depth=3)
+tree = DecisionTree("Regression", testCrit.Linear_regression, max_depth=3)
 tree.fit(X, Y)
 
 plot_tree(tree)
 plt.show()
 ```
-This just creates a regression tree with our new Linear Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/tree_utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/linear_regression).
+This just creates a regression tree with our new Linear_regression Criteria function. Specifies the max_depth to be 3 and then plots the tree using both our [plot_tree](../utils/tree_utils.md) and the [matplotlib](https://matplotlib.org/). To see the full source code used within this article check it out [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/linear_regression).

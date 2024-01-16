@@ -1,5 +1,5 @@
 # Decision Trees
-A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data can be used to predict future outcomes. It takes on a tree like structure, where each internal node splits the data set based upon some threshold value on a given feature index.
+A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data, can be used to predict future outcomes. It takes on a treelike structure, where each internal node splits the dataset based upon some threshold value on a given feature index.
 
 The [DecisionTree](../tree/DecisionTree.md) class is used when creating both a Regression and Classification tree.
 
@@ -16,7 +16,7 @@ In the example above we are creating and fitting a Classification
 tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function using the X and Y data specified.
 
 ## Regression Trees
-Regression Trees work in much the same way the classification tree works, with some key differences:
+Regression trees work in much the same way classification trees works, with some key differences:
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Squared_error
