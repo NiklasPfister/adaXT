@@ -79,10 +79,7 @@ class DecisionTree:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
         return X
 
-    def fit(
-            self,
-            X: np.ndarray,
-            Y: np.ndarray) -> None:
+    def fit(self, X, Y) -> None:
 
         X, Y = self.check_input(X, Y)
         row, col = X.shape
