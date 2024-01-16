@@ -69,7 +69,7 @@ class DecisionTree:
         Y : np.ndarray
             response values
         splitter : Splitter | None, optional
-            Splitter class if None uses premade Splitter class
+            splitter class, if None uses premade Splitter class
         feature_indices : np.ndarray | None, optional
             which features to use from the data X, by default uses all
         sample_indices : np.ndarray | None, optional
@@ -113,7 +113,7 @@ class DecisionTree:
         Returns
         -------
         Tuple(np.ndarray, np.ndarray)
-            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
+            returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
         """
         pass
 
@@ -121,7 +121,7 @@ class DecisionTree:
         """
         Creates NxN matrix,
         where N is the number of observations.
-        If A_{i,j} = 1 then i and j are in the same leafnode, otherwise 0.
+        If A_{i,j} = 1 then i and j are in the same LeafNode, otherwise 0.
         If they are scaled, then A_{i,j} is instead scaled by the number
         of elements in the leaf node.
 
@@ -129,7 +129,7 @@ class DecisionTree:
         Parameters
         ----------
         scale : bool, optional
-            Whether to scale the entries, by default False
+            whether to scale the entries, by default False
 
         Returns
         -------
@@ -149,9 +149,9 @@ class DecisionTree:
         Parameters
         ----------
         X : np.ndarray
-            New values to be fitted
+            new values to be fitted
         scale : bool, optional
-            Whether to scale the entries, by default False
+            whether to scale the entries, by default False
 
         Returns
         -------

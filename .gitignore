@@ -179,6 +179,7 @@ scrap.py
 scrap.pyx
 .gitignore
 *.c
+*.cpp
 *.pyd
 *.html
 src/adaXT/decision_tree/setup.py

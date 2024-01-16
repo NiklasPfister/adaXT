@@ -1,6 +1,6 @@
 class Criteria:
     """
-    Criteria abstract class used to calculate splits
+    Abstract class used as a parent for new Criteria functions
     """
     pass
 
@@ -35,7 +35,7 @@ class Squared_error(Criteria):
     Where y denotes the outcome values in a node. $\mu_y$ denotes the mean value in the node,
     and $n_{obs}$ denotes the number of observations in the node.
 
-    For a faster calculation it is calculated as:
+    For a faster, but equivalent calculation, it is calculated as:
     $$
     \text{Squared Error} = \frac{\sum_{i = 1}^n y[i]^2}{n_obs} - \mu_y^2
     $$

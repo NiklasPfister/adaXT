@@ -1,5 +1,5 @@
 # Decision Trees
-A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data can be used to predict future outcomes. It takes on a tree like structure, where each internal node splits the data set based upon some threshold value on a given feature index.
+A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data, can be used to predict future outcomes. It takes on a treelike structure, where each internal node splits the dataset based upon some threshold value on a given feature index.
 
 ## Classification Trees
 The [DecisionTree](../tree/DecisionTree.md) class is used when creating both a Regression and Classification tree.
@@ -15,7 +15,7 @@ In the example above we are creating and fitting a Classification
 tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function, and then fitting the tree with the X and Y data specified.
 
 ## Regression Trees
-Regression trees work in much the same way the classification tree works, with some key differences:
+Regression trees work in much the same way classification trees works, with some key differences:
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Squared_error
@@ -41,4 +41,4 @@ An important distinction is, the classification tree will never produce a predic
 You can also make use of a wide array of other methods, which can be seen in [DecisionTree](../tree/DecisionTree.md) class documentation.
 
 ### Prediction Probability
-In the case of the Classification tree it could be of interest to get the probability of a sample to be any of the possible classes. For this you could make use of [predict_proba](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict_proba) function.
+In the case of the Classification tree it could be of interest to get the probability estimates of the possible classes. For this you could make use of [predict_proba](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict_proba) function.
