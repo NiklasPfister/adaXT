@@ -1,8 +1,9 @@
 # Decision Trees
 A [Decision Tree](https://en.wikipedia.org/wiki/Decision_tree) is a predictive model, which trained on previous data can be used to predict future outcomes. It takes on a tree like structure, where each internal node splits the data set based upon some threshold value on a given feature index.
 
-## Classification Trees
 The [DecisionTree](../tree/DecisionTree.md) class is used when creating both a Regression and Classification tree.
+
+## Classification Trees
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Gini_index
@@ -12,10 +13,10 @@ tree = DecisionTree("Classification", criteria=Gini_index)
 tree.fit(X, Y)
 ```
 In the example above we are creating and fitting a Classification
-tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function, and then fitting the tree with the X and Y data specified.
+tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function using the X and Y data specified.
 
 ## Regression Trees
-Regression trees work in much the same way the classification tree works, with some key differences:
+Regression Trees work in much the same way the classification tree works, with some key differences:
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Squared_error
@@ -38,7 +39,12 @@ Now you might be tempted to say that the Regression Tree and the Classification 
 On the other hand the Regression tree just takes the mean value of all the samples within the leaf node and returns that as the prediction.
 An important distinction is, the classification tree will never produce a prediction that is not within the training data, however the regression tree can produce a prediction outside it's training data.
 
-You can also make use of a wide array of other methods, which can be seen in [DecisionTree](../tree/DecisionTree.md) class documentation.
-
 ### Prediction Probability
 In the case of the Classification tree it could be of interest to get the probability of a sample to be any of the possible classes. For this you could make use of [predict_proba](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict_proba) function.
+
+It works in much the same fashion as the prediction, but with a key distinction. It only works for the **classification tree** as it returns the proportion of each class within the leaf node. So given the previously mentioned classification tree, we have the following:
+```py
+result = tree.predict_proba([5, 0])
+print(result) # prints (array([0., 1.]), array([[0., 1.]]))
+```
+Here it instead returns a tuple of two [numpy arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html), where the first element is the classes within the training data, and the second is the probability of input being anyone of the classes.
