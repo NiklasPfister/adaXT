@@ -16,7 +16,7 @@ In the example above we are creating and fitting a classification
 tree with the [Gini Index](../criteria/criteria.md#adaXT.decision_tree.criteria.Gini_index) criteria function using the X and Y data specified as training data.
 
 ## Regression trees
-Regression trees work similar to classification trees, with the small differences demonstrated by the following example:
+Regression trees work similar to classification trees, with one small difference demonstrated by the following example:
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.criteria import Squared_error
@@ -25,17 +25,17 @@ Y = [0, 1]
 tree = DecisionTree("Regression", criteria=Squared_error)
 tree.fit(X, Y)
 ```
-You only have to specify that you are now using a regression tree instead of a classification tree, and adaXT takes care of the rest. The reason for this specification should become clear in the following section.
+You have to specify that you are now using a regression tree instead of a classification tree, and adaXT takes care of the rest. The reason for this specification is that regression and classification trees need to have some small differences in saved objects. This is for example relevant when making predictions as shown next.
 
 ## Using the fitted tree
 
 ### Prediction
-After the fitting we can predict new values using the tree with the [predict](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict) function.
+After the fitting we can predict new values using the [predict](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict) method of the tree.
 ```py
 result = tree.predict(np.array([5, 0]))
 print(result) # prints [1.]
 ```
-This works for both regression and classification trees, but the output is different. Both tree types first locate the nodes in which the new samples fall based on their structure. The classification tree then calculates the proportion of each class within those nodes and chooses the class with the highest proportion and returns that value as the prediction. In contrast the regression tree just takes the mean value of all the samples within each node and returns that as the prediction.
+This works for both regression and classification trees, but the output is different. Both tree types first locate the nodes in which the new samples fall based on their fitted structure. The classification tree then calculates the proportion of each class within those nodes, chooses the class with the highest proportion and returns that value as the prediction. In contrast the regression tree only calculates the mean value of all samples within each of those node and returns that as the prediction.
 
 ### Prediction Probability
 For classification it can useful to get a notion of classification probability for each of the possible classes instead of the predicted class label. With classification trees a commonly used option is to output the frequency each class has in the leaf nodes. In adaXT this can be done using the [predict_proba](../tree/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict_proba) function.
