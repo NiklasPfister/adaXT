@@ -70,7 +70,7 @@ class DecisionNode(Node):
 
 class LeafNode(Node):
     value: list[float]
-    parent: DecisionNode
+    parent: DecisionNode|None
     id: int
     def __init__(
             self,
