@@ -101,7 +101,8 @@ def test_predict_proba_probability():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    classes, prediction = tree.predict_proba(X)
+    classes = tree.classes 
+    prediction = tree.predict_proba(X)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
         assert Y_cla[i] == classes[np.argmax(
@@ -116,7 +117,8 @@ def test_predict_proba_against_predict():
     tree.fit(X, Y)
 
     predict = tree.predict(X)
-    classes, predict_proba = tree.predict_proba(X)
+    classes = tree.classes
+    predict_proba = tree.predict_proba(X)
 
     for i in range(predict.shape[0]):
         assert predict[i] == classes[np.argmax(

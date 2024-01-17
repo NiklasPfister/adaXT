@@ -154,9 +154,8 @@ class DecisionTree:
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        tuple_ret = (self.classes, np.asarray(ret_val))
 
-        return tuple_ret
+        return np.asarray(ret_val)
 
     def __find_max_index(self, lst):
         cur_max = 0

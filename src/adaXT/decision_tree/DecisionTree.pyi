@@ -104,8 +104,8 @@ class DecisionTree:
 
         Returns
         -------
-        Tuple(np.ndarray, np.ndarray)
-            Returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
+        np.ndarray
+            Returns an np.ndarray with the the probabilities for each class per observation in X, the order of the classes corresponds to that in the attribute classes.
         """
         pass
 
