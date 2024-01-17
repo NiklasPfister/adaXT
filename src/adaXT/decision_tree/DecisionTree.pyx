@@ -24,8 +24,6 @@ class DecisionTree:
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
-            feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None,
             splitter: Splitter | None = None) -> None:
 
         tree_types = ["Classification", "Regression"]
@@ -44,8 +42,6 @@ class DecisionTree:
         self.n_classes = -1
         self.n_obs = -1
         self.classes = None
-        self.feature_indices = feature_indices
-        self.sample_indices = sample_indices
         self.splitter = splitter
 
     def check_input(self, X: object, Y: object):
@@ -85,19 +81,21 @@ class DecisionTree:
     def fit(
             self,
             X: np.ndarray,
-            Y: np.ndarray) -> None:
+            Y: np.ndarray,
+            feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,) -> None:
 
         X, Y = self.check_input(X, Y)
         row, col = X.shape
-        if self.sample_indices is None:
-            self.sample_indices = np.arange(row)
-        if self.feature_indices is None:
-            self.feature_indices = np.arange(col)
+        if sample_indices is None:
+            sample_indices = np.arange(row)# index this wiht the sample weights from input param
+        if feature_indices is None:
+            feature_indices = np.arange(col)
         builder = DepthTreeBuilder(
             X,
             Y,
-            self.feature_indices,
-            self.sample_indices,
+            feature_indices,
+            sample_indices,
             self.criteria(X, Y),
             self.splitter)
         builder.build_tree(self)

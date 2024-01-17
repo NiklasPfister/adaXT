@@ -224,7 +224,7 @@ class DepthTreeBuilder:
                 # Add the left node to the queue of nodes yet to be computed
                 queue.append(
                     queue_obj(
-                        left,
+                        np.asarray(left),
                         depth + 1,
                         child_imp[0],
                         new_node,
@@ -232,7 +232,7 @@ class DepthTreeBuilder:
                 # Add the right node to the queue of nodes yet to be computed
                 queue.append(
                     queue_obj(
-                        right,
+                        np.asarray(right),
                         depth + 1,
                         child_imp[1],
                         new_node,

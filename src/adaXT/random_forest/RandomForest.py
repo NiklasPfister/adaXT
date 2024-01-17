@@ -115,7 +115,8 @@ class RandomForrest:
 
     # Function used to call the fit function of a tree
     def _build_single_tree(self, tree:DecisionTree):
-        tree.fit(self.features.read(), self.outcomes.read())
+        # subset the feature indices
+        tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices())
         return tree
     
     # Function to build all the trees of the forrest, differentiates between running in parallel and sequential
@@ -124,10 +125,8 @@ class RandomForrest:
             for tree in self.trees:
                 self._build_single_tree(tree)
         else:
-            pool = Pool(self.n_jobs)
-            self.trees = pool.map(self._build_single_tree, self.trees)
-            pool.close()
-            pool.join()
+            with Pool(self.n_jobs) as p:
+                self.trees = p.map(self._build_single_tree, self.trees)
     
     # Function used to call the predict function of a tree
     def _predict_single_tree(self, tree:DecisionTree):
@@ -141,10 +140,9 @@ class RandomForrest:
             for tree in self.trees:
                 predictions.append(self._predict_single_tree(tree))
         else:
-            pool = Pool(self.n_jobs)
-            predictions = pool.map(self._predict_single_tree, self.trees)
-            pool.close()
-            pool.join()
+            with Pool(self.n_jobs) as p:
+                predictions = p.map(self._predict_single_tree, self.trees)
+                
         return np.column_stack(predictions)
     
     # Function to call predict_proba for a tree
@@ -159,10 +157,8 @@ class RandomForrest:
             for tree in self.trees:
                 predictions.append(self._predict_proba_single_tree(tree))
         else:
-            pool = Pool(self.n_jobs)
-            predictions = pool.map(self._predict_proba_single_tree, self.trees)
-            pool.close()
-            pool.join()
+            with Pool(self.n_jobs) as p:
+                predictions = p.map(self._predict_proba_single_tree, self.trees)
 
         return predictions
     
@@ -178,40 +174,26 @@ class RandomForrest:
         Y : np.ndarray
             response values
         """
-        X, Y = self.check_input(X, Y)
-
-        self.features = SharedNumpyArray(X)
-        self.outcomes = SharedNumpyArray(Y)
-        self.n_features = self.features._shape[1]
-        if self.forrest_type == "Classification":
-            self.classes = np.unique(self.outcomes.read())
-
         # Should raise error if bootstrap is false, but max_samples is set
         if not self.bootstrap and self.max_samples:
             raise AttributeError("Bootstrap can not be False while max_samples is set")
-
-        num_rows, _ = X.shape
-
-        # Bootstrap
-        if self.bootstrap:
-            self.trees = [DecisionTree(tree_type=self.forrest_type, 
-                                       criteria=self.criterion, 
-                                       sample_indices=self.__get_sample_indices(num_rows),
-                                       max_depth = self.max_depth,
-                                       impurity_tol = self.impurity_tol,
-                                       min_samples_split = self.min_samples_split,
-                                       min_samples_leaf = self.min_samples_leaf,
-                                       min_improvement = self.min_improvement,
-                                       splitter=self.splitter) for _ in range(self.n_estimators)]
-        else:
-            self.trees = [DecisionTree(tree_type=self.forrest_type, 
-                                       criteria=self.criterion,
-                                       max_depth = self.max_depth,
-                                       impurity_tol = self.impurity_tol,
-                                       min_samples_split = self.min_samples_split,
-                                       min_samples_leaf = self.min_samples_leaf,
-                                       min_improvement = self.min_improvement,
-                                       splitter=self.splitter) for _ in range(self.n_estimators)]
+        
+        X, Y = self.check_input(X, Y)
+        self.features = SharedNumpyArray(X)
+        self.outcomes = SharedNumpyArray(Y)
+        self.n_obs, self.n_features = self.features._shape
+        if self.forrest_type == "Classification":
+            self.classes = np.unique(self.outcomes.read())
+        if self.max_samples is None:
+            self.max_samples = self.n_obs
+        self.trees = [DecisionTree(tree_type=self.forrest_type, 
+                                    criteria=self.criterion,
+                                    max_depth = self.max_depth,
+                                    impurity_tol = self.impurity_tol,
+                                    min_samples_split = self.min_samples_split,
+                                    min_samples_leaf = self.min_samples_leaf,
+                                    min_improvement = self.min_improvement,
+                                    splitter=self.splitter) for _ in range(self.n_estimators)]
 
         # Fit trees
         self.__build_trees()
@@ -222,10 +204,11 @@ class RandomForrest:
         return self
 
     # Function that returns an ndarray of random ints used as the sample_indices
-    def __get_sample_indices(self, n_obs):
-        if self.max_samples is None:
-            self.max_samples = n_obs
-        return np.random.randint(low=0, high=n_obs, size=self.max_samples)
+    def __get_sample_indices(self):
+        if self.bootstrap:
+            return np.random.randint(low=0, high=self.n_obs, size=self.max_samples)
+        else:
+            return None
     
     def predict(self, X: np.ndarray):
         """

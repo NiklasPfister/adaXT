@@ -58,7 +58,7 @@ cdef class Splitter:
             cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
             cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
             cnp.ndarray[long, ndim=1] temp
-        temp = np.argsort(feat_temp[idx])
+        temp = np.argsort(feat_temp[idx]).astype('int32')
         return idx[temp]
 
     cpdef get_split(self, int[:] indices, int[:] feature_indices):
