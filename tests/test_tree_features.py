@@ -101,7 +101,7 @@ def test_predict_proba_probability():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", Gini_index)
     tree.fit(X, Y_cla)
-    classes = tree.classes 
+    classes = tree.classes
     prediction = tree.predict_proba(X)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
