@@ -63,7 +63,7 @@ class DecisionTree:
                 Y = Y.reshape(-1)
 
         return X, Y
-    
+
     def __check_sample_weight(self, sample_weight: np.ndarray, n_samples):
         if sample_weight is None:
             return np.ones((n_samples,))
