@@ -53,7 +53,7 @@ class SharedNumpyArray:
         self._shared.unlink()
 
 
-class RandomForrest:
+class RandomForest:
     '''
     The Random Forrest
     '''
@@ -118,7 +118,7 @@ class RandomForrest:
         # subset the feature indices
         tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices())
         return tree
-    
+
     # Function to build all the trees of the forrest, differentiates between running in parallel and sequential
     def __build_trees(self):
         if(self.n_jobs == 1):
@@ -144,7 +144,7 @@ class RandomForrest:
                 predictions = p.map(self._predict_single_tree, self.trees)
                 
         return np.column_stack(predictions)
-    
+
     # Function to call predict_proba for a tree
     def _predict_proba_single_tree(self, tree:DecisionTree):
         return tree.predict_proba(self.predict_values.read())[1]
@@ -161,8 +161,8 @@ class RandomForrest:
                 predictions = p.map(self._predict_proba_single_tree, self.trees)
 
         return predictions
-    
-        
+
+
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """
         Function used to fit a forrest using many DecisionTrees for the given data
@@ -230,13 +230,13 @@ class RandomForrest:
         self.predict_values = SharedNumpyArray(X)
 
         # Predict using all the trees, each column is the predictions from one tree
-        tree_predictions = self.__predict_trees() 
+        tree_predictions = self.__predict_trees()
         self.predict_values.unlink()
 
         if self.forrest_type == "Regression":
             # Return the mean answer from all trees for each row
             return np.mean(tree_predictions, axis=1)
-        
+
         elif self.forrest_type == "Classification":
             # Return the element most voted for by trees for each row
             return np.apply_along_axis(self.most_frequent_element, 1, tree_predictions) # QUESTION: how to handle equal majority vote?
@@ -245,7 +245,7 @@ class RandomForrest:
     def most_frequent_element(self, arr):
         values, counts = np.unique(arr, return_counts=True)
         return values[np.argmax(counts)]
-    
+
     def predict_proba(self, X: np.ndarray):
         """
         Predicts a probability for each response for given X values using the trees of the forrest
@@ -266,13 +266,13 @@ class RandomForrest:
         # Make sure that predict_proba is only called on Classification forrests
         if self.forrest_type != "Classification":
             raise ValueError("predict_proba can only be called on a Classification tree")
-        
+
         # Check dimensions
         self.check_dimensions(X)
 
         self.predict_values = SharedNumpyArray(X)
         # Predict_proba using all the trees, each element of list is the predict_proba from one tree
-        tree_predictions = self.__predict_proba_trees() 
+        tree_predictions = self.__predict_proba_trees()
         self.predict_values.unlink()
 
         # Stack the predict_probas
@@ -289,7 +289,7 @@ class RandomForrest:
         else:
             if X.shape[1] != self.n_features:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
-    
+
     def check_input(self, X: np.ndarray, Y: np.ndarray):
         # Check if X and Y has same number of rows
         if X.shape[0] != Y.shape[0]:
