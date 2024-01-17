@@ -32,8 +32,6 @@ class DecisionTree:
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
-            feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None,
             splitter: Splitter | None = None) -> None:
         """
         Parameters
@@ -52,10 +50,6 @@ class DecisionTree:
             the minimum amount of samples in a leaf node, by default 1
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
-        feature_indices : np.ndarray | None, optional
-            which features to use from the data X, by default uses all
-        sample_indices : np.ndarray | None, optional
-            which samples to use from the data X and Y, by default uses all
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
@@ -63,8 +57,10 @@ class DecisionTree:
 
     def fit(
             self,
-            X: object,
-            Y: object) -> None:
+            X,
+            Y,
+            feature_indices: np.ndarray | None = None,
+            sample_weight: np.ndarray | None = None,) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
@@ -74,6 +70,10 @@ class DecisionTree:
             feature values, will internally be converted to np.ndarray with dtype=np.float64
         Y : array-like of shape n_samples,
             response values, will internally be converted to np.ndarray with dtype=np.float64
+        feature_indices : np.ndarray | None, optional
+            which features to use from the data X, by default uses all
+        sample_weight : np.ndarray | None, optional
+            np.ndarray of shape (n_samples,) currently only supports weights in {0, 1}
         """
         pass
 
