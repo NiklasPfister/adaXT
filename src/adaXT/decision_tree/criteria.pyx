@@ -404,7 +404,7 @@ cdef class Squared_error(Criteria):
         return (square_sum/n_obs - new_mu*new_mu)
 
     cpdef double impurity(self, int[:] indices):
-        return self._square_error(indices)
+        return self._squared_error(indices)
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
