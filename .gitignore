@@ -1,6 +1,9 @@
 # Ignore the ipynb for testing:
 timing.ipynb
 
+# Ignore update PyPi Script
+update_package.sh
+
 # Ignore temp files
 /temp
 
