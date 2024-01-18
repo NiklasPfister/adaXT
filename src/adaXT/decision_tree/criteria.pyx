@@ -404,7 +404,7 @@ cdef class Squared_error(Criteria):
         return (square_sum/n_obs - new_mu*new_mu)
 
     cpdef double impurity(self, int[:] indices):
-        return self._square_error(indices)
+        return self._squared_error(indices)
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
@@ -423,8 +423,8 @@ cdef class Squared_error(Criteria):
             right_imp = self.update_right(indices, split_idx)
 
         else:
-            left_imp = self._square_error(indices[:split_idx], 0)
-            right_imp = self._square_error(indices[split_idx:], 1)
+            left_imp = self._squared_error(indices[:split_idx], 0)
+            right_imp = self._squared_error(indices[split_idx:], 1)
 
         self.old_feature = feature
         self.old_obs = n_obs
@@ -435,7 +435,7 @@ cdef class Squared_error(Criteria):
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
-    cdef double _square_error(self, int[:] indices, int left_or_right = -1):
+    cdef double _squared_error(self, int[:] indices, int left_or_right = -1):
         """
         Function used to calculate the square error of y[indices]
         ----------

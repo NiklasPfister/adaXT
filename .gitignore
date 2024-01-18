@@ -1,6 +1,9 @@
 # Ignore the ipynb for testing:
 timing.ipynb
 
+# Ignore update PyPi Script
+update_package.sh
+
 # Ignore temp files
 /temp
 
@@ -179,6 +182,7 @@ scrap.py
 scrap.pyx
 .gitignore
 *.c
+*.cpp
 *.pyd
 *.html
 src/adaXT/decision_tree/setup.py

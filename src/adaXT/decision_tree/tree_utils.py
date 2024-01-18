@@ -11,7 +11,7 @@ def plot_tree(tree: DecisionTree):
     Parameters
     ----------
     tree : DecisionTree
-        The tree to plot
+        the tree to plot
 
     Returns
     -------
@@ -32,15 +32,15 @@ def plot_tree(tree: DecisionTree):
 
 def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
     """
-    helper function used to plot each node of a DecisionTree
+    Helper function used to plot each node of a DecisionTree
 
 
     Parameters
     ----------
     ax : matplotlib.axes.Axes
-        Axes to plot on
+        axes to plot on
     node : Node
-        Node type of a tree
+        node type of a tree
     node_positions : tuple
         (left_child position, right_child position, nodes own position)
     """
