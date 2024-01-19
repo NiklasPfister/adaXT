@@ -7,7 +7,7 @@ import sys
 
 # Custom
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
 from .DepthTreeBuilder import DepthTreeBuilder
 from .Nodes import DecisionNode
 

@@ -34,11 +34,21 @@ USE_CYTHON = True  # TODO: get commandline input, such that a user can choose wh
 # Make all pyx files for the decision_tree
 ext = '.pyx' if USE_CYTHON else ".c"
 include_dir = np.get_include()
+
+# Cythonize the decision_tree
 extensions = [Extension("adaXT.decision_tree.*",
                         ["src/adaXT/decision_tree/*" + ext],
                         include_dirs=[include_dir],
                         language="c++",
                         extra_compile_args=['-O3'])]
+
+# Cythonize the criteria functions
+extensions += [Extension("adaXT.criteria.*",
+                        ["src/adaXT/criteria/*" + ext],
+                        include_dirs=[include_dir],
+                        language="c++",
+                        extra_compile_args=['-O3'])]
+
 
 # If we are using cython, then compile, otherwise use the c files
 if USE_CYTHON:

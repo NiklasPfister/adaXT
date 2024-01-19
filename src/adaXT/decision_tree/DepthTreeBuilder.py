@@ -4,7 +4,7 @@ from typing import List
 
 # Custom
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
 from .Nodes import Node, DecisionNode, LeafNode
 from . import DecisionTree
 

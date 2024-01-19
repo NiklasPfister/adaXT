@@ -3,7 +3,7 @@
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
-from .criteria cimport Criteria
+from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
 
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.

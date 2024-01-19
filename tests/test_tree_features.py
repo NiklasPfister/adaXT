@@ -1,5 +1,5 @@
 from adaXT.decision_tree import DecisionTree
-from adaXT.decision_tree.criteria import Gini_index, Squared_error
+from adaXT.criteria import Gini_index, Squared_error
 import numpy as np
 
 

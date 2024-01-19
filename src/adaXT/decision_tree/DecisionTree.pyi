@@ -1,6 +1,6 @@
 import numpy as np
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
 from .Nodes import *
 import sys
 

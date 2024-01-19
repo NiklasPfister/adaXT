@@ -1,5 +1,5 @@
 cimport numpy as cnp
-from .criteria cimport Criteria
+from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
 cnp.import_array()
 
 cdef class Splitter:
