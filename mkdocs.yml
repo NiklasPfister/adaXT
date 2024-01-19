@@ -17,9 +17,10 @@ plugins:
             docstring_style: numpy
             show_bases: false
             # Filters off all private methods defined with __, when importing
-            filters: ["!__.*"]
+            filters: ["!^_"]
             show_source: false
             show_root_heading: false
+            merge_init_into_class: yes
 
 theme:
   name: "material"
