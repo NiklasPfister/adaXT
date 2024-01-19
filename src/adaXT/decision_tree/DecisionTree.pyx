@@ -71,9 +71,7 @@ class DecisionTree:
             raise ValueError("sample_weight should have as many elements as X and Y")
         if sample_weight.ndim > 1:
             raise ValueError("sample_weight should have dimension (n_samples,)")
-        if not ((sample_weight == 0) | (sample_weight == 1)).all():
-            raise ValueError("Currently adaXT only supports sample_weight in {0, 1}")
-        return sample_weight
+        return np.array(sample_weight, dtype=np.double)
 
     def __check_dimensions(self, double[:, :] X):
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -98,8 +96,6 @@ class DecisionTree:
 
         # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
         sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
-        # Do boolean indexing into np.arange such that we only get the indices with sample_weight == 1
-        sample_indices = np.arange(row)[np.where(sample_weight == 1)]
 
         if feature_indices is None:
             feature_indices = np.arange(col)
@@ -107,8 +103,8 @@ class DecisionTree:
             X=X,
             Y=Y,
             feature_indices=feature_indices,
-            sample_indices=sample_indices,
-            criteria=self.criteria(X, Y),
+            sample_weight=sample_weight,
+            criteria=self.criteria(X, Y, sample_weight),
             splitter=self.splitter)
         builder.build_tree(self)
 

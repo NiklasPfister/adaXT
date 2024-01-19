@@ -56,7 +56,7 @@ class DepthTreeBuilder:
             X: np.ndarray,
             Y: np.ndarray,
             feature_indices: np.ndarray,
-            sample_indices: np.ndarray,
+            sample_weight: np.ndarray,
             criteria: Criteria,
             splitter: Splitter | None = None) -> None:
         """
@@ -78,8 +78,8 @@ class DepthTreeBuilder:
         self.features = X
         self.response = Y
         self.feature_indices = np.array(feature_indices, np.int32)
-        self.sample_indices = np.array(sample_indices, np.int32)
         self.criteria = criteria
+        self.sample_weight = sample_weight
 
         if splitter:
             self.splitter = splitter
@@ -157,11 +157,12 @@ class DepthTreeBuilder:
         leaf_node_list = []
         max_depth_seen = 0
 
-        n_obs = len(self.sample_indices)
         queue = []  # queue for objects that need to be built
 
-        # root node contains all indices from sample_indices
-        all_idx = self.sample_indices
+        # root node should only contain values where the weight is not 0, otherwise they are not included.
+        all_idx = np.array(self.sample_weight.nonzero()[0], np.int32)
+        n_obs = all_idx.shape[0]
+
         queue.append(
             queue_obj(
                 all_idx,

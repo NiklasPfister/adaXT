@@ -234,7 +234,6 @@ def test_min_improvement_setting():
         assert abs(node.parent.impurity -
                    node.impurity) > min_improvement_desired, f"Failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
 
-
 if __name__ == "__main__":
     test_predict_leaf_matrix_classification()
     test_predict_leaf_matrix_regression()
