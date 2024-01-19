@@ -44,10 +44,10 @@ extensions = [Extension("adaXT.decision_tree.*",
 
 # Cythonize the criteria functions
 extensions += [Extension("adaXT.criteria.*",
-                        ["src/adaXT/criteria/*" + ext],
-                        include_dirs=[include_dir],
-                        language="c++",
-                        extra_compile_args=['-O3'])]
+                         ["src/adaXT/criteria/*" + ext],
+                         include_dirs=[include_dir],
+                         language="c++",
+                         extra_compile_args=['-O3'])]
 
 
 # If we are using cython, then compile, otherwise use the c files
