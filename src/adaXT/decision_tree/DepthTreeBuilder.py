@@ -159,7 +159,8 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        # root node should only contain values where the weight is not 0, otherwise they are not included.
+        # root node should only contain values where the weight is not 0,
+        # otherwise they are not included.
         all_idx = np.array(self.sample_weight.nonzero()[0], np.int32)
         n_obs = all_idx.shape[0]
 
