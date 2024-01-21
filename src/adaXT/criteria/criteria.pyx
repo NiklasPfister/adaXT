@@ -1,9 +1,9 @@
- # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 from libc.math cimport log2
 from libc.stdlib cimport malloc, free
 import numpy as np
-from .crit_helpers cimport mean, weighted_mean
+from .crit_helpers cimport weighted_mean
 
 cdef class Criteria:
     def __cinit__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
@@ -135,7 +135,7 @@ cdef class Gini_index(Criteria):
                 p = indices[i]
                 if y[p] == class_labels[j]:
                     weight = self.sample_weight[p]
-                    class_occurences[j] += weight 
+                    class_occurences[j] += weight
                     obs_weight += weight
 
         # Loop over all classes and calculate gini_index
@@ -163,7 +163,7 @@ cdef class Gini_index(Criteria):
                 p = indices[i]
                 if self.y[p] == self.class_labels[j]:
                     weight = self.sample_weight[p]
-                    self.n_in_class_left[j] += weight 
+                    self.n_in_class_left[j] += weight
                     self.weight_left += weight
                     break
 
@@ -188,7 +188,7 @@ cdef class Gini_index(Criteria):
                 p = indices[i]
                 if self.y[p] == self.class_labels[j]:
                     weight = self.sample_weight[p]
-                    self.n_in_class_right[j] -= weight 
+                    self.n_in_class_right[j] -= weight
                     self.weight_right -= weight
                     break
 
@@ -202,14 +202,13 @@ cdef class Gini_index(Criteria):
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
         cdef:
-            int n_obs = indices.shape[0] 
+            int n_obs = indices.shape[0]
             int n_left = split_idx
             int n_right = n_obs - n_left
             double mean_thresh
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
-            double obs_weight
             double[:, ::1] features = self.x
 
         if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
@@ -221,7 +220,7 @@ cdef class Gini_index(Criteria):
             right_imp = self._gini(indices[split_idx:], self.n_in_class_right, 0)
 
         self.old_feature = feature
-        self.old_obs = n_obs 
+        self.old_obs = n_obs
         self.old_split = split_idx
         crit = left_imp * n_left / n_obs
         crit += right_imp * n_right / n_obs
@@ -283,7 +282,7 @@ cdef class Entropy(Criteria):
 
         cdef:
             double sum = 0.0
-            double obs_weight = 0.0 
+            double obs_weight = 0.0
             int n_obs = indices.shape[0]
             double pp, weight
             int i, j, p
@@ -325,7 +324,7 @@ cdef class Entropy(Criteria):
                 p = indices[i]
                 if self.y[p] == self.class_labels[j]:
                     weight = self.sample_weight[p]
-                    self.n_in_class_left[j] += weight 
+                    self.n_in_class_left[j] += weight
                     self.weight_left += weight
                     break
 
@@ -372,7 +371,6 @@ cdef class Entropy(Criteria):
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
-            double obs_weight
             double[:, ::1] features = self.x
 
         if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
@@ -385,7 +383,6 @@ cdef class Entropy(Criteria):
         self.old_feature = feature
         self.old_obs = n_obs
         self.old_split = split_idx
-        obs_weight = self.weight_left + self.weight_right
         crit = left_imp * n_left / n_obs
         crit += right_imp * n_right / n_obs
 
@@ -460,7 +457,6 @@ cdef class Squared_error(Criteria):
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
-            double obs_weight 
             double[:, ::1] features = self.x
 
         if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting

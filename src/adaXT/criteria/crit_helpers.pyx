@@ -20,7 +20,7 @@ cdef double mean(double[:] lst, int[:] indices):
     '''
     cdef:
         double sum = 0.0
-        int i 
+        int i
         int length = indices.shape[0]
 
     for i in range(length):
