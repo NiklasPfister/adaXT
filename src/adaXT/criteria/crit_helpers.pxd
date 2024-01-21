@@ -1,1 +1,2 @@
-cdef double mean(double[::1], int[:])
+cdef double mean(double[:], int[:]) 
+cdef double weighted_mean(double[:], int[:], double[:]) 
