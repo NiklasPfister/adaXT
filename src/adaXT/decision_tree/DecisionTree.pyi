@@ -73,9 +73,9 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like of shape n_samples, n_features
+        X : array-like object
             feature values, will internally be converted to np.ndarray with dtype=np.float64
-        Y : array-like of shape n_samples,
+        Y : array-like object
             response values, will internally be converted to np.ndarray with dtype=np.float64
         sample_indices : array-like object
             specific indices of the dataset you wish to use

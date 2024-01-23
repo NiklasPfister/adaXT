@@ -4,6 +4,7 @@ class Criteria:
     """
     pass
 
+
 class Gini_index(Criteria):
     r"""
     Calculates the gini index given:
@@ -15,6 +16,7 @@ class Gini_index(Criteria):
     """
     pass
 
+
 class Entropy(Criteria):
     r"""
     Calculates the Entropy given:
@@ -25,6 +27,7 @@ class Entropy(Criteria):
     in class i.
     """
     pass
+
 
 class Squared_error(Criteria):
     r"""
@@ -41,6 +44,7 @@ class Squared_error(Criteria):
     $$
     """
     pass
+
 
 class Linear_regression(Criteria):
     r"""
