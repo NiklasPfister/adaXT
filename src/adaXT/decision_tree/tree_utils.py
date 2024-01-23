@@ -54,7 +54,7 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
         ax.text(
             position[0],
             position[1],
-            f"Impurity: {node.impurity:.3f} \n samples: {node.n_samples}\n LEAF WITH VAL: {node.value}",
+            f"Impurity: {node.impurity:.3f} \n samples: {node.n_samples}\n LEAF WITH VAL: {['%.2f' % x for x in node.value]}",
             ha='center',
             va='center',
             bbox=dict(

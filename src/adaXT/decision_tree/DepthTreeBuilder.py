@@ -4,7 +4,7 @@ from typing import List
 
 # Custom
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
 from .Nodes import Node, DecisionNode, LeafNode
 from . import DecisionTree
 
@@ -56,9 +56,10 @@ class DepthTreeBuilder:
             X: np.ndarray,
             Y: np.ndarray,
             feature_indices: np.ndarray,
-            sample_indices: np.ndarray,
+            sample_weight: np.ndarray,
             criteria: Criteria,
-            splitter: Splitter | None = None) -> None:
+            splitter: Splitter | None = None,
+            sample_indices: np.ndarray | None = None) -> None:
         """
         Parameters
         ----------
@@ -75,14 +76,12 @@ class DepthTreeBuilder:
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
-
-        # QUESTION: what is the np.ix_ used for in the initialiser, can it be
-        # deleted?
-        self.features = X[np.ix_(sample_indices, feature_indices)]
-        self.response = Y[sample_indices]
+        self.features = X
+        self.response = Y
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
         self.criteria = criteria
+        self.sample_weight = sample_weight
 
         if splitter:
             self.splitter = splitter
@@ -141,14 +140,6 @@ class DepthTreeBuilder:
         splitter = self.splitter
         criteria = self.criteria
 
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            self.classes = np.unique(response)
-            tree.classes = self.classes
-            n_classes = self.classes.shape[0]
-
-        tree.n_classes = n_classes
-
         min_samples_split = tree.min_samples_split
         min_samples_leaf = tree.min_samples_leaf
         max_depth = tree.max_depth
@@ -160,11 +151,25 @@ class DepthTreeBuilder:
         leaf_node_list = []
         max_depth_seen = 0
 
-        n_obs = len(response)
         queue = []  # queue for objects that need to be built
 
-        # root node contains all indices
-        all_idx = np.arange(n_obs, dtype=np.int32)
+        all_idx = np.arange(features.shape[0])
+        if self.sample_indices is not None:
+            all_idx = np.array(self.sample_indices)
+
+        all_idx = np.array(
+            [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32)
+
+        # Update the tree now that we have the correct samples
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            self.classes = np.unique(response[all_idx])
+            tree.classes = self.classes
+            n_classes = self.classes.shape[0]
+        tree.n_classes = n_classes
+
+        n_obs = all_idx.shape[0]
+
         queue.append(
             queue_obj(
                 all_idx,
@@ -189,7 +194,7 @@ class DepthTreeBuilder:
             # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
-                    indices)
+                    indices, self.feature_indices)
                 # If we were unable to find a split, this must be a leaf.
                 if len(split) == 0:
                     is_leaf = True

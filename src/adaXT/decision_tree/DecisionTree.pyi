@@ -1,6 +1,7 @@
 import numpy as np
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
+from .Nodes import *
 import sys
 
 
@@ -36,7 +37,8 @@ class DecisionTree:
             impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
-            min_improvement: float = 0) -> None:
+            min_improvement: float = 0,
+            splitter: Splitter | None = None) -> None:
         """
         Parameters
         ----------
@@ -50,35 +52,37 @@ class DecisionTree:
             the tolerance of impurity in a leaf node, by default 0
         min_samples_split : int
             the minimum amount of samples in a split, by default 1
-        min_samples_split : int
+        min_samples_leaf : int
             the minimum amount of samples in a leaf node, by default 1
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
+        splitter : Splitter | None, optional
+            Splitter class if None uses premade Splitter class
         """
         pass
 
     def fit(
             self,
-            X: np.ndarray,
-            Y: np.ndarray,
-            splitter: Splitter | None = None,
+            X,
+            Y,
+            sample_indices: np.ndarray | None = None,
             feature_indices: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None) -> None:
+            sample_weight: np.ndarray | None = None,) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
         Parameters
         ----------
-        X : np.ndarray
-            feature values
-        Y : np.ndarray
-            response values
-        splitter : Splitter | None, optional
-            splitter class, if None uses premade Splitter class
+        X : array-like of shape n_samples, n_features
+            feature values, will internally be converted to np.ndarray with dtype=np.float64
+        Y : array-like of shape n_samples,
+            response values, will internally be converted to np.ndarray with dtype=np.float64
+        sample_indices : array-like object
+            specific indices of the dataset you wish to use
         feature_indices : np.ndarray | None, optional
             which features to use from the data X, by default uses all
-        sample_indices : np.ndarray | None, optional
-            which samples to use from the data X and Y, by default uses all
+        sample_weight : np.ndarray | None, optional
+            np.ndarray of shape (n_samples,) currently only supports weights in {0, 1}
         """
         pass
 
@@ -117,8 +121,8 @@ class DecisionTree:
 
         Returns
         -------
-        Tuple(np.ndarray, np.ndarray)
-            returns a tuple where the first element are the reponsense, and the othe element are the probability for each class per observation in X.
+        np.ndarray
+            Returns an np.ndarray with the the probabilities for each class per observation in X, the order of the classes corresponds to that in the attribute classes.
         """
         pass
 

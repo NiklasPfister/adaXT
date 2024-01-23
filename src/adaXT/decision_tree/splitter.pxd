@@ -1,5 +1,5 @@
 cimport numpy as cnp
-from .criteria cimport Criteria
+from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
 cnp.import_array()
 
 cdef class Splitter:
@@ -14,6 +14,6 @@ cdef class Splitter:
         double* class_labels
         int* n_in_class
 
-    cdef int[:] sort_feature(self, int[:], double[:])
+    cdef cnp.ndarray sort_feature(self, int[:], double[:])
 
-    cpdef get_split(self, int[:])
+    cpdef get_split(self, int[:], int[:])
