@@ -58,7 +58,8 @@ class DepthTreeBuilder:
             feature_indices: np.ndarray,
             sample_weight: np.ndarray,
             criteria: Criteria,
-            splitter: Splitter | None = None) -> None:
+            splitter: Splitter | None = None,
+            sample_indices: np.ndarray | None = None) -> None:
         """
         Parameters
         ----------
@@ -77,7 +78,8 @@ class DepthTreeBuilder:
         """
         self.features = X
         self.response = Y
-        self.feature_indices = np.array(feature_indices, np.int32)
+        self.feature_indices = feature_indices
+        self.sample_indices = sample_indices
         self.criteria = criteria
         self.sample_weight = sample_weight
 
@@ -138,14 +140,6 @@ class DepthTreeBuilder:
         splitter = self.splitter
         criteria = self.criteria
 
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            self.classes = np.unique(response)
-            tree.classes = self.classes
-            n_classes = self.classes.shape[0]
-
-        tree.n_classes = n_classes
-
         min_samples_split = tree.min_samples_split
         min_samples_leaf = tree.min_samples_leaf
         max_depth = tree.max_depth
@@ -159,9 +153,21 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        # root node should only contain values where the weight is not 0,
-        # otherwise they are not included.
-        all_idx = np.array(self.sample_weight.nonzero()[0], np.int32)
+        all_idx = np.arange(features.shape[0])
+        if self.sample_indices is not None:
+            all_idx = np.array(self.sample_indices)
+
+        all_idx = np.array(
+            [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32)
+
+        # Update the tree now that we have the correct samples
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            self.classes = np.unique(response[all_idx])
+            tree.classes = self.classes
+            n_classes = self.classes.shape[0]
+        tree.n_classes = n_classes
+
         n_obs = all_idx.shape[0]
 
         queue.append(

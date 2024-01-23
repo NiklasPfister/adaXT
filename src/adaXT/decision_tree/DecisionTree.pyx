@@ -65,13 +65,15 @@ class DecisionTree:
         return X, Y
 
     def __check_sample_weight(self, sample_weight: np.ndarray, n_samples):
+
         if sample_weight is None:
-            return np.ones((n_samples,))
+            return np.ones(n_samples, dtype=np.double)
+        sample_weight = np.array(sample_weight, dtype=np.double)
         if sample_weight.shape[0] != n_samples:
             raise ValueError("sample_weight should have as many elements as X and Y")
         if sample_weight.ndim > 1:
             raise ValueError("sample_weight should have dimension (n_samples,)")
-        return np.array(sample_weight, dtype=np.double)
+        return sample_weight
 
     def __check_dimensions(self, double[:, :] X):
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -88,6 +90,7 @@ class DecisionTree:
             self,
             X,
             Y,
+            sample_indices: np.ndarray | None = None,
             feature_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None,) -> None:
 
@@ -98,10 +101,11 @@ class DecisionTree:
         sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
 
         if feature_indices is None:
-            feature_indices = np.arange(col)
+            feature_indices = np.arange(col, dtype=np.int32)
         builder = DepthTreeBuilder(
             X=X,
             Y=Y,
+            sample_indices=sample_indices,
             feature_indices=feature_indices,
             sample_weight=sample_weight,
             criteria=self.criteria(X, Y, sample_weight),

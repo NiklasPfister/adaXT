@@ -119,7 +119,6 @@ cdef class Splitter:
                                                         sorted_index_list_feature, i+1,
                                                         feature
                                                         )
-
                 if best_score - crit > EPSILON:  # rounding error
                     # Save the best split
                     # The index is given as the index of the

@@ -1,7 +1,5 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
-from adaXT.decision_tree.tree_utils import plot_tree
-import matplotlib.pyplot as plt
 import numpy as np
 
 import scipy
@@ -45,8 +43,6 @@ def test_gini_single():
     queue = [root]
     i = 0
 
-    plot_tree(tree)
-    plt.show()
     # Loop over all the nodes
     while len(queue) > 0:
         cur_node = queue.pop()

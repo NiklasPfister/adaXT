@@ -82,10 +82,6 @@ cdef class Gini_index(Criteria):
         int old_feature
 
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
-        self.class_labels = np.unique(y.base)
-        self.num_classes = self.class_labels.shape[0]
-        self.n_in_class_left = <double *> malloc(sizeof(double) * self.num_classes)
-        self.n_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
         self.old_obs = -1
 
     def __del__(self):  # Called by garbage collector.
@@ -93,6 +89,11 @@ cdef class Gini_index(Criteria):
         free(self.n_in_class_right)
 
     cpdef double impurity(self, int[:] indices):
+        self.class_labels = np.unique(self.y.base[indices])
+        self.num_classes = self.class_labels.shape[0]
+        self.n_in_class_left = <double *> malloc(sizeof(double) * self.num_classes)
+        self.n_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
+
         # n_in_class_left can be use as the int pointer as it will be cleared before and after this use
         return self._gini(indices, self.n_in_class_left, 1)
 
@@ -241,10 +242,6 @@ cdef class Entropy(Criteria):
         int old_feature
 
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
-        self.class_labels = np.unique(y.base)
-        self.num_classes = self.class_labels.shape[0]
-        self.n_in_class_left = <double *> malloc(sizeof(double) * self.num_classes)
-        self.n_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
         self.old_obs = -1
 
     def __del__(self):  # Called by garbage collector.
@@ -252,6 +249,10 @@ cdef class Entropy(Criteria):
         free(self.n_in_class_right)
 
     cpdef double impurity(self, int[:] indices):
+        self.class_labels = np.unique(self.y.base[indices])
+        self.num_classes = self.class_labels.shape[0]
+        self.n_in_class_left = <double *> malloc(sizeof(double) * self.num_classes)
+        self.n_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
         # n_in_class_left can be use as the int pointer as it will be cleared before and after this use
         return self._entropy(indices, self.n_in_class_left, 1)
 
