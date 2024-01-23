@@ -465,8 +465,8 @@ cdef class Squared_error(Criteria):
             right_imp = self.update_right(indices, split_idx)
 
         else:
-            left_imp = self._square_error(indices[:split_idx], 1)
-            right_imp = self._square_error(indices[split_idx:], 0)
+            left_imp = self._squared_error(indices[:split_idx], 1)
+            right_imp = self._squared_error(indices[split_idx:], 0)
 
         self.old_feature = feature
         self.old_obs = n_obs

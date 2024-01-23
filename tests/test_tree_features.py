@@ -246,7 +246,7 @@ def get_x_y_classification(n, m):
 def get_x_y_regression(n, m):
     np.random.seed(2024)
     X = np.random.uniform(0, 100, (n, m))
-    Y = np.random.randint(0, 10, n)
+    Y = np.random.uniform(0, 10, n)
     return (X, Y)
 
 

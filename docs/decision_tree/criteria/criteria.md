@@ -6,3 +6,6 @@ import adaXT.decision_tree.criteria
 ```
 
 ::: adaXT.criteria.criteria
+    options:
+      show_docstring_functions: false
+      merge_init_into_class: false

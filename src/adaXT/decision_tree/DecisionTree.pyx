@@ -49,11 +49,6 @@ class DecisionTree:
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
-    def check_input(self, X: object, Y: object):
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
         # Check if X and Y has same number of rows
         if X.shape[0] != Y.shape[0]:
             raise ValueError("X and Y should have the same number of rows")
@@ -98,8 +93,8 @@ class DecisionTree:
             self,
             X,
             Y,
-            sample_indices: np.ndarray | None = None,
             feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None,) -> None:
 
         X, Y = self.__check_input(X, Y)
@@ -122,7 +117,7 @@ class DecisionTree:
 
     def predict(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx, idx, row
+            int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
             double[:] Y
@@ -131,8 +126,10 @@ class DecisionTree:
 
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
+        n_obs = X.shape[0]
+        Y = np.empty(n_obs)
 
-        for i in range(row):
+        for i in range(n_obs):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
                 cur_split_idx = cur_node.split_idx
@@ -151,7 +148,7 @@ class DecisionTree:
 
     def predict_proba(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx, row
+            int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
             list ret_val = []
@@ -164,8 +161,9 @@ class DecisionTree:
 
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
+        n_obs = X.shape[0]
 
-        for i in range(row):
+        for i in range(n_obs):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
                 cur_split_idx = cur_node.split_idx
