@@ -4,6 +4,7 @@ from ..criteria import Criteria
 from .Nodes import *
 import sys
 
+
 class DecisionTree:
     """
     DecisionTree object
@@ -59,6 +60,7 @@ class DecisionTree:
             self,
             X,
             Y,
+            sample_indices: np.ndarray | None = None,
             feature_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None,) -> None:
         """
@@ -70,6 +72,8 @@ class DecisionTree:
             feature values, will internally be converted to np.ndarray with dtype=np.float64
         Y : array-like of shape n_samples,
             response values, will internally be converted to np.ndarray with dtype=np.float64
+        sample_indices : array-like object
+            specific indices of the dataset you wish to use
         feature_indices : np.ndarray | None, optional
             which features to use from the data X, by default uses all
         sample_weight : np.ndarray | None, optional
