@@ -43,6 +43,6 @@ For classification it can useful to get a notion of classification probability f
 It works in much the same fashion as the prediction function, but importantly only applies to classification trees. Given the above fitted classification tree, we have the following:
 ```py
 result = tree.predict_proba([5, 0])
-print(result) # prints (array([0., 1.]), array([[0., 1.]]))
+print(result) # prints  array([[0., 1.]]
 ```
-Here it the function returns a tuple of two [numpy arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html), where the first element is the classes within the training data, and the second is the class probabilities for the new X values.
+Here the function returns a [numpy arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html) with the probability of an element being either of the classes. To get the list of classes (in the correct order) use .classes on the [DecisionTree](../tree/DecisionTree.md).

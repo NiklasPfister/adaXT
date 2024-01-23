@@ -1,27 +1,32 @@
 import numpy as np
 from .splitter import Splitter
 from .criteria import Criteria
-from .Nodes import *
 import sys
+
 
 class DecisionTree:
     """
-    DecisionTree object
-    """
+    Attributes
+    ----------
     max_depth: int
-    impurity_tol: float
-    min_samples_split: int
-    min_samples_leaf: int
-    min_improvement: float
-    criteria: Criteria
+        maximum depth of the tree
     tree_type: str
+        Which type of tree it is
     leaf_nodes: list[LeafNode]
+        a list of all the leaf nodes in the tree
     root: Node
+        the root Node of the tree
     n_nodes: int
+        the number of nodes in the tree
     n_features: int
+        the number of features of the training data
     n_classes: int
+        the number of classes of the training data, 0 for Regression Tree
     n_obs: int
+        the number of observations used for training
     classes: np.ndarray
+        the different classes in the tree given a Classification tree
+    """
 
     def __init__(
             self,

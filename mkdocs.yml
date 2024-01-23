@@ -22,6 +22,7 @@ plugins:
             show_source: false
             show_root_heading: false
             merge_init_into_class: yes
+            show_docstring_attributes: true
 
 theme:
   name: "material"
