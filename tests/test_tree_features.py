@@ -293,10 +293,10 @@ def test_sample_indices_classification():
     X2, Y2 = get_x_y_classification(N, M)
     bloat_feature = np.linspace(0, 10, num=M)
     sample_indices = []
-    for i in range(1, N*2, 2):
+    for i in range(1, N * 2, 2):
         X2 = np.insert(X2, i, bloat_feature, axis=0)
         Y2 = np.insert(Y2, i, i)  # i is used as a bloat outcome value
-        sample_indices.append(i-1)
+        sample_indices.append(i - 1)
 
     t1 = DecisionTree('Classification', criteria=Gini_index)
     t2 = DecisionTree('Classification', criteria=Gini_index)
@@ -321,10 +321,10 @@ def test_sample_indices_regression():
     X2, Y2 = get_x_y_regression(N, M)
     bloat_feature = np.linspace(0, 10, num=M)
     sample_indices = []
-    for i in range(1, N*2, 2):
+    for i in range(1, N * 2, 2):
         X2 = np.insert(X2, i, bloat_feature, axis=0)
         Y2 = np.insert(Y2, i, i)  # i is used as a bloat outcome value
-        sample_indices.append(i-1)
+        sample_indices.append(i - 1)
 
     t1 = DecisionTree('Regression', criteria=Squared_error)
     t2 = DecisionTree('Regression', criteria=Squared_error)
@@ -347,7 +347,7 @@ def test_sample_weight_classification():
     X2, Y2 = get_x_y_classification(N, M)
     bloat_feature = np.linspace(0, 10, num=M)
     sample_weights = []
-    for i in range(1, N*2, 2):
+    for i in range(1, N * 2, 2):
         X2 = np.insert(X2, i, bloat_feature, axis=0)
         Y2 = np.insert(Y2, i, i)  # i is used as a bloat outcome value
         sample_weights.append(1)
@@ -376,7 +376,7 @@ def test_sample_weight_regression():
     X2, Y2 = get_x_y_regression(N, M)
     bloat_feature = np.linspace(0, 10, num=M)
     sample_weights = []
-    for i in range(1, N*2, 2):
+    for i in range(1, N * 2, 2):
         X2 = np.insert(X2, i, bloat_feature, axis=0)
         Y2 = np.insert(Y2, i, i)  # i is used as a bloat outcome value
         sample_weights.append(1)
