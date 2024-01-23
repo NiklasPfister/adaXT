@@ -4,7 +4,7 @@ from typing import List
 
 # Custom
 from .splitter import Splitter
-from .criteria import Criteria
+from ..criteria import Criteria
 from .Nodes import Node, DecisionNode, LeafNode
 from . import DecisionTree
 
@@ -25,7 +25,6 @@ class queue_obj:
             parent: Node | None = None,
             is_left: bool | None = None) -> None:
         """
-
         Parameters
         ----------
         indices : np.ndarray
@@ -39,6 +38,7 @@ class queue_obj:
         is_left : bool | None, optional
             whether the object is left or right, by default None
         """
+
         self.indices = indices
         self.depth = depth
         self.impurity = impurity
@@ -56,9 +56,10 @@ class DepthTreeBuilder:
             X: np.ndarray,
             Y: np.ndarray,
             feature_indices: np.ndarray,
-            sample_indices: np.ndarray,
+            sample_weight: np.ndarray,
             criteria: Criteria,
-            splitter: Splitter | None = None) -> None:
+            splitter: Splitter | None = None,
+            sample_indices: np.ndarray | None = None) -> None:
         """
         Parameters
         ----------
@@ -70,16 +71,17 @@ class DepthTreeBuilder:
             Which features to use
         sample_indices : np.ndarray
             Indicies of the samples to use.
-        criteria : FuncWrapper
-            Criteria function used for impurity calculations, wrapped in FuncWrapper class
+        criteria : Criteria
+            Criteria class used for impurity calculations
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
-        self.features = X[np.ix_(sample_indices, feature_indices)]
-        self.response = Y[sample_indices]
+        self.features = X
+        self.response = Y
         self.feature_indices = feature_indices
         self.sample_indices = sample_indices
         self.criteria = criteria
+        self.sample_weight = sample_weight
 
         if splitter:
             self.splitter = splitter
@@ -97,13 +99,11 @@ class DepthTreeBuilder:
         Parameters
         ----------
         tree : DecisionTree
-            The fille tree object
+            The filled tree object
         node_response : np.ndarray
-            outcome values in the node
+            response values in the node
         n_samples : int
             number of samples in the node
-        n_classes : int
-            number of different classes in the node
 
         Returns
         -------
@@ -140,14 +140,6 @@ class DepthTreeBuilder:
         splitter = self.splitter
         criteria = self.criteria
 
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            self.classes = np.unique(response)
-            tree.classes = self.classes
-            n_classes = self.classes.shape[0]
-
-        tree.n_classes = n_classes
-
         min_samples_split = tree.min_samples_split
         min_samples_leaf = tree.min_samples_leaf
         max_depth = tree.max_depth
@@ -159,11 +151,25 @@ class DepthTreeBuilder:
         leaf_node_list = []
         max_depth_seen = 0
 
-        n_obs = len(response)
-        queue = []  # queue of elements queue objects that need to be built
+        queue = []  # queue for objects that need to be built
 
-        # root node contains all indices
-        all_idx = np.arange(n_obs, dtype=np.int32)
+        all_idx = np.arange(features.shape[0])
+        if self.sample_indices is not None:
+            all_idx = np.array(self.sample_indices)
+
+        all_idx = np.array(
+            [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32)
+
+        # Update the tree now that we have the correct samples
+        n_classes = 0
+        if tree.tree_type == "Classification":
+            self.classes = np.unique(response[all_idx])
+            tree.classes = self.classes
+            n_classes = self.classes.shape[0]
+        tree.n_classes = n_classes
+
+        n_obs = all_idx.shape[0]
+
         queue.append(
             queue_obj(
                 all_idx,
@@ -188,7 +194,7 @@ class DepthTreeBuilder:
             # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
-                    indices)
+                    indices, self.feature_indices)
                 # If we were unable to find a split, this must be a leaf.
                 if len(split) == 0:
                     is_leaf = True
@@ -199,16 +205,13 @@ class DepthTreeBuilder:
                     # statements
                     N_t_L = len(split[0])
                     N_t_R = len(split[1])
-                    is_leaf = (n_samples /
-                               n_obs *
-                               (impurity -
-                                (N_t_L /
-                                 n_samples) *
-                                child_imp[0] -
-                                (N_t_R /
-                                 n_samples) *
-                                child_imp[1]) < min_improvement +
-                               EPSILON or N_t_L < min_samples_leaf or N_t_R < min_samples_leaf)
+                    is_leaf = ((n_samples / n_obs *
+                                (impurity -
+                                 (N_t_L / n_samples) * child_imp[0] -
+                                    (N_t_R / n_samples) * child_imp[1]) <
+                                min_improvement + EPSILON) or
+                               (N_t_L < min_samples_leaf) or
+                               (N_t_R < min_samples_leaf))
 
             if not is_leaf:
                 # Add the decision node to the List of nodes
@@ -265,8 +268,9 @@ class DepthTreeBuilder:
 
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = features.shape[0]
+        tree.n_features = features.shape[1]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
+
         return 0

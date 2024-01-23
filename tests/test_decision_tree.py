@@ -1,12 +1,8 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.decision_tree.criteria import Gini_index, Squared_error, Entropy, Linear_regression
+from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
 
-from itertools import groupby
 import scipy
-
-# TODO: test the different stopping criteria as well as feature indexing
-# and so on
 
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -271,7 +267,7 @@ def sanity_entropy(n, m):
 
     pred = tree.predict(X)
     for i in range(n):
-        assert (Y[i] == pred[i]), f"Gini: Expected {Y[i]} Got {pred[i]}"
+        assert (Y[i] == pred[i]), f"Entropy: Expected {Y[i]} Got {pred[i]}"
 
 
 def sanity_linear_regression(n, m):
@@ -301,9 +297,9 @@ def test_sanity():
 
 if __name__ == "__main__":
     test_gini_single()
-    test_gini_multi()
-    test_entropy_single()
-    test_entropy_multi()
-    test_regression()
-    test_sanity()
-    print("Done.")
+    # test_gini_multi()
+    # test_entropy_single()
+    # test_entropy_multi()
+    # test_regression()
+    # test_sanity()
+    # print("Done.")

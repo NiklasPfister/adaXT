@@ -3,20 +3,21 @@
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
-from .criteria cimport Criteria
-
+from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
 
 cdef double EPSILON = 2*np.finfo('double').eps
-# The rounding error for a criteria function is larger than that in DepthTreeBuilder.
-# This is most likely doe to the fact that the criteria does multiple calculations before returing the critical value,
+# The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.
+# This is needed due to the fact that the criteria does multiple calculations before returing the critical value,
 # where the DepthTreeBuilder is just comparing the impurity (that already has gone through this check).
-cdef double INFINITY = 1e20
+
+cdef double INFINITY = np.inf
+
 
 cdef class Splitter:
     """
     Splitter class used to create splits of the data
     """
-    def __init__(self, double[:, ::1] X, double[:] Y, criteria: Criteria):
+    def __init__(self, double[:, ::1] X, double[::1] Y, criteria: Criteria):
         '''
         Class initializer
         ----------------
@@ -26,8 +27,8 @@ cdef class Splitter:
                 The feature values of the dataset
             y: memoryview of NDArray
                 The response values of the dataset
-            criteria: FuncWrapper object
-                A FuncWrapper object containing the criteria function
+            criteria: Criteria
+                The criteria class used to find the impurity of a split
         '''
         self.features = X
         self.response = Y
@@ -52,13 +53,15 @@ cdef class Splitter:
         memoryview of NDArray
             A list of the sorted indices
         """
-        cdef:
-            double[:] temp
-        temp = feature.base[indices]
-        return np.array(indices.base[np.argsort(temp)], dtype=np.int32)
 
-    # Gets split given the indices in the given node
-    cpdef get_split(self, int[:] indices):
+        cdef:
+            cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
+            cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
+            cnp.ndarray[long long, ndim=1] temp
+        temp = np.argsort(feat_temp[idx])
+        return idx[temp]
+
+    cpdef get_split(self, int[:] indices, int[:] feature_indices):
         """
         Function that finds the best split of the dataset
         ----------
@@ -86,14 +89,19 @@ cdef class Splitter:
             int best_feature = 0
             double[:] current_feature_values
             int i, feature  # variables for loop
-            cnp.ndarray[cnp.int32_t, ndim=1] sorted_index_list_feature
+            cnp.ndarray[int, ndim=1] sorted_index_list_feature
+            int[:] best_sorted
+            int best_split_idx
+            double best_left_imp, best_right_imp
             double crit
 
         features = self.features.base
-        n_features = self.n_features
         split, best_imp = [], []
+        best_right_imp, best_left_imp = 0.0, 0.0
+        best_split_idx = -1
+        best_sorted = None
         # For all features
-        for feature in range(n_features):
+        for feature in feature_indices:
             current_feature_values = features[:, feature]
             sorted_index_list_feature = self.sort_feature(
                     indices, current_feature_values
@@ -116,7 +124,14 @@ cdef class Splitter:
                     # The index is given as the index of the
                     # first element of the right dataset
                     best_feature, best_threshold = feature, threshold
-                    best_score, best_imp = crit, [left_imp, right_imp]
-                    split = [sorted_index_list_feature[:i+1], sorted_index_list_feature[i+1:]]
+                    best_score = crit
+                    best_left_imp = left_imp
+                    best_right_imp = right_imp
+                    best_split_idx = i + 1
+                    best_sorted = sorted_index_list_feature
 
+        # We found a best split
+        if best_sorted is not None:
+            split = [best_sorted[0:best_split_idx], best_sorted[best_split_idx:self.n_indices]]
+            best_imp = [best_left_imp, best_right_imp]
         return split, best_threshold, best_feature, best_score, best_imp

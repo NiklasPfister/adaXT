@@ -1,7 +1,4 @@
 import numpy as np
-from .splitter import Splitter
-from .criteria import Criteria
-import sys
 
 class Node:
     indices: np.ndarray
@@ -35,6 +32,7 @@ class DecisionNode(Node):
     left_child: Node|None
     right_child: Node|None
     parent: DecisionNode|None
+
     def __init__(
             self,
             indices: np.ndarray,
@@ -50,7 +48,7 @@ class DecisionNode(Node):
         Parameters
         ----------
         indices : np.ndarray
-            indices ni node
+            indices in node
         depth : int
             depth of node
         impurity : float
