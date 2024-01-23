@@ -29,7 +29,7 @@ with open("README.md", 'r') as f:
 with open("requirements.txt", 'r') as f:
     REQUIRES = f.read()
 
-USE_CYTHON = True  # TODO: get commandline input, such that a user can choose whether to compile with cython always when installing, or just the already compiled c files
+USE_CYTHON = True
 
 # Make all pyx files for the decision_tree
 ext = '.pyx' if USE_CYTHON else ".c"
@@ -54,8 +54,6 @@ extensions += [Extension("adaXT.criteria.*",
 if USE_CYTHON:
     from Cython.Build import cythonize
     with_debug = False
-    # TODO: Annotate should be false upon release, it creates the html file,
-    # where you can see what is in python
     extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False)
 
 setup(
