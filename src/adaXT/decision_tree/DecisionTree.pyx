@@ -81,6 +81,9 @@ class DecisionTree:
         if X.ndim == 1:
             if (X.shape[0] != self.n_features):
                 raise ValueError(f"Number of features should be {self.n_features}, got {X.shape[0]}")
+
+            # expand the dimensions
+            X = np.expand_dims(X, axis=0)
         else:
             if X.shape[1] != self.n_features:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
@@ -90,8 +93,8 @@ class DecisionTree:
             self,
             X,
             Y,
-            sample_indices: np.ndarray | None = None,
             feature_indices: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None,) -> None:
 
         X, Y = self.__check_input(X, Y)
@@ -112,20 +115,21 @@ class DecisionTree:
             splitter=self.splitter)
         builder.build_tree(self)
 
-    def predict(self, double[:, :] X):
+    def predict(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx, idx
+            int i, cur_split_idx, idx, n_obs
             double cur_threshold
-            int row = X.shape[0]
-            double[:] Y = np.empty(row)
             object cur_node
+            double[:] Y
         if not self.root:
             raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
+        n_obs = X.shape[0]
+        Y = np.empty(n_obs)
 
-        for i in range(row):
+        for i in range(n_obs):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
                 cur_split_idx = cur_node.split_idx
@@ -140,13 +144,12 @@ class DecisionTree:
                 idx = self.__find_max_index(cur_node.value)
                 if self.classes is not None:
                     Y[i] = self.classes[idx]
-        return Y
+        return np.asarray(Y)
 
-    def predict_proba(self, double[:, :] X):
+    def predict_proba(self, X: np.ndarray):
         cdef:
-            int i, cur_split_idx
+            int i, cur_split_idx, n_obs
             double cur_threshold
-            int row = X.shape[0]
             object cur_node
             list ret_val = []
 
@@ -158,8 +161,9 @@ class DecisionTree:
 
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
+        n_obs = X.shape[0]
 
-        for i in range(row):
+        for i in range(n_obs):
             cur_node = self.root
             while isinstance(cur_node, DecisionNode):
                 cur_split_idx = cur_node.split_idx
@@ -199,7 +203,7 @@ class DecisionTree:
 
         return matrix
 
-    def predict_leaf_matrix(self, double[:, :] X, scale: bool = False):
+    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
         cdef:
             int i
             int row
@@ -213,6 +217,7 @@ class DecisionTree:
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
         row = X.shape[0]
+
         ht = {}
         for i in range(row):
             cur_node = self.root

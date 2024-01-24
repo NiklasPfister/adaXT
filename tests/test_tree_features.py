@@ -246,7 +246,7 @@ def get_x_y_classification(n, m):
 def get_x_y_regression(n, m):
     np.random.seed(2024)
     X = np.random.uniform(0, 100, (n, m))
-    Y = np.random.randint(0, 10, n)
+    Y = np.random.uniform(0, 10, n)
     return (X, Y)
 
 
@@ -285,6 +285,8 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
             isinstance(node2, LeafNode)
             assert (
                 node1.value == node2.value), f"{t1.tree_type}: {node1.value} != {node2.value}"
+    assert len(
+        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():

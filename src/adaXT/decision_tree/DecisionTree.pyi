@@ -7,22 +7,27 @@ import sys
 
 class DecisionTree:
     """
-    DecisionTree object
-    """
+    Attributes
+    ----------
     max_depth: int
-    impurity_tol: float
-    min_samples_split: int
-    min_samples_leaf: int
-    min_improvement: float
-    criteria: Criteria
+        maximum depth of the tree
     tree_type: str
+        Which type of tree it is
     leaf_nodes: list[LeafNode]
+        a list of all the leaf nodes in the tree
     root: Node
+        the root Node of the tree
     n_nodes: int
+        the number of nodes in the tree
     n_features: int
+        the number of features of the training data
     n_classes: int
+        the number of classes of the training data, 0 for Regression Tree
     n_obs: int
+        the number of observations used for training
     classes: np.ndarray
+        the different classes in the tree given a Classification tree
+    """
 
     def __init__(
             self,
@@ -68,9 +73,9 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like of shape n_samples, n_features
+        X : array-like object
             feature values, will internally be converted to np.ndarray with dtype=np.float64
-        Y : array-like of shape n_samples,
+        Y : array-like object
             response values, will internally be converted to np.ndarray with dtype=np.float64
         sample_indices : array-like object
             specific indices of the dataset you wish to use
@@ -83,7 +88,15 @@ class DecisionTree:
 
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
-        Predicts a y-value for given X values
+        Works in two ways depending on if the tree is a Classification or Regression tree.
+
+        Classification:
+        ----------
+        Returns the class with the highest proportion within the final leaf node
+
+        Regression:
+        ----------
+        Returns the mean value of the outcomes within the final leaf node.
 
         Parameters
         ----------
@@ -99,7 +112,7 @@ class DecisionTree:
 
     def predict_proba(self, X: np.ndarray):
         """
-        Predicts a probability for each response for given X values
+        Predicts a probability for each response for given X values. Only useable by the Classification Tree.
 
         Parameters
         ----------
@@ -117,7 +130,7 @@ class DecisionTree:
         """
         Creates NxN matrix,
         where N is the number of observations.
-        If A_{i,j} = 1 then i and j are in the same leafnode, otherwise 0.
+        If A_{i,j} = 1 then i and j are in the same LeafNode, otherwise 0.
         If they are scaled, then A_{i,j} is instead scaled by the number
         of elements in the leaf node.
 
@@ -125,7 +138,7 @@ class DecisionTree:
         Parameters
         ----------
         scale : bool, optional
-            Whether to scale the entries, by default False
+            whether to scale the entries, by default False
 
         Returns
         -------
@@ -145,9 +158,9 @@ class DecisionTree:
         Parameters
         ----------
         X : np.ndarray
-            New values to be fitted
+            new values to be fitted
         scale : bool, optional
-            Whether to scale the entries, by default False
+            whether to scale the entries, by default False
 
         Returns
         -------

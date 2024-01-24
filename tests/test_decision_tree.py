@@ -1,6 +1,7 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
+import scipy
 
 import scipy
 
@@ -297,9 +298,9 @@ def test_sanity():
 
 if __name__ == "__main__":
     test_gini_single()
-    # test_gini_multi()
-    # test_entropy_single()
-    # test_entropy_multi()
-    # test_regression()
+    test_gini_multi()
+    test_entropy_single()
+    test_entropy_multi()
+    test_regression()
     # test_sanity()
     # print("Done.")

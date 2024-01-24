@@ -446,7 +446,7 @@ cdef class Squared_error(Criteria):
         return (square_sum/self.weight_right - new_mu*new_mu)
 
     cpdef double impurity(self, int[:] indices):
-        return self._square_error(indices)
+        return self._squared_error(indices)
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
@@ -465,8 +465,8 @@ cdef class Squared_error(Criteria):
             right_imp = self.update_right(indices, split_idx)
 
         else:
-            left_imp = self._square_error(indices[:split_idx], 1)
-            right_imp = self._square_error(indices[split_idx:], 0)
+            left_imp = self._squared_error(indices[:split_idx], 1)
+            right_imp = self._squared_error(indices[split_idx:], 0)
 
         self.old_feature = feature
         self.old_obs = n_obs
@@ -477,7 +477,7 @@ cdef class Squared_error(Criteria):
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
-    cdef double _square_error(self, int[:] indices, int left_or_right = -1):
+    cdef double _squared_error(self, int[:] indices, int left_or_right = -1):
         """
         Function used to calculate the squared error of y[indices]
         ----------
@@ -577,21 +577,6 @@ cdef class Linear_regression(Criteria):
         return (theta0, theta1)
 
     cpdef double impurity(self, int[:] indices):
-        """
-        Calculates the impurity of a Node by:
-        L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            The indices to calculate
-
-        Returns
-        -------
-        double
-            The impurity evaluation
-        """
         cdef:
             double step_calc, theta0, theta1, cur_sum
             int i, length
