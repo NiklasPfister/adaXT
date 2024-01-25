@@ -19,7 +19,7 @@ Here, the indices refer to the sample indices for which the impurity value shoul
 
 Now that you have implemented your custom criteria function, we explain how to use it in a simple setting.
 
-## Using the custom criteria
+## Using a custom criteria
 Basically you can now create your **.py** file in which you fit a decision tree using the new custom criteria within the same folder where you created the **.pyx**. For this to work there are a few small things left to do. In order to not manually recompile the Cython file every time you make changes, you can automate the compilation within the Python file by telling Cython to comile the Cython source file, whenever you run the file:
 ```python
 from adaXT.decision_tree import DecisionTree
@@ -49,7 +49,7 @@ $$
 L = \sum_{i \in I} (Y[i] - \theta_0 - \theta_1 X[i, 0])^2 \\
 $$
 $$
-\theta_1 = \frac{\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)}{\sum_{i \in I} (X[i, 0] - \mu_X)^2} \\
+\theta_1 = \frac{\sum_{i \in I} (X[i, 0] - \mu_X)(Y[i] - \mu_Y)}{\sum_{i \in I} (X[i, 0] - \mu_X)^2} \\
 $$
 $$
 \theta_0 = \mu_Y - \theta_1 \mu_X,
@@ -130,7 +130,7 @@ cdef (double, double) theta(self, int[:] indices):
     return (theta0, theta1)
 ```
 Again the majority of the Cython is not mandatory but speeds up the code.
-On line 26 we access our previously defined custom mean function, which returns the mean of the $X$ indices and the mean of the $Y$ indices as described above. Then at line 27 we loop over all the indices a second time and calculate $\sum_{i \in I} (X[i, 0] - \mu_X) * (Y[i] - \mu_Y)$ and $\sum_{i \in I} (X[i, 0] - \mu_X)^2$ which are the numerator and denominator, respectively. These are the two values used to calculate $\theta_1$. Further on line 31 we check to make sure that the denominator is not 0.0, this ensures that we can consider the underidentified case separately and do not divide by zero by accident. If the denominator is zero, we simply set $theta_1$ to 0.0 as this will give an L value of 0 in the end. We finish off by returning the two $\theta$ values.
+On line 26 we access our previously defined custom mean function, which returns the mean of the $X$ indices and the mean of the $Y$ indices as described above. Then at line 27 we loop over all the indices a second time and calculate $\sum_{i \in I} (X[i, 0] - \mu_X) (Y[i] - \mu_Y)$ and $\sum_{i \in I} (X[i, 0] - \mu_X)^2$ which are the numerator and denominator, respectively. These are the two values used to calculate $\theta_1$. Further on line 31 we check to make sure that the denominator is not 0.0, this ensures that we can consider the underidentified case separately and do not divide by zero by accident. If the denominator is zero, we simply set $\theta_1$ to 0.0 as this will give an L value of 0 in the end. We finish off by returning the two values $\theta_0,\theta_1$.
 
 
 ### The impurity function
