@@ -4,7 +4,7 @@ In the following we explain how to create a custom criteria function by walking 
 ## Creating a .pyx file
 In your working directory create a .pyx file in which you first import the Criteria "super" class and then define the new custom Criteria class which inherits from the imported Criteria class. An example of the skeleton of the the Linear_regression Criteria file is given below.
 ```cython
-from adaXT.decision_tree.criteria cimport Criteria
+from adaXT.criteria cimport Criteria
 
 cdef class Linear_regression(Criteria):
     # Your implementation here
@@ -59,7 +59,7 @@ where $I$ denotes the indices of the samples within a given node, $X$ is the fea
 
 When creating a new criteria function we import and define the class as described above. This leads to:
 ```python
-from adaXT.decision_tree.criteria cimport Criteria
+from adaXT.criteria cimport Criteria
 
 cdef class Linear_regression(Criteria):
 ```
