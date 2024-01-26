@@ -6,7 +6,7 @@ The [DecisionTree](../tree/DecisionTree.md) class is used when creating both a r
 ## Classification trees
 ```py
 from adaXT.decision_tree import DecisionTree
-from adaXT.decision_tree.criteria import Gini_index
+from adaXT.criteria import Gini_index
 X = [[0, 0], [1, 0]]
 Y = [0, 1]
 tree = DecisionTree("Classification", criteria=Gini_index)
@@ -19,7 +19,7 @@ tree with the [Gini Index](../criteria/criteria.md#adaXT.criteria.criteria.Gini_
 Regression trees work similar to classification trees, with one small difference demonstrated by the following example:
 ```py
 from adaXT.decision_tree import DecisionTree
-from adaXT.decision_tree.criteria import Squared_error
+from adaXT.criteria import Squared_error
 X = [[0, 0], [1, 0]]
 Y = [0, 1]
 tree = DecisionTree("Regression", criteria=Squared_error)
