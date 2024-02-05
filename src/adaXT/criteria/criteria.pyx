@@ -577,6 +577,21 @@ cdef class Linear_regression(Criteria):
         return (theta0, theta1)
 
     cpdef double impurity(self, int[:] indices):
+        """
+        Calculates the impurity of a Node by:
+        L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            The indices to calculate
+
+        Returns
+        -------
+        double
+            The impurity evaluation
+        """
         cdef:
             double step_calc, theta0, theta1, cur_sum
             int i, length

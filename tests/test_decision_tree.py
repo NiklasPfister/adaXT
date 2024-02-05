@@ -3,8 +3,6 @@ from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 import numpy as np
 import scipy
 
-import scipy
-
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
     """

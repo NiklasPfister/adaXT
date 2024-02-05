@@ -123,6 +123,7 @@ class DecisionTree:
             double[:] Y
         if not self.root:
             raise AttributeError("The tree has not been fitted before trying to call predict")
+            raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
@@ -154,6 +155,7 @@ class DecisionTree:
             list ret_val = []
 
         if not self.root:
+            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
             raise AttributeError("The tree has not been fitted before trying to call predict_proba")
 
         if self.tree_type != "Classification":
