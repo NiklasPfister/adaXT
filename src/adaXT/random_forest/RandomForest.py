@@ -2,8 +2,7 @@ from multiprocessing import Pool, cpu_count
 from multiprocessing.shared_memory import SharedMemory
 
 from ..decision_tree import DecisionTree
-from ..decision_tree.criteria import Squared_error
-from ..decision_tree.criteria import Criteria
+from ..criteria import Criteria, Squared_error
 from ..decision_tree.splitter import Splitter
 
 
