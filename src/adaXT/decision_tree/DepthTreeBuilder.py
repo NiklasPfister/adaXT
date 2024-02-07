@@ -67,7 +67,7 @@ class DepthTreeBuilder:
             The feature values
         Y : np.ndarray
             The response values
-        int_max_features : int 
+        int_max_features : int
             The maximum number of features to use when finding a split
         sample_indices : np.ndarray
             Indicies of the samples to use.
@@ -78,7 +78,7 @@ class DepthTreeBuilder:
         """
         self.features = X
         self.response = Y
-        self.int_max_features = int_max_features 
+        self.int_max_features = int_max_features
         self.sample_indices = sample_indices
         self.criteria = criteria
         self.sample_weight = sample_weight
@@ -130,7 +130,10 @@ class DepthTreeBuilder:
         if self.int_max_features is None:
             return self.feature_indices
         else:
-            return np.random.choice(self.num_features, size=self.int_max_features, replace=False)
+            return np.random.choice(
+                self.num_features,
+                size=self.int_max_features,
+                replace=False)
 
     def build_tree(self, tree: DecisionTree):
         """
