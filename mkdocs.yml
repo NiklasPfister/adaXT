@@ -1,10 +1,11 @@
 site_name: adaXT
+site_url: https://niklaspfister.github.io/adaXT/
 
 repo_url: https://github.com/NiklasPfister/adaXT
 repo_name: 'adaXT'
 edit_uri: '?query=root/path/docs/'
 watch: [mkdocs.yml, README.md, src/adaXT]
-site_description: adaptable Decision Trees and Random Forests
+site_description: Adaptable Decision Trees and Random Forests
 
 plugins:
   - search:

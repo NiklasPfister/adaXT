@@ -3,10 +3,10 @@ import numpy as np
 from setuptools import setup, Extension, find_packages
 
 NAME = "adaXT"
-VERSION = "0.1.0"
+VERSION = "1.0.0"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
-    "Documentation": "",
+    "Documentation": "https://NiklasPfister.github.io/adaXT/",
     "Source Code": "https://github.com/NiklasPfister/adaXT"
 }
 
@@ -61,6 +61,7 @@ setup(
     version=VERSION,
     description=DESCRIPTION,
     long_description=LONG_DESCRIPTION,
+    long_description_content_type='text/markdown',
     project_urls=PROJECT_URLS,
     install_requires=REQUIRES,
     packages=find_packages(where="src"),
@@ -69,9 +70,13 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research",
-        "License :: GNU GENERAL PUBLIC LICENSE",
+        "License :: OSI Approved :: GNU General Public License (GPL)",
         "Operating System :: OS Independent",
     ],
+    package_data={
+        'adaXT/criteria': ['*.pxd'],
+        'adaXT/decision_tree': ['*.pxd'],
+    },
     tests_require=TEST_DEP,
     extras_require=extras,
 )

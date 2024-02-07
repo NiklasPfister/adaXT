@@ -203,6 +203,60 @@ def test_min_samples_split_setting():
         assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
 
 
+def test_max_features_errors():
+    max_feature_vals = [-1, "cos", []]
+
+    for max_feature in max_feature_vals:
+        try:
+            DecisionTree(
+                "Classification",
+                criteria=Gini_index,
+                max_features=max_feature)
+        except ValueError:
+            is_correct = True
+        except BaseException:
+            is_correct = False
+            break
+
+    assert is_correct, f"We occured an error that should not happen, only ValueError should be thrown when passing illegal arguments to max_features"
+
+
+def test_max_features_setting():
+    test_max_features_errors()
+
+    X = np.random.uniform(0, 100, (10000, 26))
+    Y = np.random.randint(0, 5, 10000)
+
+    max_feature_vals = [11, 0.36, "sqrt", "log2"]
+
+    for max_feature in max_feature_vals:
+        t1 = DecisionTree(
+            "Classification",
+            criteria=Gini_index,
+            max_features=max_feature)
+        t1.fit(X, Y)
+
+        t2 = DecisionTree(
+            "Classification",
+            criteria=Gini_index,
+            max_features=max_feature)
+        t2.fit(X, Y)
+
+        # Since max_features is set there should be introduced a lot of randomness in the splitting of the dataset,
+        # thus is is very unlikely that t1 equals t2 even though they are
+        # fitted using the same X and Y data
+        try:
+            # Should throw error since t1 is not the same as t2
+            assert_tree_equality(t1, t2)
+        except AssertionError:
+            # The trees are not equal, which is what we want
+            pass
+        else:
+            # If the trees are equal, raise an AssertionError
+            raise AssertionError(
+                "t1 and t2 are equal, which should not happen")
+
+
 def test_min_samples_leaf_setting():
     np.random.seed(2023)  # Set seed such that each run is the same
     X = np.random.uniform(0, 100, (10000, 5))
@@ -418,4 +472,5 @@ if __name__ == "__main__":
     test_sample_indices_regression()
     test_sample_weight_classification()
     test_sample_weight_regression()
+    test_max_features_setting()
     print("Done.")

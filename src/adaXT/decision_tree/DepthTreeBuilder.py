@@ -55,7 +55,7 @@ class DepthTreeBuilder:
             self,
             X: np.ndarray,
             Y: np.ndarray,
-            feature_indices: np.ndarray,
+            int_max_features: int,
             sample_weight: np.ndarray,
             criteria: Criteria,
             splitter: Splitter | None = None,
@@ -67,8 +67,8 @@ class DepthTreeBuilder:
             The feature values
         Y : np.ndarray
             The response values
-        feature_indices : np.ndarray
-            Which features to use
+        int_max_features : int
+            The maximum number of features to use when finding a split
         sample_indices : np.ndarray
             Indicies of the samples to use.
         criteria : Criteria
@@ -78,7 +78,7 @@ class DepthTreeBuilder:
         """
         self.features = X
         self.response = Y
-        self.feature_indices = feature_indices
+        self.int_max_features = int_max_features
         self.sample_indices = sample_indices
         self.criteria = criteria
         self.sample_weight = sample_weight
@@ -87,6 +87,10 @@ class DepthTreeBuilder:
             self.splitter = splitter
         else:
             self.splitter = Splitter(self.features, self.response, criteria)
+
+        _, col = X.shape
+        self.feature_indices = np.arange(col, dtype=np.int32)
+        self.num_features = col
 
     def get_mean(
             self,
@@ -121,6 +125,15 @@ class DepthTreeBuilder:
             # weight by the number of total samples in the leaf
             lst[i] = lst[i] / n_samples
         return lst
+
+    def __get_feature_indices(self):
+        if self.int_max_features is None:
+            return self.feature_indices
+        else:
+            return np.random.choice(
+                self.feature_indices,
+                size=self.int_max_features,
+                replace=False)
 
     def build_tree(self, tree: DecisionTree):
         """
@@ -194,7 +207,7 @@ class DepthTreeBuilder:
             # If it is not a leaf, find the best split
             if not is_leaf:
                 split, best_threshold, best_index, _, child_imp = splitter.get_split(
-                    indices, self.feature_indices)
+                    indices, self.__get_feature_indices())
                 # If we were unable to find a split, this must be a leaf.
                 if len(split) == 0:
                     is_leaf = True
