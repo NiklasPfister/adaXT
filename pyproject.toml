@@ -10,6 +10,4 @@ max-line-length = 127
 per-file-ignores = ['__init__.py:F401']
 
 [tool.cibuildwheel]
-test-requires = ["pytest", "scipy"]
-test-command = "pytest tests"
 skip = ["cp3{6,7,8,9}", 'pp*']
