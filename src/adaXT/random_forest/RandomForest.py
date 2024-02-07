@@ -64,6 +64,7 @@ class RandomForest:
             bootstrap: bool = True,
             n_jobs: int = 1,
             max_samples: int = None,
+            max_features: int = None,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 0,
             min_samples_split: int = 1,
@@ -84,7 +85,9 @@ class RandomForest:
         n_jobs : int, default=1
             The number of processes used to fit, and predict for the forrest, -1 means using all proccesors
         max_samples : int, default=None
-            The number of samples drawn from the feature values
+            The number of samples drawn when doing bootstrap
+        max_features: int, default=None
+            The number of features used when doing feature-sampling. If a larger number is given than the number of columns, all features are used
         max_depth : int
             maximum depth of the tree, by default maximum system size
         impurity_tol : float
@@ -98,12 +101,16 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
+        if max_features is not None and max_features < 1:
+            raise AttributeError("max_features should be greater than 0")
+        
         self.forrest_type = forrest_type
         self.n_estimators = n_estimators
         self.criterion = criterion
         self.bootstrap = bootstrap
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
+        self.max_features = max_features
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
@@ -115,7 +122,7 @@ class RandomForest:
     # Function used to call the fit function of a tree
     def _build_single_tree(self, tree:DecisionTree):
         # subset the feature indices
-        tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices())
+        tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices(), feature_indices=self.__get_feature_indices())
         return tree
 
     # Function to build all the trees of the forrest, differentiates between running in parallel and sequential
@@ -129,7 +136,7 @@ class RandomForest:
     
     # Function used to call the predict function of a tree
     def _predict_single_tree(self, tree:DecisionTree):
-        return tree.predict(self.predict_values.read()).base
+        return np.array(tree.predict(self.predict_values.read()))
 
     # Function to call predict on all the trees of the forrest, differentiates between running in parallel and sequential
     def __predict_trees(self):
@@ -144,9 +151,23 @@ class RandomForest:
                 
         return np.column_stack(predictions)
 
+    # Function used to add a column with zeros for all the classes that are in the forrest but not in a given tree
+    def __fill_with_zeros_for_missing_classes_in_tree(self, tree_classes, predict_proba, num_rows_predict):
+        ret_val = np.zeros((num_rows_predict, len(self.classes)))
+
+        # Find the indices of tree_classes in forrest_classes
+        tree_class_indices = np.searchsorted(self.classes, tree_classes)
+
+        # Only update columns corresponding to tree_classes
+        ret_val[:, tree_class_indices] = predict_proba
+
+        return ret_val
+
     # Function to call predict_proba for a tree
     def _predict_proba_single_tree(self, tree:DecisionTree):
-        return tree.predict_proba(self.predict_values.read())[1]
+        tree_predict_proba = tree.predict_proba(self.predict_values.read())
+        ret_val = self.__fill_with_zeros_for_missing_classes_in_tree(tree.classes, tree_predict_proba, self.predict_values._shape[0])
+        return ret_val
 
     # Function to call predict_proba on all the trees of the forrest, differentiates between running in parallel and sequential
     def __predict_proba_trees(self):
@@ -173,7 +194,6 @@ class RandomForest:
         Y : np.ndarray
             response values
         """
-        # Should raise error if bootstrap is false, but max_samples is set
         if not self.bootstrap and self.max_samples:
             raise AttributeError("Bootstrap can not be False while max_samples is set")
         
@@ -206,6 +226,14 @@ class RandomForest:
     def __get_sample_indices(self):
         if self.bootstrap:
             return np.random.randint(low=0, high=self.n_obs, size=self.max_samples)
+        else:
+            return None
+    
+    # Function that returns an ndarray of random ints used as the feature_indices
+    def __get_feature_indices(self):
+        if self.max_features:
+            num_features_to_chose = min(self.max_features, self.n_features)
+            return np.random.choice(self.n_features, size=num_features_to_chose, replace=False)
         else:
             return None
     
