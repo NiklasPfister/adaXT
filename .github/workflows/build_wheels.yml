@@ -2,12 +2,7 @@ name: Build
 
 on:
   workflow_dispatch:
-
-  push:
-    branches:
-      - "main"
-      - "build_wheels"
-
+  
   pull_request:
     branches:
       - "main"
@@ -57,13 +52,10 @@ jobs:
           pattern: cibw-wheels-*
           merge-multiple: true
           path: dist/
-
-      - name: List dist foler
-        run: ls -R dist/
-      #
-      # - name: commit to branch
-      #   run: |
-      #     git config --global user.name 'Niklas Andreas Pfister'
-      #     git config --global user.email 'np@math.ku.dk'
-      #     git commit -am "Added wheels in wheelhouse/"
-      #     git push
+      
+      - name: commit to branch
+        run: |
+          git config --global user.name 'Niklas Andreas Pfister'
+          git config --global user.email 'np@math.ku.dk'
+          git commit -am "Added wheels in dist/"
+          git push
