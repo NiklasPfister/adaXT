@@ -38,6 +38,7 @@ jobs:
   commit_wheels:
     name: commit_wheels
     runs-on: ubuntu-latest
+    needs: build_wheels
 
     steps:
       - uses: actions/checkout@v4
