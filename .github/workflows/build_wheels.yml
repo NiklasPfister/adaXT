@@ -38,9 +38,6 @@ jobs:
   commit_wheels:
     name: commit_wheels
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        os: [ubuntu-20.04, windows-2019, macos-11]
 
     steps:
       - uses: actions/checkout@v4
@@ -50,6 +47,8 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
+          pattern: cibw-wheels-*
+          merge-multiple: true
           path: wheelhouse/
 
       - name: Display structure of download-artifact
