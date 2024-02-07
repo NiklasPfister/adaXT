@@ -64,7 +64,7 @@ class RandomForest:
             bootstrap: bool = True,
             n_jobs: int = 1,
             max_samples: int = None,
-            max_features: int = None,
+            max_features: None = None,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 0,
             min_samples_split: int = 1,
@@ -86,8 +86,8 @@ class RandomForest:
             The number of processes used to fit, and predict for the forrest, -1 means using all proccesors
         max_samples : int, default=None
             The number of samples drawn when doing bootstrap
-        max_features: int, default=None
-            The number of features used when doing feature-sampling. If a larger number is given than the number of columns, all features are used
+        max_features: int, float, {"sqrt", "log2"}, default=None
+            The number of features used when doing feature-sampling
         max_depth : int
             maximum depth of the tree, by default maximum system size
         impurity_tol : float
@@ -101,8 +101,6 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
-        if max_features is not None and max_features < 1:
-            raise AttributeError("max_features should be greater than 0")
         
         self.forrest_type = forrest_type
         self.n_estimators = n_estimators
@@ -122,7 +120,7 @@ class RandomForest:
     # Function used to call the fit function of a tree
     def _build_single_tree(self, tree:DecisionTree):
         # subset the feature indices
-        tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices(), feature_indices=self.__get_feature_indices())
+        tree.fit(self.features.read(), self.outcomes.read(), sample_indices=self.__get_sample_indices())
         return tree
 
     # Function to build all the trees of the forrest, differentiates between running in parallel and sequential
@@ -212,6 +210,7 @@ class RandomForest:
                                     min_samples_split = self.min_samples_split,
                                     min_samples_leaf = self.min_samples_leaf,
                                     min_improvement = self.min_improvement,
+                                    max_features = self.max_features,
                                     splitter=self.splitter) for _ in range(self.n_estimators)]
 
         # Fit trees
@@ -226,14 +225,6 @@ class RandomForest:
     def __get_sample_indices(self):
         if self.bootstrap:
             return np.random.randint(low=0, high=self.n_obs, size=self.max_samples)
-        else:
-            return None
-    
-    # Function that returns an ndarray of random ints used as the feature_indices
-    def __get_feature_indices(self):
-        if self.max_features:
-            num_features_to_chose = min(self.max_features, self.n_features)
-            return np.random.choice(self.n_features, size=num_features_to_chose, replace=False)
         else:
             return None
     
