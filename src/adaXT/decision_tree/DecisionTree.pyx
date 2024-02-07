@@ -45,7 +45,7 @@ class DecisionTree:
         self.n_obs = -1
         self.classes = None
         self.splitter = splitter
-    
+
     def __error_check_max_features(self, max_features):
         if max_features is None:
             return max_features
@@ -64,8 +64,8 @@ class DecisionTree:
             else:
                 raise ValueError("The only string options available for max_features are \"sqrt\", \"log2\"")
         else:
-            raise ValueError("max_features can only be int, float, or in \{\"sqrt\", \"log2\"\}")
-    
+            raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
+
     def __parse_max_features(self, max_features, num_features):
         if max_features is None:
             return None
