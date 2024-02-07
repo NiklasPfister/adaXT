@@ -46,15 +46,21 @@ jobs:
           token: ${{ secrets.ADAXT_ACTIONS }}
           ref: ${{ github.head_ref }}
 
+      - name: Download pipx and make source distribution
+        run: |
+          sudo apt install pipx
+          rm -rf dist/ || true # Remvove if it exists
+          pipx run build --sdist
+
       - uses: actions/download-artifact@v4
         with:
           pattern: cibw-wheels-*
           merge-multiple: true
-          path: wheelhouse/
+          path: dist/
 
-      - name: Display structure of download-artifact
-        run: ls -R wheelhouse/
-
+      - name: List dist foler
+        run: ls -R dist/
+      #
       # - name: commit to branch
       #   run: |
       #     git config --global user.name 'Niklas Andreas Pfister'
