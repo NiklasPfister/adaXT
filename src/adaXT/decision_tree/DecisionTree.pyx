@@ -72,12 +72,12 @@ class DecisionTree:
         elif isinstance(max_features, int):
             return min(max_features, num_features)
         elif isinstance(max_features, float):
-            return min(num_features, np.int32(max_features * num_features))
+            return min(num_features, int(max_features * num_features))
         elif isinstance(max_features, str):
             if max_features == "sqrt":
-                return np.int32(np.sqrt(num_features))
+                return int(np.sqrt(num_features))
             elif max_features == "log2":
-                return np.int32(np.log2(num_features))
+                return int(np.log2(num_features))
         else:
             raise ValueError("Unable to parse max_features")
 

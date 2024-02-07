@@ -131,7 +131,7 @@ class DepthTreeBuilder:
             return self.feature_indices
         else:
             return np.random.choice(
-                self.num_features,
+                self.feature_indices,
                 size=self.int_max_features,
                 replace=False)
 
