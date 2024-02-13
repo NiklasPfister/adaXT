@@ -5,6 +5,7 @@ from sklearn.tree import DecisionTreeRegressor, DecisionTreeClassifier
 import time
 import matplotlib.pyplot as plt
 import json
+import sys
 
 
 def run_classification_tree(X, Y, criteria):
@@ -87,7 +88,7 @@ def plot_subplot(ax, X, Ydiff, title):
     ax.plot(X, Ydiff)
 
 
-if __name__ == "__main__":
+def plot_new_data():
     fig, axs = plt.subplots(3, 3, sharex=True, sharey=True)
     i = 0
     j = 0
@@ -99,13 +100,11 @@ if __name__ == "__main__":
         d_entry = []
         for m in range(1, 30, 1):
             mean_run_times = run_num_iterations(n, m, num_trees=10)
-            print(mean_run_times)
             X.append(m)
             Ydiff.append(mean_run_times[:3])
             Yrun.append(mean_run_times[3:])
             d_entry.append({m: mean_run_times.tolist()})
         data[n] = d_entry
-        print(i, j)
         plot_subplot(axs[i, j], X, Ydiff, n)
         if j == 2:
             i += 1
@@ -133,3 +132,53 @@ if __name__ == "__main__":
     with open("data.json", "w") as f:
         json.dump(data, f, indent=6)
     plt.show()
+
+
+def plot_old_data():
+    fig, axs = plt.subplots(3, 3, sharex=True, sharey=True)
+    with open("data.json", "r") as f:
+        data_json = json.load(f)
+        i = 0
+        j = 0
+        for n in range(1000, 10000, 1000):
+            X = []
+            Ydiff = []
+            Yrun = []
+            for m in range(1, 30, 1):
+                mean_run_times = data_json[str(n)][m - 1][str(m)]
+                X.append(m)
+                Ydiff.append(mean_run_times[:3])
+                Yrun.append(mean_run_times[3:])
+            plot_subplot(axs[i, j], X, Ydiff, n)
+            if j == 2:
+                i += 1
+                j = 0
+            else:
+                j += 1
+    fig.tight_layout()
+    fig.legend(
+        loc="outside upper center",
+        labels=["x=1", "Gini diff", "Entropy diff", "Squared error diff"],
+        ncols=3,
+    )
+    fig.add_subplot(111, frameon=False)
+    plt.tick_params(
+        labelcolor="none",
+        which="both",
+        top=False,
+        bottom=False,
+        left=False,
+        right=False,
+    )
+    plt.xlabel("Number of features")
+    plt.ylabel("adaXT/sklearn time")
+    plt.savefig("decision_tree_time.svg", format="svg")
+    plt.show()
+
+
+if __name__ == "__main__":
+    arg = sys.argv[1]
+    if arg == "old":
+        plot_old_data()
+    else:
+        plot_new_data()
