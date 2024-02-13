@@ -30,15 +30,16 @@ class DecisionTree:
     """
 
     def __init__(
-            self,
-            tree_type: str,
-            criteria: Criteria,
-            max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
-            min_samples_split: int = 1,
-            min_samples_leaf: int = 1,
-            min_improvement: float = 0,
-            splitter: Splitter | None = None) -> None:
+        self,
+        tree_type: str,
+        criteria: Criteria,
+        max_depth: int = sys.maxsize,
+        impurity_tol: float = 0,
+        min_samples_split: int = 1,
+        min_samples_leaf: int = 1,
+        min_improvement: float = 0,
+        splitter: Splitter | None = None,
+    ) -> None:
         """
         Parameters
         ----------
@@ -62,12 +63,13 @@ class DecisionTree:
         pass
 
     def fit(
-            self,
-            X,
-            Y,
-            sample_indices: np.ndarray | None = None,
-            feature_indices: np.ndarray | None = None,
-            sample_weight: np.ndarray | None = None,) -> None:
+        self,
+        X,
+        Y,
+        sample_indices: np.ndarray | None = None,
+        feature_indices: np.ndarray | None = None,
+        sample_weight: np.ndarray | None = None,
+    ) -> None:
         """
         Function used to fit the data on the tree using the DepthTreeBuilder
 
