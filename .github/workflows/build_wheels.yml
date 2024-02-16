@@ -53,7 +53,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: testpypi
-      url: https://test.pypi.org/legacy/adaXT
+      url: https://test.pypi.org/p/adaXT
     permissions:
       id-token: write
     steps:
