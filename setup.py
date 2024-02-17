@@ -3,7 +3,7 @@ import numpy as np
 from setuptools import setup, Extension, find_packages
 
 NAME = "adaXT"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
     "Documentation": "https://NiklasPfister.github.io/adaXT/",
