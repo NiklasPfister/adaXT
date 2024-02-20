@@ -3,8 +3,11 @@ from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 from adaXT.random_forest import RandomForest
 import numpy as np
 
-# We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forrest  
-# on this data, we should have predictions that are always equal to the last column of the input data.
+# We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forrest
+# on this data, we should have predictions that are always equal to the
+# last column of the input data.
+
+
 def test_dominant_feature():
     # Test data dimensions
     n = 1000
