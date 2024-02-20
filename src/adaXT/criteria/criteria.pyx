@@ -541,14 +541,14 @@ cdef class Linear_regression(Criteria):
 
     cdef (double, double) theta(self, int[:] indices):
         """
-        Calculate theta0 and theta1 used for a Linear Regression
-        on X[:, 0] and Y
+        Calculate theta0 and theta1 by a linear regression
+        of Y on X[:, 0]
         ----------
 
         Parameters
         ----------
         indices : memoryview of NDArray
-            The indices to calculate
+            indices included in calculation
 
         Returns
         -------
@@ -578,7 +578,7 @@ cdef class Linear_regression(Criteria):
 
     cpdef double impurity(self, int[:] indices):
         """
-        Calculates the impurity of a Node by:
+        Calculates the impurity of a node by
         L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
         ----------
 
@@ -590,7 +590,7 @@ cdef class Linear_regression(Criteria):
         Returns
         -------
         double
-            The impurity evaluation
+            evaluated impurity
         """
         cdef:
             double step_calc, theta0, theta1, cur_sum
