@@ -86,7 +86,7 @@ class RandomForest:
         bootstrap : bool, default=True
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
-            The number of processes used to fit, and predict for the forrest, -1 means using all proccesors
+            The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
         max_samples : int, default=None
             The number of samples drawn when doing bootstrap
         max_features: int, float, {"sqrt", "log2"}, default=None
