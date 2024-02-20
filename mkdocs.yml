@@ -5,7 +5,7 @@ repo_url: https://github.com/NiklasPfister/adaXT
 repo_name: 'adaXT'
 edit_uri: '?query=root/path/docs/'
 watch: [mkdocs.yml, README.md, src/adaXT]
-site_description: Adaptable Decision Trees and Random Forests
+site_description: Fast Adaptable and Extendable Trees for Research
 
 plugins:
   - search:
