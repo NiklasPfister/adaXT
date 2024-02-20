@@ -111,7 +111,7 @@ class DecisionTree:
             raise ValueError("sample_weight should have dimension (n_samples,)")
         return sample_weight
 
-    def __check_dimensions(self, double[:, :] X):
+    def __check_dimensions(self, X: object):
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         # If there is only a single point
         if X.ndim == 1:
