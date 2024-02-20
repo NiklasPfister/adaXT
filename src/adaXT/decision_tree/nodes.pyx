@@ -1,10 +1,11 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 import numpy as np
+cimport numpy as cnp
 from typing import List
 
 
-class Node:
+cdef class Node:
     def __init__(
             self,
             indices: np.ndarray,
@@ -17,7 +18,7 @@ class Node:
         self.n_samples = n_samples
 
 
-class DecisionNode(Node):
+cdef class DecisionNode(Node):
     def __init__(
             self,
             indices: np.ndarray,
@@ -29,7 +30,6 @@ class DecisionNode(Node):
             left_child: "DecisionNode|LeafNode|None" = None,
             right_child: "DecisionNode|LeafNode|None" = None,
             parent: "DecisionNode|None" = None) -> None:
-
         super().__init__(indices, depth, impurity, n_samples)
         self.threshold = threshold
         self.split_idx = split_idx
@@ -38,7 +38,7 @@ class DecisionNode(Node):
         self.parent = parent
 
 
-class LeafNode(Node):
+cdef class LeafNode(Node):
     def __init__(
             self,
             id: int,
@@ -46,10 +46,12 @@ class LeafNode(Node):
             depth: int,
             impurity: float,
             n_samples: int,
-            value: List[float],
-            parent: DecisionNode) -> None:
-
+            value: np.ndarray,
+            parent: object) -> None:
         super().__init__(indices, depth, impurity, n_samples)
-        self.value = value
         self.parent = parent
         self.id = id
+        self.value = np.asarray(value)
+
+
+

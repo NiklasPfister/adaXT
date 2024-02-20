@@ -19,7 +19,7 @@ def test_predict_leaf_matrix_classification():
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     res1 = tree.get_leaf_matrix()
     res2 = tree.predict_leaf_matrix(X)
@@ -44,7 +44,7 @@ def test_predict_leaf_matrix_regression():
         ]
     )
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
     res1 = tree.get_leaf_matrix()
@@ -70,7 +70,7 @@ def test_predict_leaf_matrix_regression_with_scaling():
         ]
     )
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
     res1 = tree.get_leaf_matrix()
@@ -98,7 +98,7 @@ def test_prediction():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     prediction = tree.predict(X)
     for i in range(len(Y_cla)):
@@ -121,9 +121,9 @@ def test_predict_proba_probability():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    classes = tree.classes
+    classes = np.unique(Y_cla)
     prediction = tree.predict_proba(X)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
@@ -136,11 +136,11 @@ def test_predict_proba_against_predict():
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
 
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y)
 
     predict = tree.predict(X)
-    classes = tree.classes
+    classes = np.unique(Y)
     predict_proba = tree.predict_proba(X)
 
     for i in range(predict.shape[0]):
@@ -163,7 +163,7 @@ def test_NxN_matrix():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     leaf_matrix = tree.get_leaf_matrix()
     true_weight = np.array(
@@ -323,11 +323,10 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
 
         elif isinstance(node1, LeafNode):
             isinstance(node2, LeafNode)
-            assert (
-                node1.value == node2.value
+            assert np.array_equal(
+                node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(
-        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
@@ -447,7 +446,7 @@ if __name__ == "__main__":
     # test_predict_leaf_matrix_regression()
     # test_predict_leaf_matrix_regression_with_scaling()
     # test_prediction()
-    test_predict_proba_probability()
+    # test_predict_proba_probability()
     # test_predict_proba_against_predict()
     # test_NxN_matrix()
     # test_max_depth_setting()

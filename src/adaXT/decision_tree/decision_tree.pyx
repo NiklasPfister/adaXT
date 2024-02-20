@@ -8,34 +8,77 @@ import sys
 # Custom
 from .splitter import Splitter
 from .predict import Predict
+from .predict cimport PredictClassification, PredictRegression
 from ..criteria import Criteria
+from ..criteria import Gini_index, Squared_error, Entropy
 from .nodes import DecisionNode, LeafNode
+from .leafbuilder import LeafBuilder
+from .leafbuilder cimport LeafBuilderClassification, LeafBuilderRegression
 
 
 cdef double EPSILON = np.finfo('double').eps
 
-
 class DecisionTree:
     def __init__(
             self,
-            tree_type: str,
-            criteria: Criteria,
+            tree_type: str | None = None,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
+            criteria: Criteria | None = None,
+            leaf_builder: LeafBuilder | None = None,
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
 
         tree_types = ["Classification", "Regression"]
-        assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
+        if tree_type in tree_types:
+            if tree_type == "Classification":
+                if predict:
+                    self.predict_class = predict
+                else:
+                    self.predict_class = PredictClassification
+                if criteria:
+                    self.criteria = criteria
+                else:
+                    self.criteria = Entropy
+                if leaf_builder:
+                    self.leaf_builder_class = leaf_builder
+                else:
+                    self.leaf_builder_class = LeafBuilderClassification
+            elif tree_type == "Regression":
+                if predict:
+                    self.predict_class = predict
+                else:
+                    self.predict_class = PredictRegression
+                if criteria:
+                    self.criteria = criteria
+                else:
+                    self.criteria = Squared_error
+                if leaf_builder:
+                    self.leaf_builder_class = leaf_builder
+                else:
+                    self.leaf_builder_class = LeafBuilderRegression
+        else:
+            if (not criteria) or (not predict) or (not leaf_builder):
+                raise ValueError(
+                        "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
+                        )
+            self.criteria = criteria
+            self.predict = predict
+            self.leaf_builder = leaf_builder
+
+        if splitter:
+            self.splitter = splitter
+        else:
+            self.splitter = Splitter
+
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
-        self.criteria = criteria
         self.tree_type = tree_type
         self.leaf_nodes = None
         self.root = None
@@ -44,8 +87,6 @@ class DecisionTree:
         self.n_classes = -1
         self.n_obs = -1
         self.classes = None
-        self.splitter = splitter
-        self.predict_class = predict
 
     def __check_input(self, X: object, Y: object):
         # Make sure input arrays are c contigous
@@ -101,6 +142,7 @@ class DecisionTree:
             feature_indices=feature_indices,
             sample_weight=sample_weight,
             criteria=self.criteria(X, Y, sample_weight),
+            leaf_builder_class = self.leaf_builder_class,
             predict_class=self.predict_class,
             splitter=self.splitter)
         builder.build_tree(self)
@@ -189,8 +231,9 @@ class DepthTreeBuilder:
         feature_indices: np.ndarray,
         sample_weight: np.ndarray,
         criteria: Criteria,
-        splitter: Splitter | None = None,
-        predict_class: Predict | None = None,
+        splitter: Splitter,
+        leaf_builder_class: LeafBuilder,
+        predict_class: Predict,
         sample_indices: np.ndarray | None = None,
     ) -> None:
         """
@@ -216,47 +259,9 @@ class DepthTreeBuilder:
         self.criteria = criteria
         self.sample_weight = sample_weight
 
-        if splitter:
-            self.splitter = splitter
-        else:
-            self.splitter = Splitter(self.features, self.response, criteria)
-
-        if predict_class:
-            self.predict_class = predict_class
-        else:
-            self.predict_class = Predict
-
-    def get_mean(
-        self, tree: DecisionTree, node_response: np.ndarray, n_samples: int
-    ) -> List[float]:
-        """
-        Calculates the mean of a leafnode
-
-        Parameters
-        ----------
-        tree : DecisionTree
-            The filled tree object
-        node_response : np.ndarray
-            response values in the node
-        n_samples : int
-            number of samples in the node
-
-        Returns
-        -------
-        List[float]
-            A List of mean values for each class in the node
-        """
-        if tree.tree_type == "Regression":
-            return [float(np.mean(node_response))]
-        # create an empty List for each class type
-        lst = [0.0 for _ in range(tree.n_classes)]
-        for i in range(tree.n_classes):
-            for idx in range(n_samples):
-                if node_response[idx] == self.classes[i]:
-                    lst[i] += 1  # add 1, if the value is the same as class value
-            # weight by the number of total samples in the leaf
-            lst[i] = lst[i] / n_samples
-        return lst
+        self.splitter = splitter(self.features, self.response, criteria)
+        self.predict_class = predict_class
+        self.leaf_builder_class = leaf_builder_class
 
     def build_tree(self, tree: DecisionTree):
         """
@@ -298,13 +303,7 @@ class DepthTreeBuilder:
         )
 
         # Update the tree now that we have the correct samples
-        n_classes = 0
-        if tree.tree_type == "Classification":
-            self.classes = np.unique(response[all_idx])
-            tree.classes = self.classes
-            n_classes = self.classes.shape[0]
-        tree.n_classes = n_classes
-
+        leaf_builder = self.leaf_builder_class(features, response, all_idx)
         n_obs = all_idx.shape[0]
 
         queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
@@ -387,16 +386,14 @@ class DepthTreeBuilder:
                              child_imp[1], new_node, 0))
 
             else:
-                mean_value = self.get_mean(tree, response[indices], n_samples)
-                new_node = LeafNode(
-                    leaf_count,
-                    indices,
-                    depth,
-                    impurity,
-                    n_samples,
-                    mean_value,
-                    parent=parent,
-                )
+                new_node = leaf_builder.build_leaf(
+                        leaf_count,
+                        indices,
+                        depth,
+                        impurity,
+                        n_samples,
+                        parent)
+
                 if is_left and parent:  # if there is a parent
                     parent.left_child = new_node
                 elif parent:
@@ -413,5 +410,5 @@ class DepthTreeBuilder:
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.predictor = self.predict_class(features, response, tree.tree_type, root)
+        tree.predictor = self.predict_class(features, response, root)
         return 0
