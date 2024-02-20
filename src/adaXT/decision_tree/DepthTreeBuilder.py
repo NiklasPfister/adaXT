@@ -90,7 +90,7 @@ class DepthTreeBuilder:
 
         _, col = X.shape
         self.feature_indices = np.arange(col, dtype=np.int32)
-        self.num_features = col
+        self.num_tot_features = col
 
     def get_mean(
             self,

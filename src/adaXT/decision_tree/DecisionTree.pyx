@@ -51,10 +51,12 @@ class DecisionTree:
             return max_features
         elif isinstance(max_features, int):
             if max_features < 1:
-                raise ValueError("max_features can not be less than 1")
+                raise ValueError("When max_features is an integer it can not be less than 1")
             else:
                 return max_features
         elif isinstance(max_features, float):
+            if max_features < 0 or max_features > 1:
+                raise ValueError("When max_features is a float it has to be between 0 and 1") 
             return max_features
         elif isinstance(max_features, str):
             if max_features == "sqrt":
@@ -65,7 +67,7 @@ class DecisionTree:
                 raise ValueError("The only string options available for max_features are \"sqrt\", \"log2\"")
         else:
             raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
-
+            
     def __parse_max_features(self, max_features, num_features):
         if max_features is None:
             return None
