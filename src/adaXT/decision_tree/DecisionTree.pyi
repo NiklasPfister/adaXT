@@ -1,8 +1,8 @@
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
-from .Nodes import *
 import sys
+from typing import Type
 
 
 class DecisionTree:
@@ -30,16 +30,17 @@ class DecisionTree:
     """
 
     def __init__(
-            self,
-            tree_type: str,
-            criteria: Criteria,
-            max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
-            min_samples_split: int = 1,
-            min_samples_leaf: int = 1,
-            min_improvement: float = 0,
-            max_features: None = None,
-            splitter: Splitter | None = None) -> None:
+        self,
+        tree_type: str,
+        criteria: Type[Criteria],
+        max_depth: int = sys.maxsize,
+        impurity_tol: float = 0,
+        min_samples_split: int = 1,
+        min_samples_leaf: int = 1,
+        min_improvement: float = 0,
+        max_features: None = None,
+        splitter: Splitter | None = None,
+    ) -> None:
         """
         Parameters
         ----------
