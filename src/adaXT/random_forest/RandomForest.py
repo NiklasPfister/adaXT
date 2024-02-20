@@ -27,7 +27,7 @@ class SharedNumpyArray:
         # save data type and shape, necessary to read the data correctly
         self._dtype, self._shape = array.dtype, array.shape
 
-        # create a new numpy array that uses the shared memory we created.
+        # create a new numpy array that uses the shared memory we created
         # at first, it is filled with zeros
         res = np.ndarray(
             self._shape, dtype=self._dtype, buffer=self._shared.buf
