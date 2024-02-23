@@ -10,23 +10,23 @@ class DecisionTree:
     Attributes
     ----------
     max_depth: int
-        maximum depth of the tree
+        The maximum depth of the tree.
     tree_type: str
-        Which type of tree it is
+        The type of tree, either "Regression" or "Classification".
     leaf_nodes: list[LeafNode]
-        a list of all the leaf nodes in the tree
+        A list of all leaf nodes in the tree.
     root: Node
-        the root Node of the tree
+        The root node of the tree.
     n_nodes: int
-        the number of nodes in the tree
+        The number of nodes in the tree.
     n_features: int
-        the number of features of the training data
+        The number of features in the training data.
     n_classes: int
-        the number of classes of the training data, 0 for Regression Tree
+        The number of classes in the training data. None for "Regression" tree.
     n_obs: int
-        the number of observations used for training
+        The number of observations in the training data.
     classes: np.ndarray
-        the different classes in the tree given a Classification tree
+        A list of all class labels. None for "Regression" tree.
     """
 
     def __init__(
@@ -44,21 +44,21 @@ class DecisionTree:
         Parameters
         ----------
         tree_type : str
-            Classification or Regression
+            The type of tree, either "Classification" or "Regression".
         criteria: Criteria
-            The Criteria class to use, should be of the type Criteria implemented by AdaXT
+            The Criteria class used for fitting. It should be of the type Criteria implemented by adaXT.
         max_depth : int
-            maximum depth of the tree, by default maximum system size
+            The maximum depth of the tree.
         impurity_tol : float
-            the tolerance of impurity in a leaf node, by default 0
+            The tolerance of impurity in a leaf node.
         min_samples_split : int
-            the minimum amount of samples in a split, by default 1
+            The minimum amount of samples in a split.
         min_samples_leaf : int
-            the minimum amount of samples in a leaf node, by default 1
+            The minimum amount of samples in a leaf node.
         min_improvement: float
-            the minimum improvement gained from performing a split, by default 0
+            The minimum improvement gained from performing a split.
         splitter : Splitter | None, optional
-            Splitter class if None uses premade Splitter class
+            The Splitter class if None uses default Splitter class.
         """
         pass
 
@@ -71,20 +71,20 @@ class DecisionTree:
         sample_weight: np.ndarray | None = None,
     ) -> None:
         """
-        Function used to fit the data on the tree using the DepthTreeBuilder
+        Bild the decision tree from the training data (X, y).
 
         Parameters
         ----------
         X : array-like object
-            feature values, will internally be converted to np.ndarray with dtype=np.float64
+            The feature values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
         Y : array-like object
-            response values, will internally be converted to np.ndarray with dtype=np.float64
-        sample_indices : array-like object
-            specific indices of the dataset you wish to use
+            The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+        sample_indices : array-like object | None, optional
+            A vector specifying samples of the training data that should be used during training. If None all samples are used.
         feature_indices : np.ndarray | None, optional
-            which features to use from the data X, by default uses all
+            A vector specifying features (i.e., columns of X) to use during training. If None all features are used.
         sample_weight : np.ndarray | None, optional
-            np.ndarray of shape (n_samples,) currently only supports weights in {0, 1}
+            Sample weights. Currently not implemented.
         """
         pass
 
