@@ -13,7 +13,7 @@ features, ask for help, or leave general comments.
 Website: [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io/adaXT)
 
 
-### Overview
+### Goals
 
 The goal of adaXT is to provide a flexible and unified code-base for
 various tree-based algorithms that strikes a balance between speed and

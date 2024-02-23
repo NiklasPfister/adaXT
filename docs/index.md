@@ -1,4 +1,4 @@
---8<-- "README.md"
+--8<-- "README.md:2:"
 
 ### Installation
 
