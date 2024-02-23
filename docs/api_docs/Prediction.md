@@ -1,3 +1,3 @@
-# The Prediction Class
+# Prediction Class
 
 TODO

@@ -1,4 +1,4 @@
-# The Splitter Class
+# Splitter Class
 
 TODO
 

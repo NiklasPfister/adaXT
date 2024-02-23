@@ -1,3 +1,3 @@
-# The LeafBuilder Class
+# LeafBuilder Class
 
 TODO

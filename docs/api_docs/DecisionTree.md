@@ -1,4 +1,4 @@
-# The DecisionTree Class
+# DecisionTree Class
 
 The decision tree lies at the core of adaXT. It uses the following
 four individual components to construct specific types of decision
