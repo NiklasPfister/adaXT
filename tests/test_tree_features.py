@@ -204,7 +204,7 @@ def test_min_samples_split_setting():
 
 
 def test_max_features_errors():
-    max_feature_vals = [-1, "cos", []]
+    max_feature_vals = [-1, "cos", [], 1.1, -0.9]
 
     for max_feature in max_feature_vals:
         try:
@@ -222,7 +222,6 @@ def test_max_features_errors():
 
 
 def test_max_features_setting():
-    test_max_features_errors()
 
     X = np.random.uniform(0, 100, (10000, 26))
     Y = np.random.randint(0, 5, 10000)
