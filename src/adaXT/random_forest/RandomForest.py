@@ -61,8 +61,8 @@ class RandomForest:
     def __init__(
             self,
             forest_type: str,
+            criterion: Criteria,
             n_estimators: int = 100,
-            criterion: Criteria = Squared_error,
             bootstrap: bool = True,
             n_jobs: int = 1,
             max_samples: int = None,
@@ -78,10 +78,10 @@ class RandomForest:
         ----------
         forest_type : str
             Classification or Regression
+        criterion : Criteria
+            The criteria function used to evaluate a split in a DecisionTree
         n_estimators : int, default=100
             The number of trees in the forest.
-        criterion : Criteria, default=Squared_errror
-            The criteria function used to evaluate a split
         bootstrap : bool, default=True
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
@@ -210,7 +210,7 @@ class RandomForest:
             raise AttributeError(
                 "Bootstrap can not be False while max_samples is set")
 
-        X, Y = self.check_input(X, Y)
+        X, Y = self.__check_input(X, Y)
         self.features = SharedNumpyArray(X)
         self.outcomes = SharedNumpyArray(Y)
         self.n_obs, self.n_features = self.features._shape
@@ -229,6 +229,7 @@ class RandomForest:
                 min_improvement=self.min_improvement,
                 max_features=self.max_features,
                 splitter=self.splitter,
+                skip_check_input=True
             )
             for _ in range(self.n_estimators)
         ]
@@ -252,7 +253,8 @@ class RandomForest:
 
     def predict(self, X: np.ndarray):
         """
-        Predicts a y-value for given X values using the trees of the forest.
+        Predicts a y-value for given X values using the trees of the forest. In the case of a classification tree with equal majority vote,
+        the lowest class that has maximum votes is returned.
 
         Parameters
         ----------
@@ -344,7 +346,7 @@ class RandomForest:
                     f"Dimension should be {self.n_features}, got {X.shape[1]}"
                 )
 
-    def check_input(self, X: np.ndarray, Y: np.ndarray):
+    def __check_input(self, X: np.ndarray, Y: np.ndarray):
         # Check if X and Y has same number of rows
         if X.shape[0] != Y.shape[0]:
             raise ValueError("X and Y should have the same number of rows")

@@ -39,7 +39,8 @@ class DecisionTree:
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
             max_features: None = None,
-            splitter: Splitter | None = None) -> None:
+            splitter: Splitter | None = None,
+            skip_check_input: bool = False) -> None:
         """
         Parameters
         ----------
@@ -61,6 +62,8 @@ class DecisionTree:
             the number of features to consider when looking for a split
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
+        skip_check_input : bool 
+            Skips any error checking on the features and response in the fitting function of a tree, should only be used if you know what you are doing, by default false.
         """
         pass
 

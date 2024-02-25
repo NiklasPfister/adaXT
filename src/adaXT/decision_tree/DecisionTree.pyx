@@ -25,7 +25,8 @@ class DecisionTree:
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
             max_features: None = None,
-            splitter: Splitter | None = None) -> None:
+            splitter: Splitter | None = None,
+            skip_check_input: bool = False) -> None:
 
         tree_types = ["Classification", "Regression"]
         assert tree_type in tree_types, f"Expected Classification or Regression as tree type, got: {tree_type}"
@@ -45,6 +46,7 @@ class DecisionTree:
         self.n_obs = -1
         self.classes = None
         self.splitter = splitter
+        self.skip_check_input = skip_check_input
 
     def __error_check_max_features(self, max_features):
         if max_features is None:
@@ -82,6 +84,10 @@ class DecisionTree:
             raise ValueError("Unable to parse max_features")
 
     def __check_input(self, X: object, Y: object):
+        # If the skip_check_input option is set to True in the initialization of a tree, then simply return X and Y 
+        if self.skip_check_input:
+            return X, Y
+
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
