@@ -56,12 +56,12 @@ class SharedNumpyArray:
 
 class RandomForest:
     '''
-    The Random Forrest
+    The Random Forest
     '''
 
     def __init__(
             self,
-            forrest_type: str,
+            forest_type: str,
             n_estimators: int = 100,
             criterion: Criteria = Squared_error,
             bootstrap: bool = True,
@@ -77,7 +77,7 @@ class RandomForest:
         """
         Parameters
         ----------
-        forrest_type : str
+        forest_type : str
             Classification or Regression
         n_estimators : int, default=100
             The number of trees in the forest.
@@ -86,7 +86,7 @@ class RandomForest:
         bootstrap : bool, default=True
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
-            The number of processes used to fit, and predict for the forrest, -1 means using all proccesors
+            The number of processes used to fit, and predict for the forest, -1 means using all proccesors
         max_samples : int, default=None
             The number of samples drawn when doing bootstrap
         max_features: int, float, {"sqrt", "log2"}, default=None
@@ -105,7 +105,7 @@ class RandomForest:
             Splitter class if None uses premade Splitter class
         """
 
-        self.forrest_type = forrest_type
+        self.forest_type = forest_type
         self.n_estimators = n_estimators
         self.criterion = criterion
         self.bootstrap = bootstrap
@@ -127,7 +127,7 @@ class RandomForest:
                  sample_indices=self.__get_sample_indices())
         return tree
 
-    # Function to build all the trees of the forrest, differentiates between
+    # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
     def __build_trees(self):
         if (self.n_jobs == 1):
@@ -141,7 +141,7 @@ class RandomForest:
     def _predict_single_tree(self, tree: DecisionTree):
         return np.array(tree.predict(self.predict_values.read()))
 
-    # Function to call predict on all the trees of the forrest, differentiates
+    # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
     def __predict_trees(self):
         predictions = []
@@ -156,12 +156,12 @@ class RandomForest:
         return np.column_stack(predictions)
 
     # Function used to add a column with zeros for all the classes that are in
-    # the forrest but not in a given tree
+    # the forest but not in a given tree
     def __fill_with_zeros_for_missing_classes_in_tree(
             self, tree_classes, predict_proba, num_rows_predict):
         ret_val = np.zeros((num_rows_predict, len(self.classes)))
 
-        # Find the indices of tree_classes in forrest_classes
+        # Find the indices of tree_classes in forest_classes
         tree_class_indices = np.searchsorted(self.classes, tree_classes)
 
         # Only update columns corresponding to tree_classes
@@ -176,7 +176,7 @@ class RandomForest:
             tree.classes, tree_predict_proba, self.predict_values._shape[0])
         return ret_val
 
-    # Function to call predict_proba on all the trees of the forrest,
+    # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
     def __predict_proba_trees(self):
         predictions = []
@@ -193,7 +193,7 @@ class RandomForest:
 
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """
-        Function used to fit a forrest using many DecisionTrees for the given data
+        Function used to fit a forest using many DecisionTrees for the given data
 
         Parameters
         ----------
@@ -210,13 +210,13 @@ class RandomForest:
         self.features = SharedNumpyArray(X)
         self.outcomes = SharedNumpyArray(Y)
         self.n_obs, self.n_features = self.features._shape
-        if self.forrest_type == "Classification":
+        if self.forest_type == "Classification":
             self.classes = np.unique(self.outcomes.read())
         if self.max_samples is None:
             self.max_samples = self.n_obs
         self.trees = [
             DecisionTree(
-                tree_type=self.forrest_type,
+                tree_type=self.forest_type,
                 criteria=self.criterion,
                 max_depth=self.max_depth,
                 impurity_tol=self.impurity_tol,
@@ -230,7 +230,7 @@ class RandomForest:
         # Fit trees
         self.__build_trees()
 
-        # Register that the forrest was succesfully fitted
+        # Register that the forest was succesfully fitted
         self.forest_fitted = True
 
         return self
@@ -246,7 +246,7 @@ class RandomForest:
 
     def predict(self, X: np.ndarray):
         """
-        Predicts a y-value for given X values using the trees of the forrest.
+        Predicts a y-value for given X values using the trees of the forest.
 
         Parameters
         ----------
@@ -260,7 +260,7 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forrest has not been fitted before trying to call predict")
+                "The forest has not been fitted before trying to call predict")
 
         self.predict_values = SharedNumpyArray(X)
 
@@ -269,11 +269,11 @@ class RandomForest:
         tree_predictions = self.__predict_trees()
         self.predict_values.unlink()
 
-        if self.forrest_type == "Regression":
+        if self.forest_type == "Regression":
             # Return the mean answer from all trees for each row
             return np.mean(tree_predictions, axis=1)
 
-        elif self.forrest_type == "Classification":
+        elif self.forest_type == "Classification":
             # Return the element most voted for by trees for each row
             # QUESTION: how to handle equal majority vote?
             return np.apply_along_axis(
@@ -286,7 +286,7 @@ class RandomForest:
 
     def predict_proba(self, X: np.ndarray):
         """
-        Predicts a probability for each response for given X values using the trees of the forrest
+        Predicts a probability for each response for given X values using the trees of the forest
 
         Parameters
         ----------
@@ -300,11 +300,11 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forrest has not been fitted before trying to call predict_proba")
+                "The forest has not been fitted before trying to call predict_proba")
 
         # Make sure that predict_proba is only called on Classification
-        # forrests
-        if self.forrest_type != "Classification":
+        # forests
+        if self.forest_type != "Classification":
             raise ValueError(
                 "predict_proba can only be called on a Classification tree")
 

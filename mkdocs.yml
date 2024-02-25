@@ -68,8 +68,8 @@ nav:
     - Decision Tree:
       - Creating a tree: decision_tree/examples/creatingATree.md
       - Creating a criteria: decision_tree/examples/creatingACriteria.md
-    - Random Forrest:
-      - Chosing n_jobs parameter: RandomForrest/user_guide/chosing_n_jobs.md
+    - Random Forest:
+      - Chosing n_jobs parameter: RandomForest/user_guide/chosing_n_jobs.md
 
 # For setting up math and code blocks
 markdown_extensions:
