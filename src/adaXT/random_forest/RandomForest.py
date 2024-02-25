@@ -12,15 +12,15 @@ import sys
 
 
 class SharedNumpyArray:
-    '''
+    """
     Wraps a numpy array so that it can be shared quickly among processes,
     avoiding unnecessary copying and (de)serializing.
-    '''
+    """
 
     def __init__(self, array):
-        '''
+        """
         Creates the shared memory and copies the array therein
-        '''
+        """
         # create the shared memory location of the same size of the array
         self._shared = SharedMemory(create=True, size=array.nbytes)
 
@@ -29,51 +29,51 @@ class SharedNumpyArray:
 
         # create a new numpy array that uses the shared memory we created
         # at first, it is filled with zeros
-        res = np.ndarray(
-            self._shape, dtype=self._dtype, buffer=self._shared.buf
-        )
+        res = np.ndarray(self._shape, dtype=self._dtype,
+                         buffer=self._shared.buf)
 
         # copy data from the array to the shared memory. numpy will
         # take care of copying everything in the correct format
         res[:] = array[:]
 
     def read(self):
-        '''
+        """
         Reads the array from the shared memory without unnecessary copying.
-        '''
+        """
         # simply create an array of the correct shape and type,
         # using the shared memory location we created earlier
         return np.ndarray(self._shape, self._dtype, buffer=self._shared.buf)
 
     def unlink(self):
-        '''
+        """
         Releases the allocated memory. Call when finished using the data,
         or when the data was copied somewhere else.
-        '''
+        """
         self._shared.close()
         self._shared.unlink()
 
 
 class RandomForest:
-    '''
+    """
     The Random Forrest
-    '''
+    """
 
     def __init__(
-            self,
-            forrest_type: str,
-            n_estimators: int = 100,
-            criterion: Criteria = Squared_error,
-            bootstrap: bool = True,
-            n_jobs: int = 1,
-            max_samples: int = None,
-            max_features: None = None,
-            max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
-            min_samples_split: int = 1,
-            min_samples_leaf: int = 1,
-            min_improvement: float = 0,
-            splitter: Splitter | None = None):
+        self,
+        forrest_type: str,
+        n_estimators: int = 100,
+        criterion: Criteria = Squared_error,
+        bootstrap: bool = True,
+        n_jobs: int = 1,
+        max_samples: int = None,
+        max_features: None = None,
+        max_depth: int = sys.maxsize,
+        impurity_tol: float = 0,
+        min_samples_split: int = 1,
+        min_samples_leaf: int = 1,
+        min_improvement: float = 0,
+        splitter: Splitter | None = None,
+    ):
         """
         Parameters
         ----------
@@ -121,24 +121,27 @@ class RandomForest:
         self.forest_fitted = False
 
     # Function used to call the fit function of a tree
-    def _build_single_tree(self, tree: DecisionTree):
+    def __build_single_tree(self, tree: DecisionTree):
         # subset the feature indices
-        tree.fit(self.features.read(), self.outcomes.read(),
-                 sample_indices=self.__get_sample_indices())
+        tree.fit(
+            self.features.read(),
+            self.outcomes.read(),
+            sample_indices=self.__get_sample_indices(),
+        )
         return tree
 
     # Function to build all the trees of the forrest, differentiates between
     # running in parallel and sequential
     def __build_trees(self):
-        if (self.n_jobs == 1):
+        if self.n_jobs == 1:
             for tree in self.trees:
-                self._build_single_tree(tree)
+                self.__build_single_tree(tree)
         else:
             with Pool(self.n_jobs) as p:
-                self.trees = p.map(self._build_single_tree, self.trees)
+                self.trees = p.map(self.__build_single_tree, self.trees)
 
     # Function used to call the predict function of a tree
-    def _predict_single_tree(self, tree: DecisionTree):
+    def __predict_single_tree(self, tree: DecisionTree):
         return np.array(tree.predict(self.predict_values.read()))
 
     # Function to call predict on all the trees of the forrest, differentiates
@@ -146,19 +149,20 @@ class RandomForest:
     def __predict_trees(self):
         predictions = []
 
-        if (self.n_jobs == 1):
+        if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(self._predict_single_tree(tree))
+                predictions.append(self.__predict_single_tree(tree))
         else:
             with Pool(self.n_jobs) as p:
-                predictions = p.map(self._predict_single_tree, self.trees)
+                predictions = p.map(self.__predict_single_tree, self.trees)
 
         return np.column_stack(predictions)
 
     # Function used to add a column with zeros for all the classes that are in
     # the forrest but not in a given tree
     def __fill_with_zeros_for_missing_classes_in_tree(
-            self, tree_classes, predict_proba, num_rows_predict):
+        self, tree_classes, predict_proba, num_rows_predict
+    ):
         ret_val = np.zeros((num_rows_predict, len(self.classes)))
 
         # Find the indices of tree_classes in forrest_classes
@@ -170,10 +174,11 @@ class RandomForest:
         return ret_val
 
     # Function to call predict_proba for a tree
-    def _predict_proba_single_tree(self, tree: DecisionTree):
+    def __predict_proba_single_tree(self, tree: DecisionTree):
         tree_predict_proba = tree.predict_proba(self.predict_values.read())
         ret_val = self.__fill_with_zeros_for_missing_classes_in_tree(
-            tree.classes, tree_predict_proba, self.predict_values._shape[0])
+            tree.classes, tree_predict_proba, self.predict_values._shape[0]
+        )
         return ret_val
 
     # Function to call predict_proba on all the trees of the forrest,
@@ -181,13 +186,13 @@ class RandomForest:
     def __predict_proba_trees(self):
         predictions = []
 
-        if (self.n_jobs == 1):
+        if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(self._predict_proba_single_tree(tree))
+                predictions.append(self.__predict_proba_single_tree(tree))
         else:
             with Pool(self.n_jobs) as p:
                 predictions = p.map(
-                    self._predict_proba_single_tree, self.trees)
+                    self.__predict_proba_single_tree, self.trees)
 
         return predictions
 
@@ -224,8 +229,10 @@ class RandomForest:
                 min_samples_leaf=self.min_samples_leaf,
                 min_improvement=self.min_improvement,
                 max_features=self.max_features,
-                splitter=self.splitter) for _ in range(
-                self.n_estimators)]
+                splitter=self.splitter,
+            )
+            for _ in range(self.n_estimators)
+        ]
 
         # Fit trees
         self.__build_trees()
@@ -239,8 +246,7 @@ class RandomForest:
     # sample_indices
     def __get_sample_indices(self):
         if self.bootstrap:
-            return np.random.randint(
-                low=0, high=self.n_obs, size=self.max_samples)
+            return np.random.randint(low=0, high=self.n_obs, size=self.max_samples)
         else:
             return None
 
@@ -260,7 +266,8 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forrest has not been fitted before trying to call predict")
+                "The forrest has not been fitted before trying to call predict"
+            )
 
         self.predict_values = SharedNumpyArray(X)
 
@@ -277,10 +284,11 @@ class RandomForest:
             # Return the element most voted for by trees for each row
             # QUESTION: how to handle equal majority vote?
             return np.apply_along_axis(
-                self.most_frequent_element, 1, tree_predictions)
+                self.__most_frequent_element, 1, tree_predictions
+            )
 
     # Function used to find the most frequent element of an array
-    def most_frequent_element(self, arr):
+    def __most_frequent_element(self, arr):
         values, counts = np.unique(arr, return_counts=True)
         return values[np.argmax(counts)]
 
@@ -300,13 +308,15 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forrest has not been fitted before trying to call predict_proba")
+                "The forrest has not been fitted before trying to call predict_proba"
+            )
 
         # Make sure that predict_proba is only called on Classification
         # forrests
         if self.forrest_type != "Classification":
             raise ValueError(
-                "predict_proba can only be called on a Classification tree")
+                "predict_proba can only be called on a Classification tree"
+            )
 
         # Check dimensions
         self.check_dimensions(X)
@@ -326,13 +336,15 @@ class RandomForest:
     def check_dimensions(self, X: np.ndarray):
         # If there is only a single point
         if X.ndim == 1:
-            if (X.shape[0] != self.n_features):
+            if X.shape[0] != self.n_features:
                 raise ValueError(
-                    f"Number of features should be {self.n_features}, got {X.shape[0]}")
+                    f"Number of features should be {self.n_features}, got {X.shape[0]}"
+                )
         else:
             if X.shape[1] != self.n_features:
                 raise ValueError(
-                    f"Dimension should be {self.n_features}, got {X.shape[1]}")
+                    f"Dimension should be {self.n_features}, got {X.shape[1]}"
+                )
 
     def check_input(self, X: np.ndarray, Y: np.ndarray):
         # Check if X and Y has same number of rows
