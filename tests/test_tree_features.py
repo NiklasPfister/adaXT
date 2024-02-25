@@ -209,8 +209,9 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        impurity_tol=impurity_tol_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -294,8 +295,9 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_samples_leaf=min_samples_leaf_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -311,8 +313,9 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_improvement=min_improvement_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:

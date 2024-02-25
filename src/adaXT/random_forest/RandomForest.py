@@ -246,7 +246,8 @@ class RandomForest:
     # sample_indices
     def __get_sample_indices(self):
         if self.bootstrap:
-            return np.random.randint(low=0, high=self.n_obs, size=self.max_samples)
+            return np.random.randint(
+                low=0, high=self.n_obs, size=self.max_samples)
         else:
             return None
 
