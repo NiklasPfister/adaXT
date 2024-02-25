@@ -5,7 +5,7 @@ algorithms that is fast, adaptable and extendable and aims to provide
 researchers a more flexible workflow when developing tree-based
 models.
 
-It is distributed under the [3-Clause BSD license](LICENSE).
+It is distributed under the [3-Clause BSD license](../LICENSE).
 
 We encourage users and developers to report problems, request
 features, ask for help, or leave general comments.

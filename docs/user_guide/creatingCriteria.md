@@ -1,4 +1,4 @@
-# Creating a custom criteria
+# Creating a custom criteriadecision_tree
 
 In the following we explain how to create a custom criteria function
 by walking through the required steps. We start by creating .pyx file.
@@ -26,7 +26,7 @@ types](https://cython.readthedocs.io/en/latest/src/tutorial/cdef_classes.html).
 Now for the criteria to work with adaXT you have to implement the
 impurity method inherited from the Criteria class. The impurity method
 has to follow the type specified within
-[criteria.pxd](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/decision_tree/criteria.pxd),
+[criteria.pxd](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/criteria/criteria.pxd),
 which is as follows.
 
 ```cython
@@ -265,7 +265,7 @@ plt.show()
 This just creates a regression tree with the newly created custom
 Linear_regression Criteria function, specifies the `max_depth` to be 3
 and then plots the tree using both our
-[plot_tree](../utils/tree_utils.md) and the
+[plot_tree](../api_docs/tree_utils.md#adaXT.decision_tree.tree_utils.plot_tree) and the
 [matplotlib](https://matplotlib.org/). The full source code used
 within this article can be found
 [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/linear_regression).
