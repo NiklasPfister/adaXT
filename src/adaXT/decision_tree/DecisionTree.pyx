@@ -84,7 +84,7 @@ class DecisionTree:
             raise ValueError("Unable to parse max_features")
 
     def __check_input(self, X: object, Y: object):
-        # If the skip_check_input option is set to True in the initialization of a tree, then simply return X and Y 
+        # If the skip_check_input option is set to True in the initialization of a tree, then simply return X and Y
         if self.skip_check_input:
             return X, Y
 
