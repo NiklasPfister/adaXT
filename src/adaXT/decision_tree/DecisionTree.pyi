@@ -1,8 +1,8 @@
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
-from .Nodes import *
 import sys
+from typing import Type
 
 
 class DecisionTree:
