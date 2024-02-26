@@ -5,6 +5,7 @@ from ..criteria import Criteria
 from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
+from typing import Type
 
 class DecisionTree:
     """
@@ -33,6 +34,7 @@ class DecisionTree:
     def __init__(
         self,
         tree_type: str | None = None,
+        criteria: Type[Criteria],
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
         min_samples_split: int = 1,
