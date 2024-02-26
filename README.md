@@ -1,7 +1,7 @@
 ## Fast Adaptable and Extendable Trees for Research
 
 **adaXT** is a Python module for tree-based machine-learning
-algorithms that is fast, adaptable and extendable and aims to provide
+algorithms that is fast, adaptable and extendable. It aims to provide
 researchers a more flexible workflow when developing tree-based
 models.
 
