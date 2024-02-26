@@ -71,7 +71,7 @@ class DecisionTree:
         sample_weight: np.ndarray | None = None,
     ) -> None:
         """
-        Bild the decision tree from the training data (X, y).
+        Build the decision tree from the training data (X, y).
 
         Parameters
         ----------
