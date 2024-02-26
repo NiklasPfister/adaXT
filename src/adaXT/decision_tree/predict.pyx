@@ -176,7 +176,7 @@ cdef class PredictRegression(Predict):
 
 
 cdef class PredictLinearRegression(Predict):
-    def predict(self, object X):
+    def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
@@ -230,6 +230,6 @@ cdef class PredictQuantile(Predict):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = (cur_node.n_samples - quantile) / (cur_node.n_samples + (1.0 - 2.0*quantile))
+            Y[i] = np.quantile(self.y[cur_node.indices], quantile)
         return Y
 

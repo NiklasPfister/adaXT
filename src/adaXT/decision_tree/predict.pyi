@@ -5,3 +5,23 @@ class Predict:
     """
 
     pass
+
+
+class PredictClassification(Predict):
+    """
+    Default used for Classification
+    """
+
+    pass
+
+
+class PredictRegression(Predict):
+    """
+    Default used for Regression
+    """
+
+    pass
+
+
+class PredictLinearRegression(Predict):
+    pass

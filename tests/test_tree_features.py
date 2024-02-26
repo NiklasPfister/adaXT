@@ -1,6 +1,9 @@
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
+from adaXT.decision_tree.predict import PredictLinearRegression
+from adaXT.decision_tree.leafbuilder import LinearRegressionLeafBuilder
+
 import numpy as np
 
 
@@ -441,6 +444,43 @@ def test_sample_weight_regression():
     assert_tree_equality(t1, t2)
 
 
+def test_linear_predict():
+    """
+    As the Linear Regression is fitted on the index 0 of the X training data,
+    we can validate the new Prediction by first creating some "noise" data,
+    and then create some data on the same line.
+    Then with new values that should be on the same line,
+    we can make sure that the predicted Y values,
+    indeed are on the line.
+    """
+    np.random.seed(2024)
+    X = np.random.uniform(1000, 100000, (1000, 5))  # noise
+    Y = np.random.uniform(1000, 100000, (1000))
+
+    X_Y_corr = np.arange(0, 50, step=1)
+    idx = np.random.randint(0, 1000, 50)
+
+    # Replace some indices with correlated data
+    X[idx, 0] = X_Y_corr
+    Y[idx] = X_Y_corr
+
+    tree = DecisionTree(
+        "LinearRegression",
+        criteria=Linear_regression,
+        predict=PredictLinearRegression,
+        leaf_builder=LinearRegressionLeafBuilder,
+    )
+    tree.fit(X, Y)
+
+    X = np.random.uniform(1, 100, (50, 5))
+    corr_data = np.arange(50, 100, step=1)
+    X[:, 0] = corr_data
+    prediction = tree.predict(X)
+    assert (
+        np.corrcoef(prediction) == 1.0
+    ), "Linear Prediction didn't predict with perfect correlation"
+
+
 if __name__ == "__main__":
     # test_predict_leaf_matrix_classification()
     # test_predict_leaf_matrix_regression()
@@ -458,4 +498,5 @@ if __name__ == "__main__":
     # test_sample_indices_regression()
     # test_sample_weight_classification()
     # test_sample_weight_regression()
+    test_linear_predict()
     print("Done.")

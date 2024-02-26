@@ -1,7 +1,9 @@
+from typing import Type
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
-from .Nodes import *
+from .predict import Predict
+from .leafbuilder import LeafBuilder
 import sys
 
 class DecisionTree:
@@ -30,22 +32,22 @@ class DecisionTree:
 
     def __init__(
         self,
-        tree_type: str,
-        criteria: Criteria,
+        tree_type: str | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
-        splitter: Splitter | None = None,
+        criteria: Type[Criteria] | None = None,
+        leaf_builder: Type[LeafBuilder] | None = None,
+        predict: Type[Predict] | None = None,
+        splitter: Type[Splitter] | None = None,
     ) -> None:
         """
         Parameters
         ----------
         tree_type : str
             Classification or Regression
-        criteria: Criteria
-            The Criteria class to use, should be of the type Criteria implemented by AdaXT
         max_depth : int
             maximum depth of the tree, by default maximum system size
         impurity_tol : float
@@ -54,8 +56,18 @@ class DecisionTree:
             the minimum amount of samples in a split, by default 1
         min_samples_leaf : int
             the minimum amount of samples in a leaf node, by default 1
-        min_improvement: float
-            the minimum improvement gained from performing a split, by default 0
+        min_improvement : float
+            the minimum improvement gained from performing a split,
+            by default 0
+        criteria : Criteria
+            The Criteria class to use,
+            if none defaults to tree_type default
+        leaf_builder : LeafBuilder
+            LeafBuilder class to use when building a given leaf,
+            if none defaults to tree_type default
+        predict : Predict
+            Predict class to use when predicting,
+            if none defaults to tree_type default
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
