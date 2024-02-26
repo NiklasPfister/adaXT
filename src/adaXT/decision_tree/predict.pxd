@@ -9,8 +9,6 @@ cdef class Predict():
 
     cdef double[:, ::1] __check_dimensions(self, object X)
 
-    cpdef double[:] predict(self, object X)
-
     cpdef double[:, ::1] predict_leaf_matrix(self, object X, bint scale=*)
 
     cpdef list predict_proba(self, object X)
@@ -22,12 +20,8 @@ cdef class PredictClassification(Predict):
 
     cdef int __find_max_index(self, double[::1] lst)
 
-    cpdef double[:] predict(self, object X)
-
     cpdef list predict_proba(self, object X)
 
 
 cdef class PredictRegression(Predict):
-
-    cpdef double[:] predict(self, object X)
-
+    pass

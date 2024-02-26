@@ -66,8 +66,8 @@ class DecisionTree:
                         "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
                         )
             self.criteria = criteria
-            self.predict = predict
-            self.leaf_builder = leaf_builder
+            self.predict_class = predict
+            self.leaf_builder_class = leaf_builder
 
         if splitter:
             self.splitter = splitter
@@ -147,10 +147,10 @@ class DecisionTree:
             splitter=self.splitter)
         builder.build_tree(self)
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, **kwargs):
         if not self.root:
             raise AttributeError("The tree has not been fitted before trying to call predict")
-        return self.predictor.predict(X)
+        return np.asarray(self.predictor.predict(X, **kwargs))
 
     def predict_proba(self, X: np.ndarray):
         if not self.root:

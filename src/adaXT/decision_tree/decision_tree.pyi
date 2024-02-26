@@ -4,7 +4,6 @@ from ..criteria import Criteria
 from .Nodes import *
 import sys
 
-
 class DecisionTree:
     """
     Attributes
@@ -88,7 +87,7 @@ class DecisionTree:
         """
         pass
 
-    def predict(self, X: np.ndarray) -> np.ndarray:
+    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Works in two ways depending on if the tree is a Classification or Regression tree.
 

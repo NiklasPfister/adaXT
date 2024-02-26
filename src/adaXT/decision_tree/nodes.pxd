@@ -22,3 +22,8 @@ cdef class LeafNode(Node):
         cnp.ndarray value
         int id
         object parent
+
+
+cdef class LinearRegressionLeafNode(LeafNode):
+    cdef public:
+        double theta0, theta1

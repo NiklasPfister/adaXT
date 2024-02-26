@@ -4,7 +4,7 @@ from .nodes import DecisionNode, LeafNode
 
 cdef class Predict():
 
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
+    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
         if not (isinstance(root, DecisionNode)):
             raise ValueError("Prediction expected a DecisionNode as root")
         self.X = X
@@ -27,7 +27,7 @@ cdef class Predict():
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
         return X
 
-    cpdef double[:] predict(self, object X):
+    def predict(self, object X, **kwargs):
         raise NotImplementedError("Function predict is not implemented for this Predict class")
 
     cpdef list predict_proba(self, object X):
@@ -76,7 +76,7 @@ cdef class Predict():
 
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
+    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
         self.classes = np.unique(Y)
 
 
@@ -89,7 +89,7 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    cpdef double[:] predict(self, object X):
+    def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
@@ -148,7 +148,7 @@ cdef class PredictClassification(Predict):
 
 
 cdef class PredictRegression(Predict):
-    cpdef double[:] predict(self, object X):
+    def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
@@ -173,3 +173,63 @@ cdef class PredictRegression(Predict):
                     cur_node = cur_node.right_child
             Y[i] = cur_node.value[0]
         return Y
+
+
+cdef class PredictLinearRegression(Predict):
+    def predict(self, object X):
+        cdef:
+            int i, cur_split_idx, idx, n_obs
+            double cur_threshold
+            object cur_node
+            double[:] Y
+
+        if not self.root:
+            raise AttributeError("The tree has not been fitted before trying to call predict")
+        X = Predict.__check_dimensions(self, X)
+        n_obs = X.shape[0]
+        Y = np.empty(n_obs)
+
+        for i in range(n_obs):
+            cur_node = self.root
+            while isinstance(cur_node, DecisionNode):
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
+                    cur_node = cur_node.left_child
+                else:
+                    cur_node = cur_node.right_child
+            Y[i] = cur_node.theta0 + cur_node.theta1*X[i, 0]
+        return Y
+
+
+cdef class PredictQuantile(Predict):
+
+    def predict(self, object X, **kwargs):
+        cdef:
+            int i, cur_split_idx, idx, n_obs
+            double cur_threshold
+            object cur_node
+            double[:] Y
+            double quantile
+
+        if not self.root:
+            raise AttributeError("The tree has not been fitted before trying to call predict")
+
+        quantile = <double> kwargs['quantile']
+        # Make sure that x fits the dimensions.
+        X = Predict.__check_dimensions(self, X)
+        n_obs = X.shape[0]
+        Y = np.empty(n_obs)
+
+        for i in range(n_obs):
+            cur_node = self.root
+            while isinstance(cur_node, DecisionNode):
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
+                    cur_node = cur_node.left_child
+                else:
+                    cur_node = cur_node.right_child
+            Y[i] = (cur_node.n_samples - quantile) / (cur_node.n_samples + (1.0 - 2.0*quantile))
+        return Y
+
