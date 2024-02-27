@@ -30,16 +30,17 @@ class DecisionTree:
     """
 
     def __init__(
-        self,
-        tree_type: str,
-        criteria: Type[Criteria],
-        max_depth: int = sys.maxsize,
-        impurity_tol: float = 0,
-        min_samples_split: int = 1,
-        min_samples_leaf: int = 1,
-        min_improvement: float = 0,
-        splitter: Splitter | None = None,
-    ) -> None:
+            self,
+            tree_type: str,
+            criteria: Criteria,
+            max_depth: int = sys.maxsize,
+            impurity_tol: float = 0,
+            min_samples_split: int = 1,
+            min_samples_leaf: int = 1,
+            min_improvement: float = 0,
+            max_features: None = None,
+            splitter: Splitter | None = None,
+            skip_check_input: bool = False) -> None:
         """
         Parameters
         ----------
@@ -57,19 +58,21 @@ class DecisionTree:
             The minimum amount of samples in a leaf node.
         min_improvement: float
             The minimum improvement gained from performing a split.
+        max_features: int, float or {“sqrt”, “log2”}, default=None
+            the number of features to consider when looking for a split
         splitter : Splitter | None, optional
             The Splitter class if None uses default Splitter class.
+        skip_check_input : bool 
+            Skips any error checking on the features and response in the fitting function of a tree, should only be used if you know what you are doing, by default false.
         """
         pass
 
     def fit(
-        self,
-        X,
-        Y,
-        sample_indices: np.ndarray | None = None,
-        feature_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
-    ) -> None:
+            self,
+            X,
+            Y,
+            sample_indices: np.ndarray | None = None,
+            sample_weight: np.ndarray | None = None,) -> None:
         """
         Build the decision tree from the training data (X, y).
 
