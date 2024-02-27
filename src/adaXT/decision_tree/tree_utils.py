@@ -5,8 +5,8 @@ from . import DecisionTree, LeafNode, DecisionNode
 
 def plot_tree(tree: DecisionTree):
     """
-    Generates the tree as a subplot of plt. To show the plot,
-    the user needs to call mathplotlib.pyplot.show().
+    Generates the tree in a subplot of plt. To show the plot,
+    the user needs to call matplotlib.pyplot.show().
 
     Parameters
     ----------
