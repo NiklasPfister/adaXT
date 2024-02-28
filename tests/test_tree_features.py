@@ -236,9 +236,7 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert (
-            min_samples_split_desired <= node.parent.n_samples
-        ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
+        assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
 
 
 def test_min_samples_leaf_setting():
@@ -497,6 +495,5 @@ if __name__ == "__main__":
     # test_sample_indices_classification()
     # test_sample_indices_regression()
     # test_sample_weight_classification()
-    # test_sample_weight_regression()
-    test_linear_predict()
+    test_sample_weight_regression()
     print("Done.")
