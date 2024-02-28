@@ -10,13 +10,14 @@ from .splitter import Splitter
 from .predict import Predict
 from .predict cimport PredictClassification, PredictRegression
 from ..criteria import Criteria
-from ..criteria import Gini_index, Squared_error, Entropy
-from .nodes import DecisionNode, LeafNode
+from ..criteria import Squared_error, Entropy
+from .nodes import DecisionNode
 from .leafbuilder import LeafBuilder
 from .leafbuilder cimport LeafBuilderClassification, LeafBuilderRegression
 
 
 cdef double EPSILON = np.finfo('double').eps
+
 
 class DecisionTree:
     def __init__(
@@ -40,9 +41,9 @@ class DecisionTree:
                 else:
                     self.predict_class = PredictClassification
                 if criteria:
-                    self.criteria = criteria
+                    self.criteria_class = criteria
                 else:
-                    self.criteria = Entropy
+                    self.criteria_class = Entropy
                 if leaf_builder:
                     self.leaf_builder_class = leaf_builder
                 else:
@@ -53,9 +54,9 @@ class DecisionTree:
                 else:
                     self.predict_class = PredictRegression
                 if criteria:
-                    self.criteria = criteria
+                    self.criteria_class = criteria
                 else:
-                    self.criteria = Squared_error
+                    self.criteria_class = Squared_error
                 if leaf_builder:
                     self.leaf_builder_class = leaf_builder
                 else:
@@ -65,7 +66,7 @@ class DecisionTree:
                 raise ValueError(
                         "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
                         )
-            self.criteria = criteria
+            self.criteria_class = criteria
             self.predict_class = predict
             self.leaf_builder_class = leaf_builder
 
@@ -141,7 +142,7 @@ class DecisionTree:
             sample_indices=sample_indices,
             feature_indices=feature_indices,
             sample_weight=sample_weight,
-            criteria=self.criteria(X, Y, sample_weight),
+            criteria=self.criteria_class(X, Y, sample_weight),
             leaf_builder_class = self.leaf_builder_class,
             predict_class=self.predict_class,
             splitter=self.splitter)
@@ -180,7 +181,6 @@ class DecisionTree:
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf_matrix(X, scale)
-
 
 
 # From below here, it is the DepthTreeBuilder

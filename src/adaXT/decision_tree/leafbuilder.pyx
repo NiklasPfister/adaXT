@@ -6,16 +6,16 @@ cimport numpy as cnp
 
 cdef class LeafBuilder:
     def __cinit__(self, double[:, ::1] x, double[::1] y, int[::1] all_idx, **kwargs):
-       self.x = x
-       self.y = y
+        self.x = x
+        self.y = y
 
     cpdef LeafNode build_leaf(self,
-                             int leaf_id,
-                             int[::1] indices,
-                             int depth,
-                             double impurity,
-                             int n_samples,
-                             object parent):
+                              int leaf_id,
+                              int[::1] indices,
+                              int depth,
+                              double impurity,
+                              int n_samples,
+                              object parent):
         raise NotImplementedError("Build leaf not implemented for this LeafBuilder")
 
 
@@ -40,12 +40,12 @@ cdef class LeafBuilderClassification(LeafBuilder):
         return ret
 
     cpdef LeafNode build_leaf(self,
-                             int leaf_id,
-                             int[::1] indices,
-                             int depth,
-                             double impurity,
-                             int n_samples,
-                             object parent):
+                              int leaf_id,
+                              int[::1] indices,
+                              int depth,
+                              double impurity,
+                              int n_samples,
+                              object parent):
         cdef double[::1] mean = self.__get_mean(indices, n_samples)
         return LeafNode(leaf_id, indices, depth, impurity, n_samples, mean, parent)
 
@@ -59,17 +59,17 @@ cdef class LeafBuilderRegression(LeafBuilder):
             int count = len(indices)
 
         for i in indices:
-           sum += self.y[i]
+            sum += self.y[i]
 
         return sum / count
 
     cpdef LeafNode build_leaf(self,
-                             int leaf_id,
-                             int[::1] indices,
-                             int depth,
-                             double impurity,
-                             int n_samples,
-                             object parent):
+                              int leaf_id,
+                              int[::1] indices,
+                              int depth,
+                              double impurity,
+                              int n_samples,
+                              object parent):
 
         cdef double[::1] mean = np.array(self.__get_mean(indices), dtype=np.double, ndmin=1)
         return LeafNode(leaf_id, indices, depth, impurity, n_samples, mean, parent)
@@ -127,14 +127,13 @@ cdef class LinearRegressionLeafBuilder(LeafBuilderRegression):
         theta0 = muY - theta1*muX
         return (theta0, theta1, muY)
 
-
     cpdef LeafNode build_leaf(self,
-                             int leaf_id,
-                             int[::1] indices,
-                             int depth,
-                             double impurity,
-                             int n_samples,
-                             object parent):
+                              int leaf_id,
+                              int[::1] indices,
+                              int depth,
+                              double impurity,
+                              int n_samples,
+                              object parent):
         cdef:
             double[::1] mean
             double theta0, theta1
@@ -145,5 +144,3 @@ cdef class LinearRegressionLeafBuilder(LeafBuilderRegression):
         return LinearRegressionLeafNode(
                 leaf_id, indices, depth, impurity, n_samples, mean, parent, theta0, theta1
                 )
-
-

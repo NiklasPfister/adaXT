@@ -1,6 +1,7 @@
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 from numpy import float64 as DOUBLE
-from .nodes import DecisionNode, LeafNode
+from .nodes import DecisionNode
 
 cdef class Predict():
 
@@ -11,7 +12,6 @@ cdef class Predict():
         self.Y = Y
         self.n_features = X.shape[1]
         self.root = root
-
 
     cdef double[:, ::1] __check_dimensions(self, object X):
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -79,7 +79,6 @@ cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
         self.classes = np.unique(Y)
 
-
     cdef int __find_max_index(self, double[::1] lst):
         cdef:
             int cur_max, i
@@ -131,7 +130,6 @@ cdef class PredictClassification(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        n_classes = self.classes.shape[0]
         ret_val = []
         for i in range(n_obs):
             cur_node = self.root
@@ -150,7 +148,7 @@ cdef class PredictClassification(Predict):
 cdef class PredictRegression(Predict):
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, idx, n_obs
+            int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
             double[:] Y
@@ -178,7 +176,7 @@ cdef class PredictRegression(Predict):
 cdef class PredictLinearRegression(Predict):
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, idx, n_obs
+            int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
             double[:] Y
@@ -206,7 +204,7 @@ cdef class PredictQuantile(Predict):
 
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, idx, n_obs
+            int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
             double[:] Y
@@ -232,4 +230,3 @@ cdef class PredictQuantile(Predict):
                     cur_node = cur_node.right_child
             Y[i] = np.quantile(self.y[cur_node.indices], quantile)
         return Y
-

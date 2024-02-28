@@ -6,7 +6,6 @@ cdef class Predict():
         int n_features
         object root
 
-
     cdef double[:, ::1] __check_dimensions(self, object X)
 
     cpdef double[:, ::1] predict_leaf_matrix(self, object X, bint scale=*)
