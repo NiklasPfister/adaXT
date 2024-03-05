@@ -392,10 +392,10 @@ cdef class Entropy(Criteria):
 
 cdef class Squared_error(Criteria):
     cdef:
-        double old_left_square_sum
-        double old_left_sum
-        double old_right_square_sum
-        double old_right_sum
+        double left_square_sum
+        double left_sum
+        double right_square_sum
+        double right_sum
         double weight_left
         double weight_right
         int old_obs
@@ -405,48 +405,48 @@ cdef class Squared_error(Criteria):
     def __init__(self, double[:, ::1] x, double[:] y, double[::1] sample_weight):
         self.old_obs = -1
 
-    cdef double update_left(self, int[:] indices, int new_split):
-        # All new values in node from before
+    cdef (double, double) update_proxy(self, int[:] indices, int new_split):
         cdef:
-            int i, start_idx, p
-            double tmp, square_sum, cur_sum, new_mu
+            int i, idx
+            double y_val, weight
 
-        square_sum = self.old_left_square_sum
-        cur_sum = self.old_left_sum
-        start_idx = self.old_split
-        for i in range(start_idx, new_split):
-            p = indices[i]
-            tmp = self.y[p] * self.sample_weight[p]
-            square_sum += tmp * tmp
-            cur_sum += tmp
-            self.weight_left += self.sample_weight[p]
+        for i in range(self.old_split, new_split):
+            idx = indices[i]
+            y_val = self.y[idx]
+            weight = self.sample_weight[idx]
+            self.left_square_sum += y_val * y_val
+            self.weight_left += weight
+            self.right_square_sum -= y_val * y_val
+            self.weight_right -= weight
 
-        self.old_left_square_sum = square_sum
-        self.old_left_sum = cur_sum
-        new_mu = cur_sum / self.weight_left
-        return (square_sum/self.weight_left - new_mu*new_mu)
+        return (self.left_square_sum / self.weight_left,
+                self.right_square_sum / self.weight_right)
 
-    cdef double update_right(self, int[:] indices, int new_split):
+    cdef (double, double) proxy_improvement(self, int[:] indices, int split_idx):
         cdef:
-            int i, start_idx, p
-            double tmp, square_sum, cur_sum, new_mu
+            int i, idx
+            double proxy_improvement_left, proxy_improvement_right
+            int n_obs = indices.shape[0]
+            double y_val
+        self.left_square_sum = 0.0
+        self.right_square_sum = 0.0
+        self.weight_left = 0.0
+        self.weight_right = 0.0
 
-        square_sum = self.old_right_square_sum
-        cur_sum = self.old_right_sum
-        start_idx = self.old_split
-        for i in range(start_idx, new_split):
-            p = indices[i]
-            tmp = self.y[p] * self.sample_weight[p]
-            square_sum -= tmp * tmp
-            cur_sum -= tmp
-            self.weight_right -= self.sample_weight[p]
-        self.old_right_square_sum = square_sum
-        self.old_right_sum = cur_sum
-        new_mu = cur_sum / self.weight_right
-        return (square_sum/self.weight_right - new_mu*new_mu)
+        for i in range(split_idx):
+            idx = indices[i]
+            y_val = self.y[idx]
+            self.left_square_sum += y_val*y_val
+            self.weight_left += self.sample_weight[idx]
 
-    cpdef double impurity(self, int[:] indices):
-        return self._squared_error(indices)
+        for i in range(split_idx, n_obs):
+            idx = indices[i]
+            y_val = self.y[idx]
+            self.right_square_sum += y_val*y_val
+            self.weight_right += self.sample_weight[idx]
+
+        return (self.left_square_sum / self.weight_left,
+                self.right_square_sum / self.weight_right)
 
     # Override the default evaluate_split
     cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature):
@@ -461,23 +461,23 @@ cdef class Squared_error(Criteria):
             double[:, ::1] features = self.x
 
         if n_obs == self.old_obs and feature == self.old_feature:  # If we are checking the same node with same sorting
-            left_imp = self.update_left(indices, split_idx)
-            right_imp = self.update_right(indices, split_idx)
+            left_imp, right_imp = self.update_proxy(indices, split_idx)
 
         else:
-            left_imp = self._squared_error(indices[:split_idx], 1)
-            right_imp = self._squared_error(indices[split_idx:], 0)
+            left_imp, right_imp = self.proxy_improvement(indices, split_idx)
 
         self.old_feature = feature
         self.old_obs = n_obs
         self.old_split = split_idx
-        crit = left_imp * n_left / n_obs
-        crit += right_imp * n_right / n_obs
+        crit = left_imp + right_imp
 
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
-    cdef double _squared_error(self, int[:] indices, int left_or_right = -1):
+    cpdef double impurity(self, int[:] indices):
+        return self._squared_error(indices)
+
+    cdef double _squared_error(self, int[:] indices):
         """
         Function used to calculate the squared error of y[indices]
         ----------
@@ -510,17 +510,6 @@ cdef class Squared_error(Criteria):
             cur_sum += tmp*tmp
             obs_weight += self.sample_weight[p]
         square_err = cur_sum/obs_weight - mu*mu
-        if left_or_right != -1:
-            # Left subnode
-            if left_or_right == 1:
-                self.old_left_sum = mu * obs_weight
-                self.old_left_square_sum = cur_sum
-                self.weight_left = obs_weight
-            # Right subnode
-            elif left_or_right == 0:
-                self.old_right_sum = mu * obs_weight
-                self.old_right_square_sum = cur_sum
-                self.weight_right = obs_weight
         return square_err
 
 cdef class Linear_regression(Criteria):
