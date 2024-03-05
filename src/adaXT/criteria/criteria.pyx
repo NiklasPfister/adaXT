@@ -390,6 +390,7 @@ cdef class Entropy(Criteria):
         mean_thresh = (features[indices[split_idx-1]][feature] + features[indices[split_idx]][feature]) / 2.0
         return (crit, left_imp, right_imp, mean_thresh)
 
+
 cdef class Squared_error(Criteria):
     cdef:
         double left_square_sum
@@ -466,6 +467,7 @@ cdef class Squared_error(Criteria):
         else:
             left_imp, right_imp = self.proxy_improvement(indices, split_idx)
 
+        print(left_imp, right_imp)
         self.old_feature = feature
         self.old_obs = n_obs
         self.old_split = split_idx
