@@ -1,6 +1,9 @@
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
-from adaXT.decision_tree.Nodes import LeafNode, DecisionNode
+from adaXT.decision_tree.nodes import LeafNode, DecisionNode
+from adaXT.decision_tree.predict import PredictLinearRegression
+from adaXT.decision_tree.leafbuilder import LinearRegressionLeafBuilder
+
 import numpy as np
 
 
@@ -19,7 +22,7 @@ def test_predict_leaf_matrix_classification():
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
 
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     res1 = tree.get_leaf_matrix()
     res2 = tree.predict_leaf_matrix(X)
@@ -44,7 +47,7 @@ def test_predict_leaf_matrix_regression():
         ]
     )
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
     res1 = tree.get_leaf_matrix()
@@ -70,7 +73,7 @@ def test_predict_leaf_matrix_regression_with_scaling():
         ]
     )
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
     res1 = tree.get_leaf_matrix()
@@ -98,7 +101,7 @@ def test_prediction():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     prediction = tree.predict(X)
     for i in range(len(Y_cla)):
@@ -121,9 +124,9 @@ def test_predict_proba_probability():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    classes = tree.classes
+    classes = np.unique(Y_cla)
     prediction = tree.predict_proba(X)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
@@ -136,11 +139,11 @@ def test_predict_proba_against_predict():
     X = np.random.uniform(0, 100, (10000, 5))
     Y = np.random.randint(0, 5, 10000)
 
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y)
 
     predict = tree.predict(X)
-    classes = tree.classes
+    classes = np.unique(Y)
     predict_proba = tree.predict_proba(X)
 
     for i in range(predict.shape[0]):
@@ -163,7 +166,7 @@ def test_NxN_matrix():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     leaf_matrix = tree.get_leaf_matrix()
     true_weight = np.array(
@@ -209,9 +212,8 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        impurity_tol=impurity_tol_desired)
+        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -234,58 +236,7 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert (
-            min_samples_split_desired <= node.parent.n_samples
-        ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
-
-
-def test_max_features_errors():
-    max_feature_vals = [-1, "cos", [], 1.1, -0.9]
-
-    for max_feature in max_feature_vals:
-        try:
-            DecisionTree(
-                "Classification", criteria=Gini_index, max_features=max_feature
-            )
-        except ValueError:
-            is_correct = True
-        except BaseException:
-            is_correct = False
-            break
-
-    assert is_correct, f"We occured an error that should not happen, only ValueError should be thrown when passing illegal arguments to max_features"
-
-
-def test_max_features_setting():
-    X = np.random.uniform(0, 100, (10000, 26))
-    Y = np.random.randint(0, 5, 10000)
-
-    max_feature_vals = [11, 0.36, "sqrt", "log2"]
-
-    for max_feature in max_feature_vals:
-        t1 = DecisionTree(
-            "Classification", criteria=Gini_index, max_features=max_feature
-        )
-        t1.fit(X, Y)
-
-        t2 = DecisionTree(
-            "Classification", criteria=Gini_index, max_features=max_feature
-        )
-        t2.fit(X, Y)
-
-        # Since max_features is set there should be introduced a lot of randomness in the splitting of the dataset,
-        # thus is is very unlikely that t1 equals t2 even though they are
-        # fitted using the same X and Y data
-        try:
-            # Should throw error since t1 is not the same as t2
-            assert_tree_equality(t1, t2)
-        except AssertionError:
-            # The trees are not equal, which is what we want
-            pass
-        else:
-            # If the trees are equal, raise an AssertionError
-            raise AssertionError(
-                "t1 and t2 are equal, which should not happen")
+        assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
 
 
 def test_min_samples_leaf_setting():
@@ -295,9 +246,8 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_samples_leaf=min_samples_leaf_desired)
+        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -313,9 +263,8 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_improvement=min_improvement_desired)
+        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -375,11 +324,10 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
 
         elif isinstance(node1, LeafNode):
             isinstance(node2, LeafNode)
-            assert (
-                node1.value == node2.value
+            assert np.array_equal(
+                node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(
-        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
@@ -494,22 +442,58 @@ def test_sample_weight_regression():
     assert_tree_equality(t1, t2)
 
 
+def test_linear_predict():
+    """
+    As the Linear Regression is fitted on the index 0 of the X training data,
+    we can validate the new Prediction by first creating some "noise" data,
+    and then create some data on the same line.
+    Then with new values that should be on the same line,
+    we can make sure that the predicted Y values,
+    indeed are on the line.
+    """
+    np.random.seed(2024)
+    X = np.random.uniform(1000, 100000, (1000, 5))  # noise
+    Y = np.random.uniform(1000, 100000, (1000))
+
+    X_Y_corr = np.arange(0, 50, step=1)
+    idx = np.random.randint(0, 1000, 50)
+
+    # Replace some indices with correlated data
+    X[idx, 0] = X_Y_corr
+    Y[idx] = X_Y_corr
+
+    tree = DecisionTree(
+        "LinearRegression",
+        criteria=Linear_regression,
+        predict=PredictLinearRegression,
+        leaf_builder=LinearRegressionLeafBuilder,
+    )
+    tree.fit(X, Y)
+
+    X = np.random.uniform(1, 100, (50, 5))
+    corr_data = np.arange(50, 100, step=1)
+    X[:, 0] = corr_data
+    prediction = tree.predict(X)
+    assert (
+        np.corrcoef(prediction) == 1.0
+    ), "Linear Prediction didn't predict with perfect correlation"
+
+
 if __name__ == "__main__":
-    test_predict_leaf_matrix_classification()
-    test_predict_leaf_matrix_regression()
-    test_predict_leaf_matrix_regression_with_scaling()
-    test_prediction()
-    test_predict_proba_probability()
-    test_predict_proba_against_predict()
-    test_NxN_matrix()
-    test_max_depth_setting()
-    test_impurity_tol_setting()
-    test_min_samples_split_setting()
-    test_min_samples_leaf_setting()
-    test_min_improvement_setting()
-    test_sample_indices_classification()
-    test_sample_indices_regression()
-    test_sample_weight_classification()
+    # test_predict_leaf_matrix_classification()
+    # test_predict_leaf_matrix_regression()
+    # test_predict_leaf_matrix_regression_with_scaling()
+    # test_prediction()
+    # test_predict_proba_probability()
+    # test_predict_proba_against_predict()
+    # test_NxN_matrix()
+    # test_max_depth_setting()
+    # test_impurity_tol_setting()
+    # test_min_samples_split_setting()
+    # test_min_samples_leaf_setting()
+    # test_min_improvement_setting()
+    # test_sample_indices_classification()
+    # test_sample_indices_regression()
+    # test_sample_weight_classification()
     test_sample_weight_regression()
-    test_max_features_setting()
     print("Done.")

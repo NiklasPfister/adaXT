@@ -4,9 +4,6 @@ timing.ipynb
 # Ignore update PyPi Script
 update_package.sh
 
-# Ignore temp files
-/temp
-
 # Ignore the csv testing files
 *.csv
 
@@ -186,6 +183,3 @@ scrap.pyx
 *.pyd
 *.html
 src/adaXT/decision_tree/setup.py
-
-# Ignore built cpp files
-src/adaXT/decision_tree/*.cpp
