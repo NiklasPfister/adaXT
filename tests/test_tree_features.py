@@ -152,7 +152,7 @@ def test_NxN_matrix():
     for i in range(len(true_weight)):
         for j in range(len(true_weight[0])):
             assert leaf_matrix[i, j] == true_weight[i,
-                                                    j], f"Failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
+                                                    j], f"failed on ({i}, {j}), should be {true_weight[i, j]} was {leaf_matrix[i, j]}"
 
 
 def test_max_depth_setting():
@@ -168,7 +168,7 @@ def test_max_depth_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert node.depth <= max_depth_desired, f"Failed as node depth was,{node.depth} but should be at the most {max_depth_desired}"
+        assert node.depth <= max_depth_desired, f"failed as node depth was {node.depth} but should be at most {max_depth_desired}"
 
 
 def test_impurity_tol_setting():
@@ -184,7 +184,7 @@ def test_impurity_tol_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert node.impurity <= impurity_tol_desired, f"Failed as node impurity was, {node.impurity} but should be at the most {impurity_tol_desired}"
+        assert node.impurity <= impurity_tol_desired, f"failed as node impurity was {node.impurity} but should be at most {impurity_tol_desired}"
 
 
 def test_min_samples_split_setting():
@@ -200,7 +200,60 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
+        assert min_samples_split_desired <= node.parent.n_samples, f"failed as node had a parent with {node.parent.n_samples} samples which should not have been split"
+
+
+def test_max_features_errors():
+    max_feature_vals = [-1, "cos", [], 1.1, -0.9]
+
+    for max_feature in max_feature_vals:
+        try:
+            DecisionTree(
+                "Classification",
+                criteria=Gini_index,
+                max_features=max_feature)
+        except ValueError:
+            is_correct = True
+        except BaseException:
+            is_correct = False
+            break
+
+    assert is_correct, "a non ValueError occured; when passing illegal arguments to max_features only a ValueError should be thrown"
+
+
+def test_max_features_setting():
+
+    X = np.random.uniform(0, 100, (10000, 26))
+    Y = np.random.randint(0, 5, 10000)
+
+    max_feature_vals = [11, 0.36, "sqrt", "log2"]
+
+    for max_feature in max_feature_vals:
+        t1 = DecisionTree(
+            "Classification",
+            criteria=Gini_index,
+            max_features=max_feature)
+        t1.fit(X, Y)
+
+        t2 = DecisionTree(
+            "Classification",
+            criteria=Gini_index,
+            max_features=max_feature)
+        t2.fit(X, Y)
+
+        # Since max_features is specified there is randomness in the splitting of the dataset,
+        # thus it is very unlikely that t1 equals t2 even though they are
+        # fitted using the same X and Y data
+        try:
+            # Should throw error since t1 is not the same as t2
+            assert_tree_equality(t1, t2)
+        except AssertionError:
+            # The trees are not equal, which is what we want
+            pass
+        else:
+            # If the trees are equal, raise an AssertionError
+            raise AssertionError(
+                "t1 and t2 are equal, which should not happen")
 
 
 def test_min_samples_leaf_setting():
@@ -216,7 +269,7 @@ def test_min_samples_leaf_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert min_samples_leaf_desired <= node.n_samples, f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a lead node"
+        assert min_samples_leaf_desired <= node.n_samples, f"failed as leaf node had {node.n_samples} samples which is below the specified min_samples_leaf"
 
 
 def test_min_improvement_setting():
@@ -233,7 +286,7 @@ def test_min_improvement_setting():
 
     for node in tree.leaf_nodes:
         assert abs(node.parent.impurity -
-                   node.impurity) > min_improvement_desired, f"Failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
+                   node.impurity) > min_improvement_desired, f"failed as node had an impurity improvement greater than {abs(node.parent.impurity - node.impurity)}"
 
 
 def get_x_y_classification(n, m):
@@ -402,20 +455,21 @@ def test_sample_weight_regression():
 
 
 if __name__ == "__main__":
-    # test_predict_leaf_matrix_classification()
-    # test_predict_leaf_matrix_regression()
-    # test_predict_leaf_matrix_regression_with_scaling()
-    # test_prediction()
-    # test_predict_proba_probability()
-    # test_predict_proba_against_predict()
-    # test_NxN_matrix()
-    # test_max_depth_setting()
-    # test_impurity_tol_setting()
-    # test_min_samples_split_setting()
-    # test_min_samples_leaf_setting()
-    # test_min_improvement_setting()
-    # test_sample_indices_classification()
-    # test_sample_indices_regression()
-    # test_sample_weight_classification()
+    test_predict_leaf_matrix_classification()
+    test_predict_leaf_matrix_regression()
+    test_predict_leaf_matrix_regression_with_scaling()
+    test_prediction()
+    test_predict_proba_probability()
+    test_predict_proba_against_predict()
+    test_NxN_matrix()
+    test_max_depth_setting()
+    test_impurity_tol_setting()
+    test_min_samples_split_setting()
+    test_min_samples_leaf_setting()
+    test_min_improvement_setting()
+    test_sample_indices_classification()
+    test_sample_indices_regression()
+    test_sample_weight_classification()
     test_sample_weight_regression()
+    test_max_features_setting()
     print("Done.")
