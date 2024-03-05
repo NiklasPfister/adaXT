@@ -74,7 +74,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
     package_data={
