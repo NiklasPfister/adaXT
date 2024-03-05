@@ -1,11 +1,10 @@
 class Predict:
     """
-    This is the Predict class other Prediction implementation
-    others must inherit from.
+    The Predict class which the DecisionTree depends on.
+    Other implementations must inherit from this class.
     """
 
     pass
-
 
 class PredictClassification(Predict):
     """
@@ -14,14 +13,12 @@ class PredictClassification(Predict):
 
     pass
 
-
 class PredictRegression(Predict):
     """
     Default used for Regression
     """
 
     pass
-
 
 class PredictLinearRegression(Predict):
     pass

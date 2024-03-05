@@ -41,9 +41,6 @@ cdef class Predict():
             int cur_split_idx
             double cur_threshold
 
-        if not self.root:
-            raise ValueError("The tree has not been trained before trying to predict")
-
         # Make sure that x fits the dimensions.
         X = self.__check_dimensions(X)
         row = X.shape[0]
@@ -94,8 +91,6 @@ cdef class PredictClassification(Predict):
             double cur_threshold
             object cur_node
             double[:] Y
-        if not self.root:
-            raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
@@ -124,9 +119,6 @@ cdef class PredictClassification(Predict):
             object cur_node
             list ret_val
 
-        if not self.root:
-            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
-
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
@@ -152,8 +144,6 @@ cdef class PredictRegression(Predict):
             double cur_threshold
             object cur_node
             double[:] Y
-        if not self.root:
-            raise AttributeError("The tree has not been fitted before trying to call predict")
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
@@ -181,8 +171,6 @@ cdef class PredictLinearRegression(Predict):
             object cur_node
             double[:] Y
 
-        if not self.root:
-            raise AttributeError("The tree has not been fitted before trying to call predict")
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         Y = np.empty(n_obs)
@@ -210,14 +198,10 @@ cdef class PredictQuantile(Predict):
             double[:] Y
             double quantile
 
-        if not self.root:
-            raise AttributeError("The tree has not been fitted before trying to call predict")
-
         quantile = <double> kwargs['quantile']
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
 
         for i in range(n_obs):
             cur_node = self.root

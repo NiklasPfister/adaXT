@@ -1,5 +1,6 @@
 from .nodes cimport LeafNode, DecisionNode
 cimport numpy as cnp
+
 cdef class LeafBuilder:
     cdef:
         double[::1] y

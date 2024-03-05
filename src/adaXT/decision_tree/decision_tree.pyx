@@ -28,7 +28,7 @@ class DecisionTree:
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
-            max_features: None = None,
+            max_features: int | float | Literal["sqrt", "log2"] | None = None,
             skip_check_input: bool = False,
             criteria: Criteria | None = None,
             leaf_builder: LeafBuilder | None = None,
@@ -86,6 +86,7 @@ class DecisionTree:
         self.tree_type = tree_type
         self.leaf_nodes = None
         self.root = None
+        self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
         self.n_classes = -1
@@ -190,12 +191,12 @@ class DecisionTree:
         builder.build_tree(self)
 
     def predict(self, X: np.ndarray, **kwargs):
-        if not self.root:
+        if not self.predictor:
             raise AttributeError("The tree has not been fitted before trying to call predict")
         return np.asarray(self.predictor.predict(X, **kwargs))
 
     def predict_proba(self, X: np.ndarray):
-        if not self.root:
+        if not self.predictor:
             raise AttributeError("The tree has not been fitted before trying to call predict_proba")
         return np.asarray(self.predictor.predict_proba(X))
 
@@ -219,7 +220,7 @@ class DecisionTree:
         return matrix
 
     def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
-        if not self.root:
+        if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf_matrix(X, scale)
 

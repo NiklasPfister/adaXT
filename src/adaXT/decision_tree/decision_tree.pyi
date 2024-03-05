@@ -1,11 +1,10 @@
-from typing import Type
+from typing import Type, Literal
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
 from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
-from typing import Type
 
 class DecisionTree:
     """
@@ -36,6 +35,7 @@ class DecisionTree:
         tree_type: str | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
+        max_features: int | float | Literal["sqrt", "log2"] | None = None,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
@@ -53,6 +53,8 @@ class DecisionTree:
             The maximum depth of the tree.
         impurity_tol : float
             The tolerance of impurity in a leaf node.
+        max_features: int | float | Literal["sqrt", 'log2'] | None
+            The number of features to consider when looking for a split,
         min_samples_split : int
             The minimum amount of samples in a split.
         min_samples_leaf : int
@@ -71,17 +73,18 @@ class DecisionTree:
             if none defaults to tree_type default
         splitter : Splitter | None, optional
             The Splitter class if None uses default Splitter class.
-        skip_check_input : bool 
+        skip_check_input : bool
             Skips any error checking on the features and response in the fitting function of a tree, should only be used if you know what you are doing, by default false.
         """
         pass
 
     def fit(
-            self,
-            X,
-            Y,
-            sample_indices: np.ndarray | None = None,
-            sample_weight: np.ndarray | None = None,) -> None:
+        self,
+        X,
+        Y,
+        sample_indices: np.ndarray | None = None,
+        sample_weight: np.ndarray | None = None,
+    ) -> None:
         """
         Build the decision tree from the training data (X, y).
 
