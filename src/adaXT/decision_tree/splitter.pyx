@@ -115,7 +115,7 @@ cdef class Splitter:
                         current_feature_values[sorted_index_list_feature[i + 1]]):
                     continue
                 # test the split
-                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(
+                crit, threshold = self.criteria.evaluate_split(
                                                         sorted_index_list_feature, i+1,
                                                         feature
                                                         )
@@ -125,13 +125,11 @@ cdef class Splitter:
                     # first element of the right dataset
                     best_feature, best_threshold = feature, threshold
                     best_score = crit
-                    best_left_imp = left_imp
-                    best_right_imp = right_imp
                     best_split_idx = i + 1
                     best_sorted = sorted_index_list_feature
 
         # We found a best split
         if best_sorted is not None:
             split = [best_sorted[0:best_split_idx], best_sorted[best_split_idx:self.n_indices]]
-            best_imp = [best_left_imp, best_right_imp]
+            best_imp = [self.criteria.impurity(split[0]), self.criteria.impurity(split[1])]
         return split, best_threshold, best_feature, best_score, best_imp

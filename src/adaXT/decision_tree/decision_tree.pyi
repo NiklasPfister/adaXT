@@ -29,7 +29,6 @@ class DecisionTree:
     classes: np.ndarray
         A list of all class labels. None for "Regression" tree.
     """
-
     def __init__(
         self,
         tree_type: str | None = None,
@@ -53,7 +52,7 @@ class DecisionTree:
             The maximum depth of the tree.
         impurity_tol : float
             The tolerance of impurity in a leaf node.
-        max_features: int | float | Literal["sqrt", 'log2'] | None
+        max_features: int | float | Literal["sqrt", "log2"] | None
             The number of features to consider when looking for a split,
         min_samples_split : int
             The minimum amount of samples in a split.
