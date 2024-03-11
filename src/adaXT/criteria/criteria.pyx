@@ -43,6 +43,7 @@ cdef class Criteria:
         if n_right != 0.0:
             right_imp = self.impurity(right_indices)
         crit += (right_imp) * (<double> n_right)
+
         return crit
 
     cpdef double impurity(self, int[::1] indices):
@@ -84,12 +85,10 @@ cdef class Criteria:
             self.old_feature = feature
             self.old_obs = n_obs
 
-        print("Crit ", crit)
         self.old_split = split_idx
         mean_thresh = (self.x[indices[split_idx-1]][feature] + self.x[indices[split_idx]][feature]) / 2.0
 
         return (crit, mean_thresh)
-
 
 cdef class Gini_index(Criteria):
     cdef:
@@ -408,55 +407,58 @@ cdef class Entropy(Criteria):
 
 cdef class Squared_error(Criteria):
     cdef:
-        double left_square_sum
         double left_sum
-        double right_square_sum
         double right_sum
-        double weight_left
-        double weight_right
-
-    def __init__(self, double[:, ::1] x, double[:] y, double[::1] sample_weight):
-        self.old_obs = -1
+        double weight_left, weight_right
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
             int i, idx
-            double y_val, weight
-
+            double y_val, weight, y_squared
         for i in range(self.old_split, new_split):
             idx = indices[i]
-            y_val = self.y[idx]
             weight = self.sample_weight[idx]
-            self.left_square_sum += y_val * y_val
-            self.right_square_sum -= y_val * y_val
+            y_val = self.y[idx]*weight
+            self.left_sum += y_val
+            self.right_sum -= y_val
+            self.weight_left += weight
+            self.weight_right -= weight
 
-        return (self.left_square_sum + self.right_square_sum)
+        return -((self.left_sum*self.left_sum) / self.weight_left +
+                 (self.right_sum*self.right_sum) / self.weight_right)
 
     cdef double proxy_improvement(self, int[::1] indices, int split_idx):
         cdef:
             int i, idx
-            double proxy_improvement_left, proxy_improvement_right
             int n_obs = indices.shape[0]
-            double y_val
-        self.left_square_sum = 0.0
-        self.right_square_sum = 0.0
+            double y_val, weight
+
+        self.left_sum = 0.0
+        self.right_sum = 0.0
+        self.weight_left = 0.0
+        self.weight_right = 0.0
 
         for i in range(split_idx):
             idx = indices[i]
-            y_val = self.y[idx]
-            self.left_square_sum += y_val*y_val
+            weight = self.sample_weight[idx]
+            y_val = self.y[idx]*weight
+            self.left_sum += y_val
+            self.weight_left += weight
 
         for i in range(split_idx, n_obs):
             idx = indices[i]
-            y_val = self.y[idx]
-            self.right_square_sum += y_val*y_val
+            weight = self.sample_weight[idx]
+            y_val = self.y[idx]*weight
+            self.right_sum += y_val
+            self.weight_right += weight
 
-        return (self.left_square_sum + self.right_square_sum)
+        return -((self.left_sum*self.left_sum) / self.weight_left +
+                 (self.right_sum*self.right_sum) / self.weight_right)
 
     cpdef double impurity(self, int[::1] indices):
         return self._squared_error(indices)
 
-    cdef double _squared_error(self, int[:] indices):
+    cdef double _squared_error(self, int[::1] indices):
         """
         Function used to calculate the squared error of y[indices]
         ----------
