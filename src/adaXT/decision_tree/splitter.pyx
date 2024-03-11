@@ -92,12 +92,10 @@ cdef class Splitter:
             cnp.ndarray[int, ndim=1] sorted_index_list_feature
             int[:] best_sorted
             int best_split_idx
-            double best_left_imp, best_right_imp
             double crit
 
         features = self.features.base
         split, best_imp = [], []
-        best_right_imp, best_left_imp = 0.0, 0.0
         best_split_idx = -1
         best_sorted = None
         # For all features

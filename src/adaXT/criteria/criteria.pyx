@@ -23,7 +23,6 @@ cdef class Criteria:
             double left_imp = 0.0
             double right_imp = 0.0
             double crit = 0.0
-            int n_indices = indices.shape[0]  # total in node
             int[::1] left_indices = indices[:split_idx]
             int[::1] right_indices = indices[split_idx:]
             int n_left = left_indices.shape[0]
@@ -198,7 +197,6 @@ cdef class Gini_index(Criteria):
         # No need to divide by the total weight, as the proxy proxy_improvement is always compared to itself
         return (1.0 - sum_left)*self.weight_left + (1.0 - sum_right)*self.weight_right
 
-
     cdef double proxy_improvement(self, int[::1] indices, int split_idx):
         cdef:
             int n_obs = indices.shape[0]
@@ -256,7 +254,6 @@ cdef class Entropy(Criteria):
 
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.first_call = True
-
 
     def __del__(self):  # Called by garbage collector.
         free(self.weight_in_class_left)
@@ -331,7 +328,7 @@ cdef class Entropy(Criteria):
             double sum_left = 0.0
             double sum_right = 0.0
             int n_obs = indices.shape[0]
-            double proportion_cls_left, proportion_cls_right, weight
+            double weight
             int i, j, p
             double[:] y = self.y
             double[:] class_labels = self.class_labels
@@ -377,7 +374,7 @@ cdef class Entropy(Criteria):
         cdef:
             int i, j, p
             int start_idx = self.old_split
-            double proportion_cls_left, proportion_cls_right, weight
+            double weight
             double sum_left = 0.0
             double sum_right = 0.0
 
@@ -414,7 +411,7 @@ cdef class Squared_error(Criteria):
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
             int i, idx
-            double y_val, weight, y_squared
+            double y_val, weight
         for i in range(self.old_split, new_split):
             idx = indices[i]
             weight = self.sample_weight[idx]
