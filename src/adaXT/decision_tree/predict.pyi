@@ -22,3 +22,6 @@ class PredictRegression(Predict):
 
 class PredictLinearRegression(Predict):
     pass
+
+class PredictQuantile(Predict):
+    pass

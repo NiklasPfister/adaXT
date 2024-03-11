@@ -1,4 +1,4 @@
-# distutils: define_macros=CYTHON_TRACE=1
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 import numpy as np
 from setuptools import setup, Extension, find_packages
 
@@ -37,6 +37,7 @@ extensions = [
         include_dirs=[include_dir],
         language="c++",
         extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
     )
 ]
 
@@ -48,6 +49,7 @@ extensions += [
         include_dirs=[include_dir],
         language="c++",
         extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
     )
 ]
 
@@ -56,8 +58,10 @@ extensions += [
 if USE_CYTHON:
     from Cython.Build import cythonize
 
-    with_debug = False
-    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False)
+    with_debug = True
+    extensions = cythonize(
+        extensions, gdb_debug=with_debug, annotate=False, language_level="3"
+    )
 
 setup(
     name=NAME,

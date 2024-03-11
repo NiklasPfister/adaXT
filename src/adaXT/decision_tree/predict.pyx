@@ -6,8 +6,6 @@ from .nodes import DecisionNode
 cdef class Predict():
 
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
-        if not (isinstance(root, DecisionNode)):
-            raise ValueError("Prediction expected a DecisionNode as root")
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
@@ -202,6 +200,7 @@ cdef class PredictQuantile(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
+        Y = np.empty(n_obs)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -212,5 +211,6 @@ cdef class PredictQuantile(Predict):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = np.quantile(self.y[cur_node.indices], quantile)
+
+            Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
