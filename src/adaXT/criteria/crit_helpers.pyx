@@ -25,7 +25,7 @@ cdef double mean(double[:] lst, int[:] indices):
 
     for i in range(length):
         sum += lst[indices[i]]
-    return sum / (<double> length)
+    return sum / (< double > length)
 
 
 cdef double weighted_mean(double[:] lst, int[:] indices, double[:] sample_weights):

@@ -1,5 +1,6 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
+
 import numpy as np
 import scipy
 
@@ -37,7 +38,6 @@ def test_gini_single():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     root = tree.root
@@ -183,7 +183,6 @@ def test_entropy_single():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-
     tree = DecisionTree("Classification", criteria=Entropy)
     tree.fit(X, Y_cla)
     root = tree.root
@@ -343,6 +342,6 @@ if __name__ == "__main__":
     # test_gini_multi()
     # test_entropy_single()
     # test_entropy_multi()
-    # test_regression()
-    test_sanity()
+    test_regression()
+    # test_sanity()
     # print("Done.")
