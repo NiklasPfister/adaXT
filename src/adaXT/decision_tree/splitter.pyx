@@ -36,7 +36,7 @@ cdef class Splitter:
         self.criteria = criteria
         self.n_class = len(np.unique(Y))
 
-    cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
+    cdef cnp.ndarray sort_feature(self, int[::1] indices, double[:] feature):
         """
         Function to sort an array at given indices.
 
@@ -61,7 +61,7 @@ cdef class Splitter:
         temp = np.argsort(feat_temp[idx])
         return idx[temp]
 
-    cpdef get_split(self, int[:] indices, int[:] feature_indices):
+    cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         """
         Function that finds the best split of the dataset
         ----------

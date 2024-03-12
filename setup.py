@@ -1,4 +1,3 @@
-# distutils: define_macros=CYTHON_TRACE=1
 import numpy as np
 from setuptools import setup, Extension, find_packages
 
