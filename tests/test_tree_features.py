@@ -246,7 +246,7 @@ def test_min_samples_split_setting():
     for node in tree.leaf_nodes:
         assert (
             min_samples_split_desired <= node.parent.n_samples
-        ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
+        ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
 def test_min_samples_leaf_setting():
@@ -263,7 +263,7 @@ def test_min_samples_leaf_setting():
     for node in tree.leaf_nodes:
         assert (
             min_samples_leaf_desired <= node.n_samples
-        ), f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a lead node"
+        ), f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a leaf node"
 
 
 def test_min_improvement_setting():
