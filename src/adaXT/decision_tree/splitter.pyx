@@ -4,6 +4,8 @@ import numpy as np
 cimport numpy as cnp
 cnp.import_array()
 from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
+from libc.stdlib cimport qsort, malloc, free
+cimport cython
 
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.
@@ -12,6 +14,21 @@ cdef double EPSILON = 2*np.finfo('double').eps
 
 cdef double INFINITY = np.inf
 
+
+cdef struct cmp_obj:
+    double value
+    int index
+
+cdef int compare(const void* a, const void* b) noexcept nogil:
+    cdef:
+        cmp_obj* a1 = < cmp_obj *> a
+        cmp_obj* b1 = < cmp_obj *> b
+    if a1.value > b1.value:
+        return 1
+    if a1.value == b1.value:
+        return 0
+    if a1.value < b1.value:
+        return -1
 
 cdef class Splitter:
     """
@@ -36,7 +53,7 @@ cdef class Splitter:
         self.criteria = criteria
         self.n_class = len(np.unique(Y))
 
-    cdef cnp.ndarray sort_feature(self, int[::1] indices, double[:] feature):
+    cdef int[::1] sort_feature(self, int[::1] indices, int feature):
         """
         Function to sort an array at given indices.
 
@@ -53,13 +70,25 @@ cdef class Splitter:
         memoryview of NDArray
             A list of the sorted indices
         """
-
         cdef:
-            cnp.ndarray[double, ndim=1] feat_temp = np.asarray(feature)
-            cnp.ndarray[int, ndim=1] idx = np.asarray(indices)
-            cnp.ndarray[long long, ndim=1] temp
-        temp = np.argsort(feat_temp[idx])
-        return idx[temp]
+            int n_obs = indices.shape[0]
+            cmp_obj* objs = <cmp_obj*> malloc(n_obs*sizeof(cmp_obj))
+            int[::1] ret = cython.view.array(shape=(n_obs,),
+                                             itemsize=sizeof(int), format="i")
+            int i, idx
+
+        for i in range(n_obs):
+            idx = indices[i]
+            objs[i].value = self.features[idx, feature]
+            objs[i].index = idx
+
+        qsort(objs, n_obs, sizeof(cmp_obj), compare)
+
+        for i in range(n_obs):
+            ret[i] = objs[i].index
+
+        free(objs)
+        return ret
 
     cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         """
@@ -89,8 +118,8 @@ cdef class Splitter:
             int best_feature = 0
             double[:] current_feature_values
             int i, feature  # variables for loop
-            cnp.ndarray[int, ndim=1] sorted_index_list_feature
-            int[:] best_sorted
+            int[::1] sorted_index_list_feature
+            int[::1] best_sorted
             int best_split_idx
             double crit
 
@@ -100,17 +129,14 @@ cdef class Splitter:
         best_sorted = None
         # For all features
         for feature in feature_indices:
-            current_feature_values = features[:, feature]
-            sorted_index_list_feature = self.sort_feature(
-                    indices, current_feature_values
-                    )
+            sorted_index_list_feature = self.sort_feature(indices, feature)
 
             # Loop over sorted feature list
             for i in range(N_i):
                 # Skip one iteration of the loop if the current
                 # threshold value is the same as the next in the feature list
-                if (current_feature_values[sorted_index_list_feature[i]] ==
-                        current_feature_values[sorted_index_list_feature[i + 1]]):
+                if (self.features[sorted_index_list_feature[i], feature] ==
+                        self.features[sorted_index_list_feature[i + 1], feature]):
                     continue
                 # test the split
                 crit, threshold = self.criteria.evaluate_split(
