@@ -56,7 +56,12 @@ if USE_CYTHON:
     from Cython.Build import cythonize
 
     with_debug = False
-    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False)
+    extensions = cythonize(
+        extensions,
+        gdb_debug=with_debug,
+        annotate=True,
+        language_level="3",
+    )
 
 setup(
     name=NAME,
