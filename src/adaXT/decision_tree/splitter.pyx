@@ -1,4 +1,4 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False, profile=True
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 # from libcstdlib cimport qsort_r
 import numpy as np
 cimport numpy as cnp

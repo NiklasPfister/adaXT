@@ -1,4 +1,4 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False, profile=True
+# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 from libc.math cimport log2
 from libc.stdlib cimport malloc, free
