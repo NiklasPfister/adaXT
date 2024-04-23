@@ -49,29 +49,6 @@ cdef class Criteria:
         raise Exception("Impurity must be implemented!")
 
     cdef (double, double) evaluate_split(self, int[::1] indices, int split_idx, int feature):
-        """
-        Function to evaluate how good a split is
-        ----------
-
-        Parameters
-        ----------
-        indices: int[:]
-            the indices of a given node
-
-        split_idx: int
-            the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
-
-        feature: int
-            The current feature we are working on
-
-        Returns
-        -----------
-        (double, double, double, double)
-            A quadruple containing the criteria value,
-            the left impurity, the right impurity and
-            the mean threshold between the two
-            closest datapoints of the current feature
-        """
         cdef:
             double mean_thresh
             int n_obs = indices.shape[0]  # total in node
@@ -357,7 +334,7 @@ cdef class Entropy(Criteria):
                     self.weight_right += weight
                     break
 
-        # Loop over all classes and calculate gini_index
+        # Loop over all classes and calculate entropy
         for i in range(self.num_classes):
             if self.weight_in_class_left[i] != 0.0:  # To make sure we dont take log(0)
                 pp = (self.weight_in_class_left[i])/(self.weight_left)
