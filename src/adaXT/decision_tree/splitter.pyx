@@ -36,7 +36,7 @@ cdef class Splitter:
         self.criteria = criteria
         self.n_class = len(np.unique(Y))
 
-    cdef cnp.ndarray sort_feature(self, int[:] indices, double[:] feature):
+    cdef cnp.ndarray sort_feature(self, int[::1] indices, double[:] feature):
         """
         Function to sort an array at given indices.
 
@@ -61,7 +61,7 @@ cdef class Splitter:
         temp = np.argsort(feat_temp[idx])
         return idx[temp]
 
-    cpdef get_split(self, int[:] indices, int[:] feature_indices):
+    cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         """
         Function that finds the best split of the dataset
         ----------
@@ -92,12 +92,10 @@ cdef class Splitter:
             cnp.ndarray[int, ndim=1] sorted_index_list_feature
             int[:] best_sorted
             int best_split_idx
-            double best_left_imp, best_right_imp
             double crit
 
         features = self.features.base
         split, best_imp = [], []
-        best_right_imp, best_left_imp = 0.0, 0.0
         best_split_idx = -1
         best_sorted = None
         # For all features
@@ -115,23 +113,21 @@ cdef class Splitter:
                         current_feature_values[sorted_index_list_feature[i + 1]]):
                     continue
                 # test the split
-                crit, left_imp, right_imp, threshold = self.criteria.evaluate_split(
+                crit, threshold = self.criteria.evaluate_split(
                                                         sorted_index_list_feature, i+1,
                                                         feature
                                                         )
-                if best_score - crit > EPSILON:  # rounding error
+                if best_score > crit:  # rounding error
                     # Save the best split
                     # The index is given as the index of the
                     # first element of the right dataset
                     best_feature, best_threshold = feature, threshold
                     best_score = crit
-                    best_left_imp = left_imp
-                    best_right_imp = right_imp
                     best_split_idx = i + 1
                     best_sorted = sorted_index_list_feature
 
         # We found a best split
         if best_sorted is not None:
             split = [best_sorted[0:best_split_idx], best_sorted[best_split_idx:self.n_indices]]
-            best_imp = [best_left_imp, best_right_imp]
+            best_imp = [self.criteria.impurity(split[0]), self.criteria.impurity(split[1])]
         return split, best_threshold, best_feature, best_score, best_imp
