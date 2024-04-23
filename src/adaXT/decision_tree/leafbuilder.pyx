@@ -74,7 +74,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
         cdef double[::1] mean = np.array(self.__get_mean(indices), dtype=np.double, ndmin=1)
         return LeafNode(leaf_id, indices, depth, impurity, n_samples, mean, parent)
 
-cdef class LinearRegressionLeafBuilder(LeafBuilderRegression):
+cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) custom_mean(self, int[::1] indices):
