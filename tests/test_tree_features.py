@@ -1,10 +1,18 @@
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
-from adaXT.decision_tree.predict import PredictLinearRegression
-from adaXT.decision_tree.leafbuilder import LinearRegressionLeafBuilder
+from adaXT.decision_tree.predict import PredictLinearRegression, PredictQuantile
+from adaXT.decision_tree.leafbuilder import (
+    LeafBuilderLinearRegression,
+    LeafBuilderRegression,
+)
 
 import numpy as np
+
+
+def uniform_x_y(n, m):
+    np.random.seed(2024)
+    return (np.random.uniform(1, 1000, (n, m)), np.random.uniform(1, 1000, (n)))
 
 
 def test_predict_leaf_matrix_classification():
@@ -236,7 +244,9 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
-        assert min_samples_split_desired <= node.parent.n_samples, f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a lead node"
+        assert (
+            min_samples_split_desired <= node.parent.n_samples
+        ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
 def test_min_samples_leaf_setting():
@@ -253,7 +263,7 @@ def test_min_samples_leaf_setting():
     for node in tree.leaf_nodes:
         assert (
             min_samples_leaf_desired <= node.n_samples
-        ), f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a lead node"
+        ), f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a leaf node"
 
 
 def test_min_improvement_setting():
@@ -442,6 +452,25 @@ def test_sample_weight_regression():
     assert_tree_equality(t1, t2)
 
 
+def test_quantile_predict():
+    X, Y = uniform_x_y(10000, 5)
+    tree = DecisionTree(
+        "Quantile",
+        criteria=Squared_error,
+        predict=PredictQuantile,
+        leaf_builder=LeafBuilderRegression,
+        max_depth=0,
+    )
+    tree.fit(X, Y)
+    pred = tree.predict(
+        X[0], quantile=0.95
+    )  # As we are never splitting, we can just check a single data point
+    np_quantile = np.quantile(Y, 0.95)
+    assert (
+        pred == np_quantile
+    ), f"Quantile predict failed with {pred} - should be {np_quantile}"
+
+
 def test_linear_predict():
     """
     As the Linear Regression is fitted on the index 0 of the X training data,
@@ -466,7 +495,7 @@ def test_linear_predict():
         "LinearRegression",
         criteria=Linear_regression,
         predict=PredictLinearRegression,
-        leaf_builder=LinearRegressionLeafBuilder,
+        leaf_builder=LeafBuilderLinearRegression,
     )
     tree.fit(X, Y)
 
@@ -480,20 +509,4 @@ def test_linear_predict():
 
 
 if __name__ == "__main__":
-    # test_predict_leaf_matrix_classification()
-    # test_predict_leaf_matrix_regression()
-    # test_predict_leaf_matrix_regression_with_scaling()
-    # test_prediction()
-    # test_predict_proba_probability()
-    # test_predict_proba_against_predict()
-    # test_NxN_matrix()
-    # test_max_depth_setting()
-    # test_impurity_tol_setting()
-    # test_min_samples_split_setting()
-    # test_min_samples_leaf_setting()
-    # test_min_improvement_setting()
-    # test_sample_indices_classification()
-    # test_sample_indices_regression()
-    # test_sample_weight_classification()
-    test_sample_weight_regression()
     print("Done.")
