@@ -5,7 +5,6 @@ cimport numpy as cnp
 cnp.import_array()
 from ..criteria.criteria cimport Criteria  # Must be complete path for cimport
 from libc.stdlib cimport qsort
-from cython cimport view
 
 cdef double EPSILON = 2*np.finfo('double').eps
 # The rounding error for a criteria function is set twice as large as in DepthTreeBuilder.
@@ -72,7 +71,6 @@ cdef class Splitter:
         self.n_features = X.shape[1]
         self.criteria = criteria
         self.n_class = len(np.unique(Y))
-
 
     cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         """
