@@ -2,6 +2,7 @@ from typing import Type, Literal
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
+from .nodes import LeafNode, Node
 from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
@@ -29,12 +30,23 @@ class DecisionTree:
     classes: np.ndarray
         A list of all class labels. None for "Regression" tree.
     """
+
+    max_depth: int
+    tree_type: str
+    leaf_nodes: list[LeafNode]
+    root: Node
+    n_nodes: int
+    n_features: int
+    n_classes: int
+    n_obs: int
+    classes: np.ndarray
     def __init__(
         self,
         tree_type: str | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
+        skip_check_input: bool = False,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
@@ -54,6 +66,8 @@ class DecisionTree:
             The tolerance of impurity in a leaf node.
         max_features: int | float | Literal["sqrt", "log2"] | None
             The number of features to consider when looking for a split,
+        skip_check_input : bool
+            Whether to skip checking the input for consistency
         min_samples_split : int
             The minimum amount of samples in a split.
         min_samples_leaf : int

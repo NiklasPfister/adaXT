@@ -1,5 +1,6 @@
 from multiprocessing import Pool, cpu_count
 from multiprocessing.shared_memory import SharedMemory
+from multiprocessing.managers import BaseManager
 
 from ..decision_tree import DecisionTree
 from ..criteria import Criteria, Squared_error
@@ -9,6 +10,17 @@ from ..decision_tree.splitter import Splitter
 import numpy as np
 from numpy import float64 as DOUBLE
 import sys
+import dill
+
+
+def run_dill_encoded(payload):
+    fun, args = dill.loads(payload)
+    return fun(*args)
+
+
+def apply_async(pool, fun, args):
+    payload = dill.dumps((fun, args))
+    return pool.apply_async(run_dill_encoded, (payload,))
 
 
 class SharedNumpyArray:
@@ -29,8 +41,7 @@ class SharedNumpyArray:
 
         # create a new numpy array that uses the shared memory we created
         # at first, it is filled with zeros
-        res = np.ndarray(self._shape, dtype=self._dtype,
-                         buffer=self._shared.buf)
+        res = np.ndarray(self._shape, dtype=self._dtype, buffer=self._shared.buf)
 
         # copy data from the array to the shared memory. numpy will
         # take care of copying everything in the correct format
@@ -54,25 +65,27 @@ class SharedNumpyArray:
 
 
 class RandomForest:
-    '''
+    """
     The Random Forest
-    '''
+    """
 
     def __init__(
-            self,
-            forest_type: str,
-            criterion: Criteria,
-            n_estimators: int = 100,
-            bootstrap: bool = True,
-            n_jobs: int = 1,
-            max_samples: int = None,
-            max_features: None = None,
-            max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
-            min_samples_split: int = 1,
-            min_samples_leaf: int = 1,
-            min_improvement: float = 0,
-            splitter: Splitter | None = None):
+        self,
+        forest_type: str,
+        criterion: type[Criteria],
+        n_estimators: int = 100,
+        bootstrap: bool = True,
+        n_jobs: int = -1,
+        max_samples: int | None = None,
+        max_features: int | None = None,
+        random_state: int | None = None,
+        max_depth: int = sys.maxsize,
+        impurity_tol: float = 0,
+        min_samples_split: int = 1,
+        min_samples_leaf: int = 1,
+        min_improvement: float = 0,
+        splitter: Splitter | None = None,
+    ):
         """
         Parameters
         ----------
@@ -90,6 +103,8 @@ class RandomForest:
             The number of samples drawn when doing bootstrap
         max_features: int, float, {"sqrt", "log2"}, default=None
             The number of features used when doing feature-sampling
+        random_state: int
+            Used for deterministic seeding of the tree
         max_depth : int
             maximum depth of the tree, by default maximum system size
         impurity_tol : float
@@ -103,7 +118,8 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
-
+        if random_state:
+            np.random.seed(random_state)
         self.forest_type = forest_type
         self.n_estimators = n_estimators
         self.criterion = criterion
@@ -118,42 +134,91 @@ class RandomForest:
         self.min_improvement = min_improvement
         self.splitter = splitter
         self.forest_fitted = False
+        BaseManager.register("DecisionTree", DecisionTree)
+        self.manager = BaseManager()
+        self.manager.start()
+        self.trees = [
+            self.manager.DecisionTree(
+                tree_type=self.forest_type,
+                criteria=self.criterion,
+                max_depth=self.max_depth,
+                impurity_tol=self.impurity_tol,
+                min_samples_split=self.min_samples_split,
+                min_samples_leaf=self.min_samples_leaf,
+                min_improvement=self.min_improvement,
+                max_features=self.max_features,
+                splitter=self.splitter,
+                skip_check_input=True,
+            )
+            for _ in range(self.n_estimators)
+        ]
+
+    def __del__(self):
+        self.X.unlink()
+        self.Y.unlink()
 
     # Function used to call the fit function of a tree
-    def __build_single_tree(self, tree: DecisionTree):
+    @staticmethod
+    def __build_single_tree(
+        tree: DecisionTree, X: SharedNumpyArray, Y: SharedNumpyArray, max_features: int
+    ):
         # subset the feature indices
+        X_val = X.read()
         tree.fit(
-            self.features.read(),
-            self.outcomes.read(),
-            sample_indices=self.__get_sample_indices(),
+            X_val,
+            Y.read(),
+            sample_indices=RandomForest.__get_sample_indices(
+                X_val.shape[0], max_features
+            ),
         )
-        return tree
 
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
-                self.__build_single_tree(tree)
+                tree.fit(self.X.read(), self.Y.read())
         else:
             with Pool(self.n_jobs) as p:
-                self.trees = p.map(self.__build_single_tree, self.trees)
+                jobs = []
+                for tree in self.trees:
+                    jobs.append(
+                        apply_async(
+                            p,
+                            RandomForest.__build_single_tree,
+                            args=(tree, self.X, self.Y, self.max_features),
+                        )
+                    )
+                for job in jobs:
+                    job.get()
 
     # Function used to call the predict function of a tree
-    def __predict_single_tree(self, tree: DecisionTree):
-        return np.array(tree.predict(self.predict_values.read()))
+    @staticmethod
+    def __predict_single_tree(tree: DecisionTree, predict_values: SharedNumpyArray):
+        return np.array(tree.predict(predict_values.read()))
 
     # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
-    def __predict_trees(self):
+    def __predict_trees(self, X: np.ndarray):
         predictions = []
-
         if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(self.__predict_single_tree(tree))
+                predictions.append(tree.predict(X))
         else:
+            predict_value = SharedNumpyArray(X)
+            jobs = []
             with Pool(self.n_jobs) as p:
-                predictions = p.map(self.__predict_single_tree, self.trees)
+                for tree in self.trees:
+                    jobs.append(
+                        apply_async(
+                            p,
+                            RandomForest.__predict_single_tree,
+                            args=(tree, predict_value),
+                        )
+                    )
+                for job in jobs:
+                    predictions.append(job.get())
+            predict_value.unlink()
 
         return np.column_stack(predictions)
 
@@ -190,8 +255,7 @@ class RandomForest:
                 predictions.append(self.__predict_proba_single_tree(tree))
         else:
             with Pool(self.n_jobs) as p:
-                predictions = p.map(
-                    self.__predict_proba_single_tree, self.trees)
+                predictions = p.map(self.__predict_proba_single_tree, self.trees)
 
         return predictions
 
@@ -207,32 +271,16 @@ class RandomForest:
             response values
         """
         if not self.bootstrap and self.max_samples:
-            raise AttributeError(
-                "Bootstrap can not be False while max_samples is set")
+            raise AttributeError("Bootstrap can not be False while max_samples is set")
 
         X, Y = self.__check_input(X, Y)
-        self.features = SharedNumpyArray(X)
-        self.outcomes = SharedNumpyArray(Y)
-        self.n_obs, self.n_features = self.features._shape
+        self.X = SharedNumpyArray(X)
+        self.Y = SharedNumpyArray(Y)
+        self.n_obs, self.n_features = self.X._shape
         if self.forest_type == "Classification":
-            self.classes = np.unique(self.outcomes.read())
+            self.classes = np.unique(self.Y.read())
         if self.max_samples is None:
             self.max_samples = self.n_obs
-        self.trees = [
-            DecisionTree(
-                tree_type=self.forest_type,
-                criteria=self.criterion,
-                max_depth=self.max_depth,
-                impurity_tol=self.impurity_tol,
-                min_samples_split=self.min_samples_split,
-                min_samples_leaf=self.min_samples_leaf,
-                min_improvement=self.min_improvement,
-                max_features=self.max_features,
-                splitter=self.splitter,
-                skip_check_input=True
-            )
-            for _ in range(self.n_estimators)
-        ]
 
         # Fit trees
         self.__build_trees()
@@ -244,10 +292,10 @@ class RandomForest:
 
     # Function that returns an ndarray of random ints used as the
     # sample_indices
-    def __get_sample_indices(self):
-        if self.bootstrap:
-            return np.random.randint(
-                low=0, high=self.n_obs, size=self.max_samples)
+    @staticmethod
+    def __get_sample_indices(n_obs: int, max_samples: int | None):
+        if max_samples:
+            return np.random.randint(low=0, high=n_obs, size=max_samples)
         else:
             return None
 
@@ -268,14 +316,12 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forest has not been fitted before trying to call predict")
-
-        self.predict_values = SharedNumpyArray(X)
+                "The forest has not been fitted before trying to call predict"
+            )
 
         # Predict using all the trees, each column is the predictions from one
         # tree
-        tree_predictions = self.__predict_trees()
-        self.predict_values.unlink()
+        tree_predictions = self.__predict_trees(X)
 
         if self.forest_type == "Regression":
             # Return the mean answer from all trees for each row
@@ -309,7 +355,8 @@ class RandomForest:
         """
         if not self.forest_fitted:
             raise AttributeError(
-                "The forest has not been fitted before trying to call predict_proba")
+                "The forest has not been fitted before trying to call predict_proba"
+            )
 
         # Make sure that predict_proba is only called on Classification
         # forests
