@@ -19,11 +19,11 @@ cdef double[:] current_feature_values
 cdef int compare(const void* a, const void* b) noexcept nogil:
     cdef:
         int a1 = (<int *> a)[0]
-        int b1 = ( <int *> b )[0]
+        int b1 = (<int *> b)[0]
 
     if  current_feature_values[a1] >= current_feature_values[b1]:
         return 1
-    if current_feature_values[a1] < current_feature_values[b1]:
+    else:
         return -1
 
 cdef int[::1] sort_feature(int[::1] indices):
