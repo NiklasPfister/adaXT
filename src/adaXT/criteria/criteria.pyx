@@ -366,7 +366,7 @@ cdef class Entropy(Criteria):
                     self.weight_right -= weight
                     break
 
-        # Loop over all classes and calculate gini_index
+        # Loop over all classes and calculate entropy
         for i in range(self.num_classes):
             if self.weight_in_class_left[i] != 0.0:  # To make sure we dont take log(0)
                 pp = (self.weight_in_class_left[i])/(self.weight_left)

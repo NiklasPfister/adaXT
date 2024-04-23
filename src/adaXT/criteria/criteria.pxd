@@ -25,25 +25,25 @@ cdef class Criteria:
 
     cpdef double impurity(self, int[::1] indices)
     cdef (double, double) evaluate_split(self, int[::1] indices, int split_idx, int feature)
-        """
+    """
         Function to evaluate how good a split is
         ----------
 
         Parameters
         ----------
         indices: int[:]
-            the indices of a given node
+        the indices of a given node
 
         split_idx: int
-            the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
+        the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
 
         feature: int
-            The current feature we are working on
+        The current feature we are working on
 
         Returns
         -----------
         (double, double)
-            The critical value of the given split,
-            followed by the mean threshold between the
-            split index and the closest neighbour outside.
-        """
+        The critical value of the given split,
+        followed by the mean threshold between the
+        split index and the closest neighbour outside.
+    """
