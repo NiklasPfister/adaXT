@@ -118,8 +118,11 @@ class RandomForest:
             Splitter class if None uses premade Splitter class
         """
         self.X, self.Y = None, None
-        if random_state:
-            np.random.seed(random_state)
+        self.random_state = self.__get_random_state(random_state)
+        if forest_type not in ["Classification", "Regression"]:
+            raise ValueError(
+                "At the moment only Classification and Regression forests are supported"
+            )
         self.forest_type = forest_type
         self.n_estimators = n_estimators
         self.criterion = criterion
@@ -157,6 +160,14 @@ class RandomForest:
         if self.Y:
             self.Y.unlink()
 
+    def __get_random_state(self, random_state):
+        if isinstance(random_state, Integral) or (random_state is None):
+            return np.random.RandomState(random_state)
+        elif isinstance(random_state, np.random.RandomState):
+            return random_state
+        else:
+            raise ValueError("Random state either has to be Integral or None")
+
     def __get_max_samples(self, max_samples):
         if max_samples is None:
             return self.n_obs
@@ -174,6 +185,7 @@ class RandomForest:
         X: SharedNumpyArray,
         Y: SharedNumpyArray,
         max_samples: int,
+        random_state: np.random.RandomState,
     ):
         # subset the feature indices
         X_val = X.read()
@@ -181,7 +193,7 @@ class RandomForest:
             X_val,
             Y.read(),
             sample_indices=RandomForest.__get_sample_indices(
-                X_val.shape[0], max_samples
+                X_val.shape[0], max_samples, random_state
             ),
         )
 
@@ -200,7 +212,7 @@ class RandomForest:
                         apply_async(
                             p,
                             RandomForest.__build_single_tree,
-                            args=(tree, self.X, self.Y, max_samples),
+                            args=(tree, self.X, self.Y, max_samples, self.random_state),
                         )
                     )
                 for job in jobs:
@@ -273,6 +285,55 @@ class RandomForest:
 
         return predictions
 
+    # Function that returns an ndarray of random ints used as the
+    # sample_indices
+    @staticmethod
+    def __get_sample_indices(
+        n_obs: int, max_samples: int, random_state: np.random.RandomState
+    ):
+        if max_samples:
+            return random_state.randint(low=0, high=n_obs, size=max_samples)
+        else:
+            return None
+
+    # Function used to find the most frequent element of an array
+    def __most_frequent_element(self, arr):
+        values, counts = np.unique(arr, return_counts=True)
+        return values[np.argmax(counts)]
+
+    def __check_dimensions(self, X: np.ndarray):
+        # If there is only a single point
+        if X.ndim == 1:
+            if X.shape[0] != self.n_features:
+                raise ValueError(
+                    f"Number of features should be {self.n_features}, got {X.shape[0]}"
+                )
+        else:
+            if X.shape[1] != self.n_features:
+                raise ValueError(
+                    f"Dimension should be {self.n_features}, got {X.shape[1]}"
+                )
+
+    def __check_input(self, X: np.ndarray, Y: np.ndarray):
+        # Check if X and Y has same number of rows
+        if X.shape[0] != Y.shape[0]:
+            raise ValueError("X and Y should have the same number of rows")
+
+        # Check if Y has dimensions (n, 1) or (n,)
+        if 2 < Y.ndim:
+            raise ValueError("Y should have dimensions (n,1) or (n,)")
+        elif 2 == Y.ndim:
+            if 1 < Y.shape[1]:
+                raise ValueError("Y should have dimensions (n,1) or (n,)")
+            else:
+                Y = Y.reshape(-1)
+
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+
+        return X, Y
+
     def fit(self, X: np.ndarray, Y: np.ndarray):
         """
         Function used to fit a forest using many DecisionTrees for the given data
@@ -303,15 +364,6 @@ class RandomForest:
         self.forest_fitted = True
 
         return self
-
-    # Function that returns an ndarray of random ints used as the
-    # sample_indices
-    @staticmethod
-    def __get_sample_indices(n_obs: int, max_samples: int | None):
-        if max_samples:
-            return np.random.randint(low=0, high=n_obs, size=max_samples)
-        else:
-            return None
 
     def predict(self, X: np.ndarray):
         """
@@ -349,11 +401,6 @@ class RandomForest:
                 self.__most_frequent_element, 1, tree_predictions
             )
 
-    # Function used to find the most frequent element of an array
-    def __most_frequent_element(self, arr):
-        values, counts = np.unique(arr, return_counts=True)
-        return values[np.argmax(counts)]
-
     def predict_proba(self, X: np.ndarray):
         """
         Predicts a probability for each response for given X values using the trees of the forest
@@ -381,7 +428,7 @@ class RandomForest:
             )
 
         # Check dimensions
-        self.check_dimensions(X)
+        self.__check_dimensions(X)
 
         self.predict_values = SharedNumpyArray(X)
         # Predict_proba using all the trees, each element of list is the
@@ -394,36 +441,3 @@ class RandomForest:
 
         # Return the mean along the newly created axis
         return np.mean(stacked_tree_predictions, axis=0)
-
-    def check_dimensions(self, X: np.ndarray):
-        # If there is only a single point
-        if X.ndim == 1:
-            if X.shape[0] != self.n_features:
-                raise ValueError(
-                    f"Number of features should be {self.n_features}, got {X.shape[0]}"
-                )
-        else:
-            if X.shape[1] != self.n_features:
-                raise ValueError(
-                    f"Dimension should be {self.n_features}, got {X.shape[1]}"
-                )
-
-    def __check_input(self, X: np.ndarray, Y: np.ndarray):
-        # Check if X and Y has same number of rows
-        if X.shape[0] != Y.shape[0]:
-            raise ValueError("X and Y should have the same number of rows")
-
-        # Check if Y has dimensions (n, 1) or (n,)
-        if 2 < Y.ndim:
-            raise ValueError("Y should have dimensions (n,1) or (n,)")
-        elif 2 == Y.ndim:
-            if 1 < Y.shape[1]:
-                raise ValueError("Y should have dimensions (n,1) or (n,)")
-            else:
-                Y = Y.reshape(-1)
-
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
-        return X, Y
