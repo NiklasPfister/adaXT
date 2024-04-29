@@ -12,6 +12,8 @@ from numpy import float64 as DOUBLE
 import sys
 import dill
 
+from numbers import Integral, Real
+
 
 def run_dill_encoded(payload):
     fun, args = dill.loads(payload)
@@ -74,10 +76,9 @@ class RandomForest:
         forest_type: str,
         criterion: type[Criteria],
         n_estimators: int = 100,
-        bootstrap: bool = True,
+        bootstrap: bool = False,
         n_jobs: int = -1,
         max_samples: int | None = None,
-        max_features: int | None = None,
         random_state: int | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
@@ -101,8 +102,6 @@ class RandomForest:
             The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
         max_samples : int, default=None
             The number of samples drawn when doing bootstrap
-        max_features: int, float, {"sqrt", "log2"}, default=None
-            The number of features used when doing feature-sampling
         random_state: int
             Used for deterministic seeding of the tree
         max_depth : int
@@ -118,6 +117,7 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
+        self.X, self.Y = None, None
         if random_state:
             np.random.seed(random_state)
         self.forest_type = forest_type
@@ -126,7 +126,6 @@ class RandomForest:
         self.bootstrap = bootstrap
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
-        self.max_features = max_features
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
@@ -146,7 +145,6 @@ class RandomForest:
                 min_samples_split=self.min_samples_split,
                 min_samples_leaf=self.min_samples_leaf,
                 min_improvement=self.min_improvement,
-                max_features=self.max_features,
                 splitter=self.splitter,
                 skip_check_input=True,
             )
@@ -154,13 +152,28 @@ class RandomForest:
         ]
 
     def __del__(self):
-        self.X.unlink()
-        self.Y.unlink()
+        if self.X:
+            self.X.unlink()
+        if self.Y:
+            self.Y.unlink()
+
+    def __get_max_samples(self, max_samples):
+        if max_samples is None:
+            return self.n_obs
+        if isinstance(max_samples, Integral):
+            if max_samples > self.n_obs:
+                raise ValueError("max_samples can not be larger than total samples")
+            return max_samples
+        elif isinstance(max_samples, Real):
+            return max(round(self.n_obs * max_samples), 1)
 
     # Function used to call the fit function of a tree
     @staticmethod
     def __build_single_tree(
-        tree: DecisionTree, X: SharedNumpyArray, Y: SharedNumpyArray, max_features: int
+        tree: DecisionTree,
+        X: SharedNumpyArray,
+        Y: SharedNumpyArray,
+        max_samples: int,
     ):
         # subset the feature indices
         X_val = X.read()
@@ -168,7 +181,7 @@ class RandomForest:
             X_val,
             Y.read(),
             sample_indices=RandomForest.__get_sample_indices(
-                X_val.shape[0], max_features
+                X_val.shape[0], max_samples
             ),
         )
 
@@ -179,6 +192,7 @@ class RandomForest:
             for tree in self.trees:
                 tree.fit(self.X.read(), self.Y.read())
         else:
+            max_samples = self.__get_max_samples(self.max_samples)
             with Pool(self.n_jobs) as p:
                 jobs = []
                 for tree in self.trees:
@@ -186,7 +200,7 @@ class RandomForest:
                         apply_async(
                             p,
                             RandomForest.__build_single_tree,
-                            args=(tree, self.X, self.Y, self.max_features),
+                            args=(tree, self.X, self.Y, max_samples),
                         )
                     )
                 for job in jobs:
@@ -325,6 +339,7 @@ class RandomForest:
 
         if self.forest_type == "Regression":
             # Return the mean answer from all trees for each row
+            print("Tree Predictions ", tree_predictions)
             return np.mean(tree_predictions, axis=1)
 
         elif self.forest_type == "Classification":
