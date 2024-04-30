@@ -34,7 +34,7 @@ def test_dominant_feature():
 
     # Create forest and fit data
     forest = RandomForest(
-        "Classification", n_estimators=100, criterion=Gini_index, bootstrap=False
+        "Classification", n_estimators=100, criteria=Gini_index, bootstrap=False
     )
     forest.fit(X, Y)
 
@@ -56,31 +56,55 @@ def test_deterministic_seeding_regression():
     m = 10
     random_state = 100
     X, Y = get_random_data_regression(n, m)
-    prediction_data = np.random.uniform(0, 10, (1, m))  # Get new data to predict
+    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
-        bootstrap=True,
-        criterion=Squared_error,
+        criteria=Squared_error,
         random_state=random_state,
-        max_samples=n - 500,
     )
     forest1.fit(X, Y)
 
     forest2 = RandomForest(
         "Regression",
         n_estimators=100,
-        bootstrap=True,
-        criterion=Squared_error,
+        criteria=Squared_error,
         random_state=random_state,
-        max_samples=n - 500,
     )
     forest2.fit(X, Y)
 
     pred1 = forest1.predict(prediction_data)
     pred2 = forest2.predict(prediction_data)
 
-    print("Prediction: ", pred2)
+    assert np.array_equal(
+        pred1, pred2
+    ), "The two random forest predictions were different"
+
+
+def test_deterministic_seeding_classification():
+    n = 1000
+    m = 10
+    random_state = 100
+    X, Y = get_random_data_classification(n, m)
+    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
+    forest1 = RandomForest(
+        "Classification",
+        n_estimators=100,
+        criteria=Gini_index,
+        random_state=random_state,
+    )
+    forest1.fit(X, Y)
+
+    forest2 = RandomForest(
+        "Classification",
+        n_estimators=100,
+        criteria=Gini_index,
+        random_state=random_state,
+    )
+    forest2.fit(X, Y)
+
+    pred1 = forest1.predict(prediction_data)
+    pred2 = forest2.predict(prediction_data)
 
     assert np.array_equal(
         pred1, pred2
@@ -89,5 +113,5 @@ def test_deterministic_seeding_regression():
 
 if __name__ == "__main__":
     # test_dominant_feature()
-    test_deterministic_seeding_regression()
+    test_deterministic_seeding_classification()
     print("Done")

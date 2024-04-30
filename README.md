@@ -34,7 +34,7 @@ be fitted on data and then used to perform some version of
 prediction. adaXT has therefore been designed with a modular decision
 tree implementation that takes four input components:
 
-- Criterion class: Used during fitting to determine splits.
+- criteria class: Used during fitting to determine splits.
 
 - LeafBuilder class: Used during fitting to specify what is saved in
   the leaf nodes.
