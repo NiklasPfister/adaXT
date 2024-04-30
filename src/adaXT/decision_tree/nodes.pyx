@@ -1,20 +1,20 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 
-cdef class Node:
+class Node:
     def __init__(
             self,
             indices: np.ndarray,
             depth: int,
             impurity: float,
             n_samples: int) -> None:
-        self.indices = indices
+        self.indices = np.asarray(indices)
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
 
 
-cdef class DecisionNode(Node):
+class DecisionNode(Node):
     def __init__(
             self,
             indices: np.ndarray,
@@ -34,7 +34,7 @@ cdef class DecisionNode(Node):
         self.parent = parent
 
 
-cdef class LeafNode(Node):
+class LeafNode(Node):
     def __init__(
             self,
             id: int,
@@ -50,7 +50,7 @@ cdef class LeafNode(Node):
         self.value = np.asarray(value)
 
 
-cdef class LinearRegressionLeafNode(LeafNode):
+class LinearRegressionLeafNode(LeafNode):
     def __init__(
             self,
             id: int,

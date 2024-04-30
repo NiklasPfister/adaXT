@@ -5,11 +5,14 @@ from .nodes import DecisionNode
 
 cdef class Predict():
 
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
+    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
         self.root = root
+
+    def __reduce__(self):
+        return (self.__class__, (self.X.base, self.Y.base, self.root))
 
     cdef double[:, ::1] __check_dimensions(self, object X):
         X = np.ascontiguousarray(X, dtype=DOUBLE)

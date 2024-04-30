@@ -1,6 +1,6 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-from .nodes cimport LeafNode, LinearRegressionLeafNode
+from .nodes import LeafNode, LinearRegressionLeafNode
 import numpy as np
 cimport numpy as cnp
 
@@ -9,7 +9,7 @@ cdef class LeafBuilder:
         self.x = x
         self.y = y
 
-    cpdef LeafNode build_leaf(self,
+    cpdef object build_leaf(self,
                               int leaf_id,
                               int[::1] indices,
                               int depth,
@@ -39,7 +39,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
         ret = ret / n_samples
         return ret
 
-    cpdef LeafNode build_leaf(self,
+    cpdef object build_leaf(self,
                               int leaf_id,
                               int[::1] indices,
                               int depth,
@@ -63,7 +63,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
 
         return sum / count
 
-    cpdef LeafNode build_leaf(self,
+    cpdef object build_leaf(self,
                               int leaf_id,
                               int[::1] indices,
                               int depth,
@@ -127,7 +127,7 @@ cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
         theta0 = muY - theta1*muX
         return (theta0, theta1, muY)
 
-    cpdef LeafNode build_leaf(self,
+    cpdef object build_leaf(self,
                               int leaf_id,
                               int[::1] indices,
                               int depth,
