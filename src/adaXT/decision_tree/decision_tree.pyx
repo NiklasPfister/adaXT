@@ -105,7 +105,7 @@ class DecisionTree:
         d[ "n_features" ] = self.n_features
         d[ "n_obs" ] = self.n_obs
         d[ "skip_check_input" ] = self.skip_check_input
-        d[ "leaf_nodes" ] = np.asarray(self.leaf_nodes)
+        d[ "leaf_nodes" ] = self.leaf_nodes
         d[ "root" ] = self.root
         d[ "predictor" ] = self.predictor
         return d
