@@ -11,13 +11,13 @@ import sys
 def run_classification_tree(X, Y, criteria):
     sk_time = 0
     if criteria.__name__ == "Gini_index":
-        tree = DecisionTreeClassifier(criterion="gini")
+        tree = DecisionTreeClassifier(criteria="gini")
         st = time.time()
         tree.fit(X, Y)
         et = time.time()
         sk_time = et - st
     elif criteria.__name__ == "Entropy":
-        tree = DecisionTreeClassifier(criterion="entropy")
+        tree = DecisionTreeClassifier(criteria="entropy")
         st = time.time()
         tree.fit(X, Y)
         et = time.time()
@@ -37,7 +37,7 @@ def run_classification_tree(X, Y, criteria):
 def run_regression_tree(X, Y, criteria):
     sk_time = 0
     if criteria.__name__ == "Squared_error":
-        tree = DecisionTreeRegressor(criterion="squared_error")
+        tree = DecisionTreeRegressor(criteria="squared_error")
         st = time.time()
         tree.fit(X, Y)
         et = time.time()

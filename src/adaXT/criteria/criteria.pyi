@@ -56,7 +56,7 @@ class Squared_error(Criteria):
 class Linear_regression(Criteria):
     r"""
     Linear regression based criteria, which adapts the Squared_error
-    criterion by fitting a linear regression in the first coordinate.
+    criteria by fitting a linear regression in the first coordinate.
     Formally, in a node consisting of samples $I$, it is given by
     $$
     \text{Linear\_regression} = \sum_{i \in I}

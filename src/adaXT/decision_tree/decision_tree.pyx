@@ -89,10 +89,34 @@ class DecisionTree:
         self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
-        self.n_classes = -1
         self.n_obs = -1
-        self.classes = None
         self.skip_check_input = skip_check_input
+
+    def __getstate__(self):
+        d = dict()
+        d["max_depth"] = self.max_depth
+        d["tree_type"] = self.tree_type
+        d["n_nodes"] = self.n_nodes
+        d["n_features"] = self.n_features
+        d["n_obs"] = self.n_obs
+        d["leaf_nodes"] = self.leaf_nodes
+        d["root"] = self.root
+        d["predictor"] = self.predictor
+        return d
+
+    def __setstate__(self, d):
+        self.max_depth=d["max_depth"]
+        self.tree_type=d["tree_type"]
+        self.n_nodes=d["n_nodes"]
+        self.n_features=d["n_features"]
+        self.n_obs=d["n_obs"]
+        self.leaf_nodes=d["leaf_nodes"]
+        self.root=d["root"]
+        self.predictor=d["predictor"]
+
+    def __reduce__(self):
+        d = self.__getstate__()
+        return (DecisionTree, (d['tree_type'], ), d)
 
     def __error_check_max_features(self, max_features):
         if max_features is None:
@@ -169,9 +193,10 @@ class DecisionTree:
             X,
             Y,
             sample_indices: np.ndarray | None = None,
-            sample_weight: np.ndarray | None = None,) -> None:
+            sample_weight: np.ndarray | None = None) -> None:
 
-        X, Y = self.__check_input(X, Y)
+        if not self.skip_check_input:
+            X, Y = self.__check_input(X, Y)
         row, col = X.shape
         self.int_max_features = self.__parse_max_features(self.max_features, col)
 
@@ -294,14 +319,14 @@ class DepthTreeBuilder:
         splitter : Splitter | None, optional
             Splitter class used to split data, by default None
         """
-        self.features = X
-        self.response = Y
+        self.X = X
+        self.Y = Y
         self.int_max_features = int_max_features
         self.sample_indices = sample_indices
         self.criteria = criteria
         self.sample_weight = sample_weight
 
-        self.splitter = splitter(self.features, self.response, criteria)
+        self.splitter = splitter(self.X, self.Y, criteria)
         self.predict_class = predict_class
         self.leaf_builder_class = leaf_builder_class
 
@@ -331,8 +356,8 @@ class DepthTreeBuilder:
         int :
             returns 0 on succes
         """
-        features = self.features
-        response = self.response
+        X = self.X
+        Y = self.Y
         splitter = self.splitter
         criteria = self.criteria
 
@@ -349,7 +374,7 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = np.arange(features.shape[0])
+        all_idx = np.arange(X.shape[0])
         if self.sample_indices is not None:
             all_idx = np.array(self.sample_indices)
 
@@ -358,7 +383,7 @@ class DepthTreeBuilder:
         )
 
         # Update the tree now that we have the correct samples
-        leaf_builder = self.leaf_builder_class(features, response, all_idx)
+        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
         n_obs = all_idx.shape[0]
 
         queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
@@ -461,9 +486,9 @@ class DepthTreeBuilder:
 
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = features.shape[1]
+        tree.n_features = X.shape[1]
         tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.predictor = self.predict_class(features, response, root)
+        tree.predictor = self.predict_class(self.X, self.Y, root)
         return 0
