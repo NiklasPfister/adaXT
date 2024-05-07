@@ -95,16 +95,10 @@ class DecisionTree:
     def __getstate__(self):
         d = dict()
         d["max_depth"] = self.max_depth
-        d["impurity_tol"] = self.impurity_tol
-        d["min_samples_split"] = self.min_samples_split
-        d["min_samples_leaf"] = self.min_samples_leaf
-        d["min_improvement"] = self.min_improvement
-        d["max_features"] = self.max_features
         d["tree_type"] = self.tree_type
         d["n_nodes"] = self.n_nodes
         d["n_features"] = self.n_features
         d["n_obs"] = self.n_obs
-        d["skip_check_input"] = self.skip_check_input
         d["leaf_nodes"] = self.leaf_nodes
         d["root"] = self.root
         d["predictor"] = self.predictor
@@ -112,16 +106,10 @@ class DecisionTree:
 
     def __setstate__(self, d):
         self.max_depth=d["max_depth"]
-        self.impurity_tol=d["impurity_tol"]
-        self.min_samples_split=d["min_samples_split"]
-        self.min_samples_leaf=d["min_samples_leaf"]
-        self.min_improvement=d["min_improvement"]
-        self.max_features=d["max_features"]
         self.tree_type=d["tree_type"]
         self.n_nodes=d["n_nodes"]
         self.n_features=d["n_features"]
         self.n_obs=d["n_obs"]
-        self.skip_check_input=d["skip_check_input"]
         self.leaf_nodes=d["leaf_nodes"]
         self.root=d["root"]
         self.predictor=d["predictor"]
