@@ -1,6 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 
+
 class Node:
     def __init__(
             self,
