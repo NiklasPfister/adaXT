@@ -11,16 +11,26 @@ def plot_running_time(n_jobs, running_time, ax, title):
 
 
 def get_regression_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.uniform(lowy, highy, n)
     return (X, Y)
 
 
 def get_classification_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.randint(lowy, highy, n)
     return (X, Y)
@@ -87,7 +97,13 @@ if __name__ == "__main__":
         n_jobs.append(i)
         running_times = []
         for _ in range(1):
-            running_times.append(running_time(n, m, random_state, i, n_estimators))
+            running_times.append(
+                running_time(
+                    n,
+                    m,
+                    random_state,
+                    i,
+                    n_estimators))
         mean_running_times.append(np.mean(running_times, axis=0))
     plt.plot(n_jobs, mean_running_times)
     plt.show()

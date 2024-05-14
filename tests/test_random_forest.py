@@ -17,16 +17,26 @@ from multiprocessing import cpu_count
 
 
 def get_regression_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.uniform(lowy, highy, n)
     return (X, Y)
 
 
 def get_classification_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.randint(lowy, highy, n)
     return (X, Y)
@@ -86,8 +96,10 @@ def test_dominant_feature():
 
     # Create forest and fit data
     forest = RandomForest(
-        "Classification", n_estimators=100, criteria=Gini_index, bootstrap=False
-    )
+        "Classification",
+        n_estimators=100,
+        criteria=Gini_index,
+        bootstrap=False)
     forest.fit(X, Y)
 
     # Create data for predict
@@ -109,7 +121,8 @@ def test_deterministic_seeding_regression():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_regression_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(
+        0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
@@ -142,7 +155,8 @@ def test_deterministic_seeding_classification():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_classification_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(
+        0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Classification",
         n_estimators=100,

@@ -106,15 +106,20 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
 # Calculate where to add nodes when plotting a tree
 
 
-def calculate_node_positions(node: LeafNode | DecisionNode, x: float, y: float):
+def calculate_node_positions(
+        node: LeafNode | DecisionNode,
+        x: float,
+        y: float):
     if node is None:
         return {}
 
     dx = 1
     dy = 1
     if isinstance(node, DecisionNode):
-        left_positions = calculate_node_positions(node.left_child, 2 * x - dx, y - dy)
-        right_positions = calculate_node_positions(node.right_child, 2 * x + dx, y - dy)
+        left_positions = calculate_node_positions(
+            node.left_child, 2 * x - dx, y - dy)
+        right_positions = calculate_node_positions(
+            node.right_child, 2 * x + dx, y - dy)
     else:
         left_positions = calculate_node_positions(None, 2 * x - dx, y - dy)
         right_positions = calculate_node_positions(None, 2 * x + dx, y - dy)

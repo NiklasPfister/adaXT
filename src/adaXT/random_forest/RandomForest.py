@@ -77,8 +77,7 @@ def predict_proba_single_tree(
 ):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
-        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes
-    )
+        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes)
     return ret_val
 
 
@@ -96,7 +95,8 @@ def shared_numpy_array(array):
     else:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(
+            shape=row, dtype=np.double, buffer=shared_array)
     np.copyto(shared_array_np, array)
     return shared_array_np
 
@@ -191,7 +191,8 @@ class RandomForest:
             return self.n_obs
         if isinstance(max_samples, int):
             if max_samples > self.n_obs:
-                raise ValueError("max_samples can not be larger than total samples")
+                raise ValueError(
+                    "max_samples can not be larger than total samples")
             return max_samples
         elif isinstance(max_samples, float):
             return max(round(self.n_obs * max_samples), 1)
@@ -241,7 +242,9 @@ class RandomForest:
                 predictions.append(tree.predict(X))
         else:
             predict_value = shared_numpy_array(X)
-            partial_func = partial(predict_single_tree, predict_values=predict_value)
+            partial_func = partial(
+                predict_single_tree,
+                predict_values=predict_value)
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
@@ -317,7 +320,8 @@ class RandomForest:
             response values
         """
         if not self.bootstrap and self.max_samples:
-            raise AttributeError("Bootstrap can not be False while max_samples is set")
+            raise AttributeError(
+                "Bootstrap can not be False while max_samples is set")
 
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
