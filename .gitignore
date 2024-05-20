@@ -4,9 +4,6 @@ timing.ipynb
 # Ignore update PyPi Script
 update_package.sh
 
-# Ignore temp files
-/temp
-
 # Ignore the csv testing files
 *.csv
 
