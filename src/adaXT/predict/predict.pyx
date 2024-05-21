@@ -1,7 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 from numpy import float64 as DOUBLE
-from .nodes import DecisionNode
+from ..decision_tree.nodes import DecisionNode
 
 cdef class Predict():
 
@@ -72,6 +72,13 @@ cdef class Predict():
 
         return matrix
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray, **kwargs):
+        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+
+    @staticmethod
+    def forest_predict_proba(predictions: np.ndarray, **kwargs):
+        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
 
 cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
@@ -137,6 +144,23 @@ cdef class PredictClassification(Predict):
                 ret_val.append(cur_node.value)
         return ret_val
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray, **kwargs):
+        def __most_frequent_element(arr):
+            values, counts = np.unique(arr, return_counts=True)
+            return values[np.argmax(counts)]
+        return np.apply_along_axis(
+            __most_frequent_element, 1, predictions
+        )
+
+    @staticmethod
+    def forest_predict_proba(predictions: np.ndarray, **kwargs):
+        # Stack the predict_probas
+        stacked_tree_predictions = np.stack(predictions, axis=0)
+
+        # Return the mean along the newly created axis
+        return np.mean(stacked_tree_predictions, axis=0)
+
 
 cdef class PredictRegression(Predict):
     def predict(self, object X, **kwargs):
@@ -163,8 +187,11 @@ cdef class PredictRegression(Predict):
             Y[i] = cur_node.value[0]
         return Y
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray, **kwargs):
+        return np.mean(predictions, axis=1)
 
-cdef class PredictLinearRegression(Predict):
+cdef class PredictLinearRegression(PredictRegression):
     def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, n_obs
@@ -198,8 +225,13 @@ cdef class PredictQuantile(Predict):
             object cur_node
             double[:] Y
             double quantile
+            bint save_indices
 
         quantile = <double> kwargs['quantile']
+        if "save_indices" in kwargs.keys():
+            save_indices = <bint> kwargs['save_indices']
+        else:
+            save_indices = False
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
@@ -215,5 +247,13 @@ cdef class PredictQuantile(Predict):
                 else:
                     cur_node = cur_node.right_child
 
-            Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
+            if save_indices:
+                Y[i] = self.Y.base[cur_node.indices]
+            else:
+                Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
+
+    @staticmethod
+    def forest_predict(predictions: np.ndarray, **kwargs):
+        quantile = <double> kwargs['quantile']
+        return np.quantile(predictions, quantile, axis=1)

@@ -24,3 +24,11 @@ cdef class PredictClassification(Predict):
 
 cdef class PredictRegression(Predict):
     pass
+
+
+cdef class PredictLinearRegression(PredictRegression):
+    pass
+
+
+cdef class PredictQuantile(Predict):
+    pass
