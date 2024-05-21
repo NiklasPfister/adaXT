@@ -7,19 +7,20 @@ import sys
 
 # Custom
 from .splitter import Splitter
-from .predict import Predict
-from .predict cimport PredictClassification, PredictRegression
+from ..predict import Predict
+from ..predict.predict cimport PredictClassification, PredictRegression
 from ..criteria import Criteria
 from ..criteria import Squared_error, Entropy
 from .nodes import DecisionNode
-from .leafbuilder import LeafBuilder
-from .leafbuilder cimport LeafBuilderClassification, LeafBuilderRegression
+from ..leaf_builder import LeafBuilder
+from ..leaf_builder.leaf_builder cimport LeafBuilderClassification, LeafBuilderRegression
+from ..general_model import GeneralModel
 
 
 cdef double EPSILON = np.finfo('double').eps
 
 
-class DecisionTree:
+class DecisionTree(GeneralModel):
     def __init__(
             self,
             tree_type: str | None = None,
@@ -35,47 +36,8 @@ class DecisionTree:
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
 
-        tree_types = ["Classification", "Regression"]
-        if tree_type in tree_types:
-            if tree_type == "Classification":
-                if predict:
-                    self.predict_class = predict
-                else:
-                    self.predict_class = PredictClassification
-                if criteria:
-                    self.criteria_class = criteria
-                else:
-                    self.criteria_class = Entropy
-                if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
-                else:
-                    self.leaf_builder_class = LeafBuilderClassification
-            elif tree_type == "Regression":
-                if predict:
-                    self.predict_class = predict
-                else:
-                    self.predict_class = PredictRegression
-                if criteria:
-                    self.criteria_class = criteria
-                else:
-                    self.criteria_class = Squared_error
-                if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
-                else:
-                    self.leaf_builder_class = LeafBuilderRegression
-        else:
-            if (not criteria) or (not predict) or (not leaf_builder):
-                raise ValueError(
-                        "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
-                        )
-            self.criteria_class = criteria
-            self.predict_class = predict
-            self.leaf_builder_class = leaf_builder
-
-        if splitter:
-            self.splitter = splitter
-        else:
-            self.splitter = Splitter
+        # Function defined in GeneralModel
+        self.check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
 
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol

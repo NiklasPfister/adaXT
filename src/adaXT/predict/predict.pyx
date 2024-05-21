@@ -1,7 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 from numpy import float64 as DOUBLE
-from .nodes import DecisionNode
+from ..decision_tree.nodes import DecisionNode
 
 cdef class Predict():
 
