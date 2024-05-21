@@ -29,4 +29,5 @@ jobs:
       - run: pip install 'mkdocstrings[python,cython]'
       - run: pip install mkdocs-autorefs
       - run: pip install pymdown-extensions
+      - run: pip install .
       - run: mkdocs gh-deploy --force
