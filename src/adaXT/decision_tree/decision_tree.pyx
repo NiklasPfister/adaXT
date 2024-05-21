@@ -8,12 +8,9 @@ import sys
 # Custom
 from .splitter import Splitter
 from ..predict import Predict
-from ..predict.predict cimport PredictClassification, PredictRegression
 from ..criteria import Criteria
-from ..criteria import Squared_error, Entropy
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
-from ..leaf_builder.leaf_builder cimport LeafBuilderClassification, LeafBuilderRegression
 from ..general_model import GeneralModel
 
 
