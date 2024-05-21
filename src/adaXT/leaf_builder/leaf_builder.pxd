@@ -41,3 +41,15 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             double impurity,
                             int n_samples,
                             object parent)
+
+
+cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
+    cdef (double, double) custom_mean(self, int[::1] indices)
+    cdef (double, double, double) theta(self, int[::1] indices)
+    cpdef object build_leaf(self,
+                            int leaf_id,
+                            int[::1] indices,
+                            int depth,
+                            double impurity,
+                            int n_samples,
+                            object parent)

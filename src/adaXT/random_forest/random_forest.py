@@ -85,17 +85,21 @@ def fill_with_zeros_for_missing_classes_in_tree(
 
 
 def predict_proba_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray
+    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray, **kwargs
 ):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
-        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes
+        tree.classes,
+        tree_predict_proba,
+        predict_values.shape[0],
+        classes=classes,
+        **kwargs,
     )
     return ret_val
 
 
-def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray):
-    return tree.predict(predict_values)
+def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
+    return tree.predict(predict_values, **kwargs)
 
 
 def shared_numpy_array(array):
@@ -122,7 +126,7 @@ class RandomForest(GeneralModel):
         self,
         forest_type: str | None,
         n_estimators: int = 100,
-        bootstrap: bool = False,
+        bootstrap: bool = True,
         n_jobs: int = -1,
         max_samples: int | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
@@ -245,14 +249,16 @@ class RandomForest(GeneralModel):
 
     # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
-    def __predict_trees(self, X: np.ndarray):
+    def __predict_trees(self, X: np.ndarray, **kwargs):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(tree.predict(X))
+                predictions.append(tree.predict(X, **kwargs))
         else:
             predict_value = shared_numpy_array(X)
-            partial_func = partial(predict_single_tree, predict_values=predict_value)
+            partial_func = partial(
+                predict_single_tree, predict_values=predict_value, **kwargs
+            )
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
@@ -260,7 +266,7 @@ class RandomForest(GeneralModel):
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
-    def __predict_proba_trees(self, X: np.ndarray):
+    def __predict_proba_trees(self, X: np.ndarray, **kwargs):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
@@ -271,6 +277,7 @@ class RandomForest(GeneralModel):
                 predict_proba_single_tree,
                 predict_values=predict_value,
                 classes=self.classes,
+                **kwargs,
             )
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
@@ -342,7 +349,7 @@ class RandomForest(GeneralModel):
 
         return self
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, **kwargs):
         """
         Predicts a y-value for given X values using the trees of the forest. In the case of a classification tree with equal majority vote,
         the lowest class that has maximum votes is returned.
@@ -364,11 +371,11 @@ class RandomForest(GeneralModel):
 
         # Predict using all the trees, each column is the predictions from one
         # tree
-        tree_predictions = self.__predict_trees(X)
+        tree_predictions = self.__predict_trees(X, **kwargs)
 
-        return self.predict_class.forest_predict(tree_predictions)
+        return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-    def predict_proba(self, X: np.ndarray):
+    def predict_proba(self, X: np.ndarray, **kwargs):
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
@@ -398,10 +405,5 @@ class RandomForest(GeneralModel):
         self.__check_dimensions(X)
         # Predict_proba using all the trees, each element of list is the
         # predict_proba from one tree
-        tree_predictions = self.__predict_proba_trees(X)
-
-        # Stack the predict_probas
-        stacked_tree_predictions = np.stack(tree_predictions, axis=0)
-
-        # Return the mean along the newly created axis
-        return np.mean(stacked_tree_predictions, axis=0)
+        tree_predictions = self.__predict_proba_trees(X, **kwargs)
+        return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)

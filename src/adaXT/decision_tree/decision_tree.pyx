@@ -21,7 +21,7 @@ class DecisionTree(GeneralModel):
     def __init__(
             self,
             tree_type: str | None = None,
-            skip_check_input:bool = False,
+            skip_check_input: bool = False,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 0,
             min_samples_split: int = 1,

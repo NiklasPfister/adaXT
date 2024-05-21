@@ -208,7 +208,7 @@ def test_random_forest():
 
 def test_linear_regression_forest():
     random_state = np.random.RandomState(2024)
-    n = 5
+    n = 1000
     m = 10
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     tree = DecisionTree(
@@ -222,6 +222,7 @@ def test_linear_regression_forest():
         leaf_builder=LeafBuilderLinearRegression,
         predict=PredictLinearRegression,
         criteria=Linear_regression,
+        bootstrap=False,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
@@ -232,8 +233,27 @@ def test_linear_regression_forest():
     ), "Forest predicts different than tree when it should be equal."
 
 
+def test_quantile_regression_forest():
+    random_state = np.random.RandomState(2024)
+    n = 10
+    m = 10
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    tree = DecisionTree(
+        "Quantile",
+    )
+    forest = RandomForest("Quantile", bootstrap=False)
+    tree.fit(X_reg, Y_reg)
+    forest.fit(X_reg, Y_reg)
+    tree_predict = tree.predict(X_reg, quantile=0.95)
+    forest_predict = forest.predict(X_reg, quantile=0.95)
+    assert np.allclose(
+        tree_predict, forest_predict
+    ), "Forest predicts different than tree when it should be equal."
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    test_linear_regression_forest()
+    # test_linear_regression_forest()
+    test_quantile_regression_forest()
     print("Done")
