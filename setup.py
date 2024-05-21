@@ -1,9 +1,9 @@
-# distutils: define_macros=CYTHON_TRACE=1
+# distutils: define_macros=NPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION
 import numpy as np
 from setuptools import setup, Extension, find_packages
 
 NAME = "adaXT"
-VERSION = "1.0.1"
+VERSION = "1.1.0"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
     "Documentation": "https://NiklasPfister.github.io/adaXT/",
@@ -37,6 +37,7 @@ extensions = [
         include_dirs=[include_dir],
         language="c++",
         extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
     )
 ]
 
@@ -48,6 +49,7 @@ extensions += [
         include_dirs=[include_dir],
         language="c++",
         extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
     )
 ]
 
@@ -57,7 +59,12 @@ if USE_CYTHON:
     from Cython.Build import cythonize
 
     with_debug = False
-    extensions = cythonize(extensions, gdb_debug=with_debug, annotate=False)
+    extensions = cythonize(
+        extensions,
+        gdb_debug=with_debug,
+        annotate=True,
+        language_level="3",
+    )
 
 setup(
     name=NAME,
@@ -74,7 +81,7 @@ setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License (GPL)",
+        "License :: OSI Approved :: BSD License",
         "Operating System :: OS Independent",
     ],
     package_data={

@@ -5,7 +5,7 @@ repo_url: https://github.com/NiklasPfister/adaXT
 repo_name: "adaXT"
 edit_uri: "?query=root/path/docs/"
 watch: [mkdocs.yml, README.md, src/adaXT]
-site_description: Adaptable Decision Trees and Random Forests
+site_description: Adaptable and Extendable Decision Trees
 
 plugins:
   - search:
@@ -59,15 +59,21 @@ theme:
 
 # Navigation bar on the left
 nav:
-  - Welcome: index.md
-  - API reference:
-    - DecisionTree: decision_tree/tree/DecisionTree.md
-    - Criteria: decision_tree/criteria/criteria.md
-    - Tree utilities: decision_tree/utils/tree_utils.md
+  - Overview: index.md
   - User Guide:
-    - Decision Tree:
-      - Creating a tree: decision_tree/examples/creatingATree.md
-      - Creating a criteria: decision_tree/examples/creatingACriteria.md
+      - Decision trees:
+          - Getting started: user_guide/getting_started.md
+          - Creating custom criteria: user_guide/creatingCriteria.md
+      - Random Forest:
+          - Chosing n_jobs parameter: RandomForest/user_guide/chosing_n_jobs.md
+  - API reference:
+      - DecisionTree: api_docs/DecisionTree.md
+      - Criteria: api_docs/Criteria.md
+      - LeafBuilder: api_docs/LeafBuilder.md
+      - Prediction: api_docs/Prediction.md
+      - Splitter: api_docs/Splitter.md
+      - Tree utilities: api_docs/tree_utils.md
+      - RandomForest: api_docs/RandomForest.md
 
 # For setting up math and code blocks
 markdown_extensions:

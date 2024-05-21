@@ -1,46 +1,53 @@
 class Criteria:
     """
-    Abstract class used as a parent for new Criteria functions
+    Abstract class used as a parent for new Criteria classes.
     """
     pass
 
 
 class Gini_index(Criteria):
     r"""
-    Calculates the gini index given by
+    Gini index based criteria, which can be used for classification.
+    Formally, given class labels $\mathcal{L}$, the Gini index in a node
+    consisting of samples $I$, is given by
     $$
-    \text{Gini Index} = 1 - \sum_{i=1}^n (P[i])^2,
+    \text{Gini\_index} = 1 - \sum_{k\in \mathcal{L}} P[k]^2,
     $$
-    where $P[i]$ denotes the probability of an element
-    being classified for a distinct class.
+    where $P[k]$ denotes the fraction of samples in $I$ with class
+    label $k$.
     """
     pass
 
 
 class Entropy(Criteria):
     r"""
-    Calculates the Entropy given by
+    Entropy based criteria, which can be used for classification.
+    Formally, given class labels $\mathcal{L}$, the entropy in a node
+    consisting of samples $I$, is given by
     $$
-    \text{Entropy} = - \sum_{i = 1}^n P[i] \log_2 (P[i]),
+    \text{Entropy} = - \sum_{k\in\mathcal{L}} P[k] \log_2 (P[k]),
     $$
-    where $P[i]$ denotes the probability of randomly selecting an example
-    in class i.
+    where $P[k]$ denotes the fraction of samples in $I$ with class
+    label $k$.
     """
     pass
 
 
 class Squared_error(Criteria):
     r"""
-    Calculates the Squared error given by
+    Squared error based criteria, which can be used for regression and
+    leads to standard CART splits. Formally, the squared error in a node
+    consisting of samples $I$, is given by
     $$
-    \text{Squared Error} = \frac{\sum_{i = 1}^n (Y[i] - \mu_Y)^2}{n_{obs}},
+    \text{Squared\_error} = \tfrac{1}{|I|}\sum_{i\in I}
+    \Big(Y[i] - \tfrac{1}{|I|}\sum_{i\in I} Y[i]\Big)^2,
     $$
-    where $Y$ denotes the outcome values in a node. $\mu_Y$ denotes the mean value in the node,
-    and $n_{obs}$ denotes the number of observations in the node.
+    where $Y[i]$ denotes the response value at sample $i$.
 
-    For a faster, but equivalent calculation, it is calculated using the formula
+    For a faster, but equivalent calculation, it is computed by
     $$
-    \text{Squared Error} = \frac{\sum_{i = 1}^n Y[i]^2}{n_obs} - \mu_Y^2
+    \text{Squared\_error} = \tfrac{1}{|I|}\sum_{i\in I} Y[i]^2
+    - \Big(\tfrac{1}{|I|}\sum_{i\in I} Y[i]\Big)^2
     $$
     """
     pass
@@ -48,9 +55,17 @@ class Squared_error(Criteria):
 
 class Linear_regression(Criteria):
     r"""
-    Calculates the impurity given by
+    Linear regression based criteria, which adapts the Squared_error
+    criteria by fitting a linear regression in the first coordinate.
+    Formally, in a node consisting of samples $I$, it is given by
     $$
-    \text{Linear Regression} = \sum_{i \in indices} (Y[i] - \\theta_0 - \\theta_1 X[i, 0])^2.
+    \text{Linear\_regression} = \sum_{i \in I}
+    (Y[i] - \widehat{\theta}_0 - \widehat{\theta}_1 X[i, 0])^2,
     $$
+    where $Y[i]$ and $X[i, 0]$ denote the response value and
+    the value of the first feature at sample $i$, respectively, and
+    $(\widehat{\theta}_0, \widehat{\theta}_1)$ are ordinary
+    least squares regression estimates when regressing
+    $Y[i]$ on $X[i, 0]$ using the samples in $I$.
     """
     pass
