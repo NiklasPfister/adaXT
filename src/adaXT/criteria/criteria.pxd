@@ -3,47 +3,5 @@ cdef class Criteria:
         double[:, ::1] x
         double[::1] y
         double[::1] sample_weight
-        int old_obs
-        int old_split
-        int old_feature
-
-    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
-    """
-        This function defaults to calling impurity, but if there is a way
-        to calculate a proxy for the impurity, then defining this function,
-        will give you the speed up without having to change anything else.
-    """
-    cdef double update_proxy(self, int[::1] indices, int split_idx)
-    """
-        This function is a drop in replacement for proxy_improvement. It get's called,
-        whenever we are looking for a split within the same node and on the same feature,
-        but we have just moved the splitting index a little bit. This means, that indices
-        self.indices[self.old_split:split_idx] have moved from the previous right child node
-        to the left child node. Can be used to shorten the calculation, but defaults to just
-        calling proxy_improvement.
-    """
-
-    cpdef double impurity(self, int[::1] indices)
-    cdef (double, double) evaluate_split(self, int[::1] indices, int split_idx, int feature)
-    """
-        Function to evaluate how good a split is
-        ----------
-
-        Parameters
-        ----------
-        indices: int[:]
-        the indices of a given node
-
-        split_idx: int
-        the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
-
-        feature: int
-        The current feature we are working on
-
-        Returns
-        -----------
-        (double, double)
-        The critical value of the given split,
-        followed by the mean threshold between the
-        split index and the closest neighbour outside.
-    """
+    cpdef double impurity(self, int[:] indices)
+    cdef (double, double, double, double) evaluate_split(self, int[:] indices, int split_idx, int feature)

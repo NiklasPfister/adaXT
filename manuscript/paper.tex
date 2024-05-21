@@ -1,0 +1,221 @@
+\documentclass[11pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsfonts,mathrsfs}
+\usepackage{mathtools}
+\usepackage[amsmath,thmmarks]{ntheorem}
+\usepackage{dsfont}
+\usepackage{colortbl}
+\usepackage{fullpage}
+\usepackage{algorithmic}
+\usepackage{multirow,booktabs,bigdelim}
+\usepackage{caption}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{placeins}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{paralist}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{tkz-graph}
+\usetikzlibrary{shapes.geometric}
+\usetikzlibrary{backgrounds}
+\usetikzlibrary{arrows}
+\usepackage[framemethod=TikZ]{mdframed}
+\usepackage[labelsep=period]{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{float}
+\usepackage{appendix}
+\floatstyle{plain}
+\newfloat{dataset}{ht}{lop}
+\floatname{dataset}{Data Set}
+
+
+% Theorems
+\newenvironment{proof}{{\noindent\textbf{Proof}}}{\hfill$\square$\vskip\baselineskip}
+\newtheorem{assumption}{Assumption}
+\newtheorem{theorem}{Theorem}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+
+
+
+%%% Main part
+\title{Fast Adaptable and Extendable Trees for Research - adaXT}
+
+
+\author{}
+
+
+
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+  This document outlines the desired features and proposed
+  implementation of the new tree fitting algorithm. The overall goal
+  of the project is to create a Python module for tree-based
+  regression and classification that is fast, adaptable and extendable
+  and aims to provide researchers a more flexible workflow when
+  building tree-based models. The implementation should have the same
+  interface as the sklearn implementation but should be easier to
+  modify. We outline the desired features of the implementation in
+  Section~\ref{sec:goals} and provide an overview of the sklearn
+  implementation in Section~\ref{sec:sklearn}. Finally, in
+  Section~\ref{sec:implementation}, we describe the proposed
+  implementation.
+\end{abstract}
+
+
+\section{Desired features}\label{sec:goals}
+
+The goal of this implementation is to strike a balance between speed
+and ease with which the code can be adapted and extended.
+
+\paragraph{Speed}
+For speed there are three components that are important: (1) Fitting,
+(2) prediction and (3) extracting parts of the tree (e.g.,
+weights). In terms of fitting and prediction, we want the fitting time
+to be on the same order of magnitude as the sklearn package for dense
+data sets. More specifically, we want to be able to fit random forests
+using our trees on large modern data sets. Extracting parts of the
+tree is not an intended use case in sklearn but similarly to
+predicting involves iterating over (the leafs of) the individual
+trees. We therefore expect similar speeds for these types of tasks.
+
+
+\paragraph{Adaptability and Extendability}
+This is the important distinguishing factor from other
+implementations. Since trees require some parts to run as compiled
+code, most implementations are not intended to be modified. This makes
+it hard to prototype and improve tree fitting algorithms in research
+settings. This project intends to strike a compromise between speed
+and modifiability of the code.
+
+There are essentially four components of tree ensemble models that
+would be useful to adapt and extend.
+\begin{itemize}
+\item Splitting criterion (e.g., local polynomial)
+\item Building strategy (e.g., which variables to search over, depth
+  or best first)
+\item Tree structure (e.g., what is saved)
+\item High-level functions (e.g., aggregating trees, predicting,
+  extracting weights, subsampling, etc)
+\end{itemize}
+
+Lastly, the implementation should allow an easy way of propagating new
+parameters to each of these components.
+
+\section{Overview of sklearn implementation}\label{sec:sklearn}
+
+In the sklearn package, trees are implemented using four classes: (1)
+Tree class, (2) builder class, (3) splitter class and (4) criterion
+class. Each is described in the following sections.
+
+\subsection{Tree class}
+The tree class is used to represent a tree object (i.e., the fitted
+tree). It is implemented as a C class and essentially consists of a
+number of parallel arrays that each have length 'number of nodes',
+where the i-th entry contains information on the i-th node. The class
+contains the following attributes (taken from \texttt{\_tree.pyx}):
+\begin{itemize}
+\item \textit{node\_count (int):} The number of nodes (internal nodes
+  + leaves) in the tree.
+\item \textit{capacity (int):} The current capacity (i.e., size) of
+  the arrays, which is at least as great as 'node\_count'.
+\item \textit{max\_depth (int):} The depth of the tree, i.e. the
+  maximum depth of its leaves.
+\item \textit{children\_left (array of int, shape [node\_count]):}
+  children\_left[i] holds the node id of the left child of node i.
+  For leaves, children\_left[i] $==$ TREE\_LEAF. Otherwise,
+  children\_left[i] $>$ i. This child handles the case where X[:,
+  feature[i]] $<=$ threshold[i].
+\item \textit{children\_right (array of int, shape [node\_count]):}
+  children\_right[i] holds the node id of the right child of node i.
+  For leaves, children\_right[i] $==$ TREE\_LEAF. Otherwise,
+  children\_right[i] $>$ i. This child handles the case where X[:,
+  feature[i]] $>$ threshold[i].
+\item \textit{feature (array of int, shape [node\_count]):} feature[i]
+  holds the feature to split on, for the internal node i.
+\item \textit{threshold (array of double, shape [node\_count]):}
+  threshold[i] holds the threshold for the internal node i.
+\item \textit{value (array of double, shape [node\_count, n\_outputs,
+    max\_n\_classes]):} Contains the constant prediction value of each
+  node.
+\item \textit{impurity (array of double, shape [node\_count]):}
+  impurity[i] holds the impurity (i.e., the value of the splitting
+  criterion) at node i.
+\item \textit{n\_node\_samples (array of int, shape [node\_count]):}
+  n\_node\_samples[i] holds the number of training samples reaching node
+  i.
+\item \textit{weighted\_n\_node\_samples (array of double, shape
+    [node\_count]):} weighted\_n\_node\_samples[i] holds the weighted
+  number of training samples reaching node i.
+\end{itemize}
+
+\subsection{Builder class}
+
+The builder class is a Cython class that contains the strategy used to
+build the tree from a training data set $(X, y)$. There are two main
+builders implemented a \textit{DepthFirstTreeBuilder} (commonly
+employed procedure) and a \textit{BestFirstTreeBuilder}.
+
+The class is initialized (among other parameters) with the parameters
+specifying the stopping criteria (e.g., min samples per leaf and max
+depth) and the splitter class (described below). There are two main
+class functions: (1) A function to build a tree and (2) a function to
+check the inputs.  The build function takes the data $(X, y)$ and the
+tree object as input and then constructs the tree, making use of the
+specified splitter class. The class is defined in the file
+\texttt{\_tree.pyx}.
+
+\subsection{Splitter class}
+The splitter class is a Cython class that is called by the builder to find
+the best split. There are four explicit splitter classes implemented,
+\textit{BestDenseSplitter}, \textit{RandomDenseSplitter},
+\textit{BestSparseSplitter} and \textit{RandomSparseSplitter}.
+
+The class is initialized (among other parameters) with the parameters
+specifying the stopping criteria (e.g., min samples per leaf and max
+depth) and the criterion class (described below). The two main class
+functions are (1) a function to reset the splitter to a node
+(essentially, specifying the subset of the sample at node) and (2) a
+function that finds the best split (i.e., iterate over a set of
+features and on each feature check each possible split).
+
+The splitting function in the splitter class is the part of the code
+that contains most of the computational burden of fitting a tree. The
+class is defined in the file \texttt{\_splitter.pyx}.
+
+\subsection{Criterion class}
+The criterion class is used to evaluate the quality of a split. The
+code separates classification criteria (e.g., entropy or Gini
+impurity) from regression criteria (e.g., MSE).
+
+The current implementation makes use of some computational speed-ups
+that make use of the explicit structure of the specific criterion. For
+example, instead of recomputing the score at each point, it updates
+the score when moving one sample from the right to the left child
+node. These are speed-ups that we do not (necessarily) want to use as
+this makes the code too complicated. The class is defined in the file
+\texttt{\_criterion.pyx}.
+
+
+\section{Proposed implementation}\label{sec:implementation}
+
+TODO
+
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

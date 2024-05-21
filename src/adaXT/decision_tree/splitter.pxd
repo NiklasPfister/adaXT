@@ -14,4 +14,6 @@ cdef class Splitter:
         double* class_labels
         int* n_in_class
 
-    cpdef get_split(self, int[::1], int[::1])
+    cdef cnp.ndarray sort_feature(self, int[:], double[:])
+
+    cpdef get_split(self, int[:], int[:])

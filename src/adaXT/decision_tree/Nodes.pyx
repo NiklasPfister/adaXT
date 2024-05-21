@@ -1,5 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
+
 import numpy as np
+from typing import List
 
 
 class Node:
@@ -9,7 +11,7 @@ class Node:
             depth: int,
             impurity: float,
             n_samples: int) -> None:
-        self.indices = np.asarray(indices)
+        self.indices = indices
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
@@ -27,6 +29,7 @@ class DecisionNode(Node):
             left_child: "DecisionNode|LeafNode|None" = None,
             right_child: "DecisionNode|LeafNode|None" = None,
             parent: "DecisionNode|None" = None) -> None:
+
         super().__init__(indices, depth, impurity, n_samples)
         self.threshold = threshold
         self.split_idx = split_idx
@@ -43,26 +46,10 @@ class LeafNode(Node):
             depth: int,
             impurity: float,
             n_samples: int,
-            value: np.ndarray,
-            parent: object) -> None:
+            value: List[float],
+            parent: DecisionNode) -> None:
+
         super().__init__(indices, depth, impurity, n_samples)
+        self.value = value
         self.parent = parent
         self.id = id
-        self.value = np.asarray(value)
-
-
-class LinearRegressionLeafNode(LeafNode):
-    def __init__(
-            self,
-            id: int,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int,
-            value: np.ndarray,
-            parent: object,
-            theta0: float,
-            theta1: float) -> None:
-        super().__init__(id, indices, depth, impurity, n_samples, value, parent)
-        self.theta0 = theta0
-        self.theta1 = theta1

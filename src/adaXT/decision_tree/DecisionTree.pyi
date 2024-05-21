@@ -1,122 +1,93 @@
-from typing import Type, Literal
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
-from .nodes import LeafNode, Node
-from .predict import Predict
-from .leafbuilder import LeafBuilder
 import sys
+from typing import Type
+
 
 class DecisionTree:
     """
     Attributes
     ----------
     max_depth: int
-        The maximum depth of the tree.
+        maximum depth of the tree
     tree_type: str
-        The type of tree, either "Regression" or "Classification".
+        Which type of tree it is
     leaf_nodes: list[LeafNode]
-        A list of all leaf nodes in the tree.
+        a list of all the leaf nodes in the tree
     root: Node
-        The root node of the tree.
+        the root Node of the tree
     n_nodes: int
-        The number of nodes in the tree.
+        the number of nodes in the tree
     n_features: int
-        The number of features in the training data.
+        the number of features of the training data
     n_classes: int
-        The number of classes in the training data. None for "Regression" tree.
+        the number of classes of the training data, 0 for Regression Tree
     n_obs: int
-        The number of observations in the training data.
+        the number of observations used for training
     classes: np.ndarray
-        A list of all class labels. None for "Regression" tree.
+        the different classes in the tree given a Classification tree
     """
 
-    max_depth: int
-    tree_type: str
-    leaf_nodes: list[LeafNode]
-    root: Node
-    n_nodes: int
-    n_features: int
-    n_classes: int
-    n_obs: int
-    classes: np.ndarray
     def __init__(
         self,
-        tree_type: str | None = None,
+        tree_type: str,
+        criteria: Type[Criteria],
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
-        max_features: int | float | Literal["sqrt", "log2"] | None = None,
-        skip_check_input: bool = False,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
-        criteria: Type[Criteria] | None = None,
-        leaf_builder: Type[LeafBuilder] | None = None,
-        predict: Type[Predict] | None = None,
-        splitter: Type[Splitter] | None = None,
+        max_features: None = None,
+        splitter: Splitter | None = None,
     ) -> None:
         """
         Parameters
         ----------
         tree_type : str
             Classification or Regression
+        criteria: Criteria
+            The Criteria class to use, should be of the type Criteria implemented by AdaXT
         max_depth : int
-            The maximum depth of the tree.
+            maximum depth of the tree, by default maximum system size
         impurity_tol : float
-            The tolerance of impurity in a leaf node.
-        max_features: int | float | Literal["sqrt", "log2"] | None
-            The number of features to consider when looking for a split,
-        skip_check_input : bool
-            Whether to skip checking the input for consistency
+            the tolerance of impurity in a leaf node, by default 0
         min_samples_split : int
-            The minimum amount of samples in a split.
+            the minimum amount of samples in a split, by default 1
         min_samples_leaf : int
             the minimum amount of samples in a leaf node, by default 1
-        min_improvement : float
-            the minimum improvement gained from performing a split,
-            by default 0
-        criteria : Criteria
-            The Criteria class to use,
-            if none defaults to tree_type default
-        leaf_builder : LeafBuilder
-            LeafBuilder class to use when building a given leaf,
-            if none defaults to tree_type default
-        predict : Predict
-            Predict class to use when predicting,
-            if none defaults to tree_type default
+        min_improvement: float
+            the minimum improvement gained from performing a split, by default 0
+        max_features: int, float or {“sqrt”, “log2”}, default=None
+            the number of features to consider when looking for a split
         splitter : Splitter | None, optional
-            The Splitter class if None uses default Splitter class.
-        skip_check_input : bool
-            Skips any error checking on the features and response in the fitting function of a tree, should only be used if you know what you are doing, by default false.
+            Splitter class if None uses premade Splitter class
         """
         pass
 
     def fit(
-        self,
-        X,
-        Y,
-        sample_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
-    ) -> None:
+            self,
+            X,
+            Y,
+            sample_indices: np.ndarray | None = None,
+            sample_weight: np.ndarray | None = None,) -> None:
         """
-        Build the decision tree from the training data (X, y).
+        Function used to fit the data on the tree using the DepthTreeBuilder
 
         Parameters
         ----------
         X : array-like object
-            The feature values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+            feature values, will internally be converted to np.ndarray with dtype=np.float64
         Y : array-like object
-            The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
-        sample_indices : array-like object | None, optional
-            A vector specifying samples of the training data that should be used during training. If None all samples are used.
-        feature_indices : np.ndarray | None, optional
-            A vector specifying features (i.e., columns of X) to use during training. If None all features are used.
+            response values, will internally be converted to np.ndarray with dtype=np.float64
+        sample_indices : array-like object
+            specific indices of the dataset you wish to use
         sample_weight : np.ndarray | None, optional
-            Sample weights. Currently not implemented.
+            np.ndarray of shape (n_samples,) currently only supports weights in {0, 1}
         """
         pass
 
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
+    def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Works in two ways depending on if the tree is a Classification or Regression tree.
 

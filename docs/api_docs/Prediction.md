@@ -1,3 +1,0 @@
-# Prediction Class
-
-TODO
