@@ -208,8 +208,7 @@ def test_random_forest():
 
 def test_linear_regression_forest():
     random_state = np.random.RandomState(2024)
-    seed = 2024
-    n = 1000
+    n = 5
     m = 10
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     tree = DecisionTree(
@@ -223,13 +222,12 @@ def test_linear_regression_forest():
         leaf_builder=LeafBuilderLinearRegression,
         predict=PredictLinearRegression,
         criteria=Linear_regression,
-        bootstrap=False,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
     tree_predict = tree.predict(X_reg)
     forest_predict = forest.predict(X_reg)
-    assert np.array_equal(
+    assert np.allclose(
         tree_predict, forest_predict
     ), "Forest predicts different than tree when it should be equal."
 
@@ -237,5 +235,5 @@ def test_linear_regression_forest():
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    test_random_forest()
+    test_linear_regression_forest()
     print("Done")

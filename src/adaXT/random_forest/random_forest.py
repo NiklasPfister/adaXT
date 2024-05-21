@@ -19,9 +19,12 @@ from ..leaf_builder import LeafBuilder
 
 
 def get_sample_indices(
-    n_obs: int, max_samples: int | None, random_state: np.random.RandomState
+    n_obs: int,
+    max_samples: int | None,
+    random_state: np.random.RandomState,
+    bootstrap: bool,
 ):
-    if max_samples:
+    if max_samples and bootstrap:
         return random_state.randint(low=0, high=n_obs, size=max_samples)
     else:
         return None
@@ -29,9 +32,12 @@ def get_sample_indices(
 
 def build_single_tree(
     sample_indices: np.ndarray | None,
-    criteria: type[Criteria],
     X: np.ndarray,
     Y: np.ndarray,
+    criteria: type[Criteria],
+    predict: type[Predict],
+    leaf_builder: type[LeafBuilder],
+    splitter: type[Splitter],
     tree_type: str | None = None,
     max_depth: int = sys.maxsize,
     impurity_tol: float = 0,
@@ -39,7 +45,7 @@ def build_single_tree(
     min_samples_leaf: int = 1,
     min_improvement: float = 0,
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
-    skip_check_input: bool = False,
+    skip_check_input: bool = True,
 ):
     # subset the feature indices
     tree = DecisionTree(
@@ -52,6 +58,9 @@ def build_single_tree(
         max_features=max_features,
         skip_check_input=skip_check_input,
         criteria=criteria,
+        leaf_builder=leaf_builder,
+        predict=predict,
+        splitter=splitter,
     )
     tree.fit(X, Y, sample_indices=sample_indices)
 
@@ -111,7 +120,7 @@ class RandomForest(GeneralModel):
 
     def __init__(
         self,
-        forest_type: str,
+        forest_type: str | None,
         n_estimators: int = 100,
         bootstrap: bool = False,
         n_jobs: int = -1,
@@ -163,14 +172,9 @@ class RandomForest(GeneralModel):
         self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
         self.ctx = multiprocessing.get_context("spawn")
         self.X, self.Y = None, None
-        if forest_type not in ["Classification", "Regression"]:
-            raise ValueError(
-                "At the moment only Classification and Regression forests are supported"
-            )
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.criteria = criteria
         self.bootstrap = bootstrap
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
@@ -179,7 +183,6 @@ class RandomForest(GeneralModel):
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
-        self.splitter = splitter
         self.forest_fitted = False
         BaseManager.register("RandomState", np.random.RandomState)
         self.manager = BaseManager()
@@ -193,8 +196,6 @@ class RandomForest(GeneralModel):
             raise ValueError("Random state either has to be Integral or None")
 
     def __get_max_samples(self, max_samples):
-        if max_samples is None:
-            return self.n_obs
         if isinstance(max_samples, int):
             if max_samples > self.n_obs:
                 raise ValueError("max_samples can not be larger than total samples")
@@ -212,6 +213,12 @@ class RandomForest(GeneralModel):
             max_samples = self.__get_max_samples(self.max_samples)
             partial_func = partial(
                 build_single_tree,
+                X=self.X,
+                Y=self.Y,
+                criteria=self.criteria_class,
+                predict=self.predict_class,
+                leaf_builder=self.leaf_builder_class,
+                splitter=self.splitter,
                 tree_type=self.forest_type,
                 max_depth=self.max_depth,
                 impurity_tol=self.impurity_tol,
@@ -219,16 +226,14 @@ class RandomForest(GeneralModel):
                 min_samples_leaf=self.min_samples_leaf,
                 min_improvement=self.min_improvement,
                 max_features=self.max_features,
-                criteria=self.criteria,
                 skip_check_input=True,
-                X=self.X,
-                Y=self.Y,
             )
             partial_sample = partial(
                 get_sample_indices,
                 random_state=self.random_state,
                 n_obs=self.n_obs,
                 max_samples=max_samples,
+                bootstrap=self.bootstrap,
             )
             with self.ctx.Pool(self.n_jobs) as p:
                 sample_indices = [
@@ -272,11 +277,6 @@ class RandomForest(GeneralModel):
                 predictions = promise.get()
 
         return predictions
-
-    # Function used to find the most frequent element of an array
-    def __most_frequent_element(self, arr):
-        values, counts = np.unique(arr, return_counts=True)
-        return values[np.argmax(counts)]
 
     def __check_dimensions(self, X: np.ndarray):
         # If there is only a single point
@@ -366,14 +366,7 @@ class RandomForest(GeneralModel):
         # tree
         tree_predictions = self.__predict_trees(X)
 
-        if self.forest_type == "Regression":
-            # Return the mean answer from all trees for each row
-            return np.mean(tree_predictions, axis=1)
-
-        elif self.forest_type == "Classification":
-            return np.apply_along_axis(
-                self.__most_frequent_element, 1, tree_predictions
-            )
+        return self.predict_class.forest_predict(tree_predictions)
 
     def predict_proba(self, X: np.ndarray):
         """

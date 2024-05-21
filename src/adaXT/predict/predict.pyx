@@ -72,6 +72,10 @@ cdef class Predict():
 
         return matrix
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray):
+        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+
 
 cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
@@ -137,6 +141,15 @@ cdef class PredictClassification(Predict):
                 ret_val.append(cur_node.value)
         return ret_val
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray):
+        def __most_frequent_element(arr):
+            values, counts = np.unique(arr, return_counts=True)
+            return values[np.argmax(counts)]
+        return np.apply_along_axis(
+            __most_frequent_element, 1, predictions
+        )
+
 
 cdef class PredictRegression(Predict):
     def predict(self, object X, **kwargs):
@@ -163,8 +176,11 @@ cdef class PredictRegression(Predict):
             Y[i] = cur_node.value[0]
         return Y
 
+    @staticmethod
+    def forest_predict(predictions: np.ndarray):
+        return np.mean(predictions, axis=1)
 
-cdef class PredictLinearRegression(Predict):
+cdef class PredictLinearRegression(PredictRegression):
     def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, n_obs
