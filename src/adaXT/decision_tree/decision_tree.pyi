@@ -7,6 +7,7 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
+
 class DecisionTree:
     """
     Attributes
@@ -40,6 +41,7 @@ class DecisionTree:
     n_classes: int
     n_obs: int
     classes: np.ndarray
+
     def __init__(
         self,
         tree_type: str | None = None,
@@ -109,8 +111,6 @@ class DecisionTree:
             The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
         sample_indices : array-like object | None, optional
             A vector specifying samples of the training data that should be used during training. If None all samples are used.
-        feature_indices : np.ndarray | None, optional
-            A vector specifying features (i.e., columns of X) to use during training. If None all features are used.
         sample_weight : np.ndarray | None, optional
             Sample weights. Currently not implemented.
         """
