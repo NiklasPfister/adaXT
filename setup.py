@@ -122,6 +122,8 @@ setup(
     package_data={
         "adaXT/criteria": ["*.pxd"],
         "adaXT/decision_tree": ["*.pxd"],
+        "adaXT/predict": ["*.pxd"],
+        "adaXT/leaf_builder": ["*.pxd"],
     },
     tests_require=TEST_DEP,
     extras_require=extras,
