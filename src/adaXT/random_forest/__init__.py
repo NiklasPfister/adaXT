@@ -1,1 +1,1 @@
-from .RandomForest import RandomForest
+from .random_forest import RandomForest

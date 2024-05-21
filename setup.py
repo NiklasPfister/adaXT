@@ -53,6 +53,41 @@ extensions += [
     )
 ]
 
+# Predict
+extensions += [
+    Extension(
+        "adaXT.predict.*",
+        ["src/adaXT/predict/*" + ext],
+        include_dirs=[include_dir],
+        language="c++",
+        extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+    )
+]
+
+# leaf_builder
+extensions += [
+    Extension(
+        "adaXT.leaf_builder.*",
+        ["src/adaXT/leaf_builder/*" + ext],
+        include_dirs=[include_dir],
+        language="c++",
+        extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+    )
+]
+
+# General model and all others at top level
+extensions += [
+    Extension(
+        "adaXT.*",
+        ["src/adaXT/*" + ext],
+        include_dirs=[include_dir],
+        language="c++",
+        extra_compile_args=["-O3"],
+        define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+    )
+]
 
 # If we are using cython, then compile, otherwise use the c files
 if USE_CYTHON:

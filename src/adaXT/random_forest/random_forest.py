@@ -13,6 +13,9 @@ from numpy import float64 as DOUBLE
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
 from ..decision_tree.splitter import Splitter
+from ..general_model import GeneralModel
+from ..predict import Predict
+from ..leaf_builder import LeafBuilder
 
 
 def get_sample_indices(
@@ -77,7 +80,8 @@ def predict_proba_single_tree(
 ):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
-        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes)
+        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes
+    )
     return ret_val
 
 
@@ -95,13 +99,12 @@ def shared_numpy_array(array):
     else:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(
-            shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
     np.copyto(shared_array_np, array)
     return shared_array_np
 
 
-class RandomForest:
+class RandomForest(GeneralModel):
     """
     The Random Forest
     """
@@ -109,7 +112,6 @@ class RandomForest:
     def __init__(
         self,
         forest_type: str,
-        criteria: type[Criteria],
         n_estimators: int = 100,
         bootstrap: bool = False,
         n_jobs: int = -1,
@@ -121,7 +123,10 @@ class RandomForest:
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
-        splitter: Splitter | None = None,
+        criteria: type[Criteria] | None = None,
+        leaf_builder: type[LeafBuilder] | None = None,
+        predict: type[Predict] | None = None,
+        splitter: type[Splitter] | None = None,
     ):
         """
         Parameters
@@ -155,6 +160,7 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
+        self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
         self.ctx = multiprocessing.get_context("spawn")
         self.X, self.Y = None, None
         if forest_type not in ["Classification", "Regression"]:
@@ -191,8 +197,7 @@ class RandomForest:
             return self.n_obs
         if isinstance(max_samples, int):
             if max_samples > self.n_obs:
-                raise ValueError(
-                    "max_samples can not be larger than total samples")
+                raise ValueError("max_samples can not be larger than total samples")
             return max_samples
         elif isinstance(max_samples, float):
             return max(round(self.n_obs * max_samples), 1)
@@ -242,9 +247,7 @@ class RandomForest:
                 predictions.append(tree.predict(X))
         else:
             predict_value = shared_numpy_array(X)
-            partial_func = partial(
-                predict_single_tree,
-                predict_values=predict_value)
+            partial_func = partial(predict_single_tree, predict_values=predict_value)
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
@@ -320,8 +323,7 @@ class RandomForest:
             response values
         """
         if not self.bootstrap and self.max_samples:
-            raise AttributeError(
-                "Bootstrap can not be False while max_samples is set")
+            raise AttributeError("Bootstrap can not be False while max_samples is set")
 
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
