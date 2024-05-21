@@ -1,8 +1,8 @@
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
-from adaXT.decision_tree.predict import PredictLinearRegression, PredictQuantile
-from adaXT.decision_tree.leafbuilder import (
+from adaXT.predict import PredictLinearRegression, PredictQuantile
+from adaXT.leaf_builder import (
     LeafBuilderLinearRegression,
     LeafBuilderRegression,
 )

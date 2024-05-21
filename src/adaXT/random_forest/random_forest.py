@@ -13,12 +13,18 @@ from numpy import float64 as DOUBLE
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
 from ..decision_tree.splitter import Splitter
+from ..general_model import GeneralModel
+from ..predict import Predict
+from ..leaf_builder import LeafBuilder
 
 
 def get_sample_indices(
-    n_obs: int, max_samples: int | None, random_state: np.random.RandomState
+    n_obs: int,
+    max_samples: int | None,
+    random_state: np.random.RandomState,
+    bootstrap: bool,
 ):
-    if max_samples:
+    if max_samples and bootstrap:
         return random_state.randint(low=0, high=n_obs, size=max_samples)
     else:
         return None
@@ -26,9 +32,12 @@ def get_sample_indices(
 
 def build_single_tree(
     sample_indices: np.ndarray | None,
-    criteria: type[Criteria],
     X: np.ndarray,
     Y: np.ndarray,
+    criteria: type[Criteria],
+    predict: type[Predict],
+    leaf_builder: type[LeafBuilder],
+    splitter: type[Splitter],
     tree_type: str | None = None,
     max_depth: int = sys.maxsize,
     impurity_tol: float = 0,
@@ -36,7 +45,7 @@ def build_single_tree(
     min_samples_leaf: int = 1,
     min_improvement: float = 0,
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
-    skip_check_input: bool = False,
+    skip_check_input: bool = True,
 ):
     # subset the feature indices
     tree = DecisionTree(
@@ -49,6 +58,9 @@ def build_single_tree(
         max_features=max_features,
         skip_check_input=skip_check_input,
         criteria=criteria,
+        leaf_builder=leaf_builder,
+        predict=predict,
+        splitter=splitter,
     )
     tree.fit(X, Y, sample_indices=sample_indices)
 
@@ -73,16 +85,26 @@ def fill_with_zeros_for_missing_classes_in_tree(
 
 
 def predict_proba_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray
-):
+        tree: DecisionTree,
+        predict_values: np.ndarray,
+        classes: np.ndarray,
+        **kwargs):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
-        tree.classes, tree_predict_proba, predict_values.shape[0], classes=classes)
+        tree.classes,
+        tree_predict_proba,
+        predict_values.shape[0],
+        classes=classes,
+        **kwargs,
+    )
     return ret_val
 
 
-def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray):
-    return tree.predict(predict_values)
+def predict_single_tree(
+        tree: DecisionTree,
+        predict_values: np.ndarray,
+        **kwargs):
+    return tree.predict(predict_values, **kwargs)
 
 
 def shared_numpy_array(array):
@@ -101,17 +123,16 @@ def shared_numpy_array(array):
     return shared_array_np
 
 
-class RandomForest:
+class RandomForest(GeneralModel):
     """
     The Random Forest
     """
 
     def __init__(
         self,
-        forest_type: str,
-        criteria: type[Criteria],
+        forest_type: str | None,
         n_estimators: int = 100,
-        bootstrap: bool = False,
+        bootstrap: bool = True,
         n_jobs: int = -1,
         max_samples: int | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
@@ -121,7 +142,10 @@ class RandomForest:
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
-        splitter: Splitter | None = None,
+        criteria: type[Criteria] | None = None,
+        leaf_builder: type[LeafBuilder] | None = None,
+        predict: type[Predict] | None = None,
+        splitter: type[Splitter] | None = None,
     ):
         """
         Parameters
@@ -155,16 +179,17 @@ class RandomForest:
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
+        self.check_tree_type(
+            forest_type,
+            criteria,
+            splitter,
+            leaf_builder,
+            predict)
         self.ctx = multiprocessing.get_context("spawn")
         self.X, self.Y = None, None
-        if forest_type not in ["Classification", "Regression"]:
-            raise ValueError(
-                "At the moment only Classification and Regression forests are supported"
-            )
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.criteria = criteria
         self.bootstrap = bootstrap
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
@@ -173,7 +198,6 @@ class RandomForest:
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
-        self.splitter = splitter
         self.forest_fitted = False
         BaseManager.register("RandomState", np.random.RandomState)
         self.manager = BaseManager()
@@ -187,8 +211,6 @@ class RandomForest:
             raise ValueError("Random state either has to be Integral or None")
 
     def __get_max_samples(self, max_samples):
-        if max_samples is None:
-            return self.n_obs
         if isinstance(max_samples, int):
             if max_samples > self.n_obs:
                 raise ValueError(
@@ -207,6 +229,12 @@ class RandomForest:
             max_samples = self.__get_max_samples(self.max_samples)
             partial_func = partial(
                 build_single_tree,
+                X=self.X,
+                Y=self.Y,
+                criteria=self.criteria_class,
+                predict=self.predict_class,
+                leaf_builder=self.leaf_builder_class,
+                splitter=self.splitter,
                 tree_type=self.forest_type,
                 max_depth=self.max_depth,
                 impurity_tol=self.impurity_tol,
@@ -214,16 +242,14 @@ class RandomForest:
                 min_samples_leaf=self.min_samples_leaf,
                 min_improvement=self.min_improvement,
                 max_features=self.max_features,
-                criteria=self.criteria,
                 skip_check_input=True,
-                X=self.X,
-                Y=self.Y,
             )
             partial_sample = partial(
                 get_sample_indices,
                 random_state=self.random_state,
                 n_obs=self.n_obs,
                 max_samples=max_samples,
+                bootstrap=self.bootstrap,
             )
             with self.ctx.Pool(self.n_jobs) as p:
                 sample_indices = [
@@ -235,16 +261,16 @@ class RandomForest:
 
     # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
-    def __predict_trees(self, X: np.ndarray):
+    def __predict_trees(self, X: np.ndarray, **kwargs):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(tree.predict(X))
+                predictions.append(tree.predict(X, **kwargs))
         else:
             predict_value = shared_numpy_array(X)
             partial_func = partial(
-                predict_single_tree,
-                predict_values=predict_value)
+                predict_single_tree, predict_values=predict_value, **kwargs
+            )
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
@@ -252,7 +278,7 @@ class RandomForest:
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
-    def __predict_proba_trees(self, X: np.ndarray):
+    def __predict_proba_trees(self, X: np.ndarray, **kwargs):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
@@ -263,17 +289,13 @@ class RandomForest:
                 predict_proba_single_tree,
                 predict_values=predict_value,
                 classes=self.classes,
+                **kwargs,
             )
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
         return predictions
-
-    # Function used to find the most frequent element of an array
-    def __most_frequent_element(self, arr):
-        values, counts = np.unique(arr, return_counts=True)
-        return values[np.argmax(counts)]
 
     def __check_dimensions(self, X: np.ndarray):
         # If there is only a single point
@@ -340,7 +362,7 @@ class RandomForest:
 
         return self
 
-    def predict(self, X: np.ndarray):
+    def predict(self, X: np.ndarray, **kwargs):
         """
         Predicts a y-value for given X values using the trees of the forest. In the case of a classification tree with equal majority vote,
         the lowest class that has maximum votes is returned.
@@ -362,18 +384,11 @@ class RandomForest:
 
         # Predict using all the trees, each column is the predictions from one
         # tree
-        tree_predictions = self.__predict_trees(X)
+        tree_predictions = self.__predict_trees(X, **kwargs)
 
-        if self.forest_type == "Regression":
-            # Return the mean answer from all trees for each row
-            return np.mean(tree_predictions, axis=1)
+        return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-        elif self.forest_type == "Classification":
-            return np.apply_along_axis(
-                self.__most_frequent_element, 1, tree_predictions
-            )
-
-    def predict_proba(self, X: np.ndarray):
+    def predict_proba(self, X: np.ndarray, **kwargs):
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
@@ -403,10 +418,6 @@ class RandomForest:
         self.__check_dimensions(X)
         # Predict_proba using all the trees, each element of list is the
         # predict_proba from one tree
-        tree_predictions = self.__predict_proba_trees(X)
-
-        # Stack the predict_probas
-        stacked_tree_predictions = np.stack(tree_predictions, axis=0)
-
-        # Return the mean along the newly created axis
-        return np.mean(stacked_tree_predictions, axis=0)
+        tree_predictions = self.__predict_proba_trees(X, **kwargs)
+        return self.predict_class.forest_predict_proba(
+            tree_predictions, **kwargs)

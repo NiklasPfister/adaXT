@@ -1,11 +1,12 @@
-from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
+from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import (
     Gini_index,
     Squared_error,
     Entropy,
     Linear_regression,
-    criteria,
 )
+from adaXT.predict import PredictLinearRegression
+from adaXT.leaf_builder import LeafBuilderLinearRegression
 from adaXT.random_forest import RandomForest
 import numpy as np
 import json
@@ -219,8 +220,54 @@ def test_random_forest():
     ), "Squared Error prediction incorrect"
 
 
+def test_linear_regression_forest():
+    random_state = np.random.RandomState(2024)
+    n = 1000
+    m = 10
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    tree = DecisionTree(
+        "Linear Regression",
+        leaf_builder=LeafBuilderLinearRegression,
+        predict=PredictLinearRegression,
+        criteria=Linear_regression,
+    )
+    forest = RandomForest(
+        "Linear Regression",
+        leaf_builder=LeafBuilderLinearRegression,
+        predict=PredictLinearRegression,
+        criteria=Linear_regression,
+        bootstrap=False,
+    )
+    tree.fit(X_reg, Y_reg)
+    forest.fit(X_reg, Y_reg)
+    tree_predict = tree.predict(X_reg)
+    forest_predict = forest.predict(X_reg)
+    assert np.allclose(
+        tree_predict, forest_predict
+    ), "Forest predicts different than tree when it should be equal."
+
+
+def test_quantile_regression_forest():
+    random_state = np.random.RandomState(2024)
+    n = 10
+    m = 10
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    tree = DecisionTree(
+        "Quantile",
+    )
+    forest = RandomForest("Quantile", bootstrap=False)
+    tree.fit(X_reg, Y_reg)
+    forest.fit(X_reg, Y_reg)
+    tree_predict = tree.predict(X_reg, quantile=0.95)
+    forest_predict = forest.predict(X_reg, quantile=0.95)
+    assert np.allclose(
+        tree_predict, forest_predict
+    ), "Forest predicts different than tree when it should be equal."
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    test_random_forest()
+    # test_linear_regression_forest()
+    test_quantile_regression_forest()
     print("Done")

@@ -7,75 +7,40 @@ import sys
 
 # Custom
 from .splitter import Splitter
-from .predict import Predict
-from .predict cimport PredictClassification, PredictRegression
+from ..predict import Predict
 from ..criteria import Criteria
-from ..criteria import Squared_error, Entropy
 from .nodes import DecisionNode
-from .leafbuilder import LeafBuilder
-from .leafbuilder cimport LeafBuilderClassification, LeafBuilderRegression
+from ..leaf_builder import LeafBuilder
+from ..general_model import GeneralModel
 
 
 cdef double EPSILON = np.finfo('double').eps
 
 
-class DecisionTree:
+class DecisionTree(GeneralModel):
     def __init__(
             self,
             tree_type: str | None = None,
+            skip_check_input: bool = False,
             max_depth: int = sys.maxsize,
             impurity_tol: float = 0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
             min_improvement: float = 0,
             max_features: int | float | Literal["sqrt", "log2"] | None = None,
-            skip_check_input: bool = False,
             criteria: Criteria | None = None,
             leaf_builder: LeafBuilder | None = None,
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
 
-        tree_types = ["Classification", "Regression"]
-        if tree_type in tree_types:
-            if tree_type == "Classification":
-                if predict:
-                    self.predict_class = predict
-                else:
-                    self.predict_class = PredictClassification
-                if criteria:
-                    self.criteria_class = criteria
-                else:
-                    self.criteria_class = Entropy
-                if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
-                else:
-                    self.leaf_builder_class = LeafBuilderClassification
-            elif tree_type == "Regression":
-                if predict:
-                    self.predict_class = predict
-                else:
-                    self.predict_class = PredictRegression
-                if criteria:
-                    self.criteria_class = criteria
-                else:
-                    self.criteria_class = Squared_error
-                if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
-                else:
-                    self.leaf_builder_class = LeafBuilderRegression
-        else:
-            if (not criteria) or (not predict) or (not leaf_builder):
-                raise ValueError(
-                        "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
-                        )
+        # Function defined in GeneralModel
+        if skip_check_input:
             self.criteria_class = criteria
             self.predict_class = predict
             self.leaf_builder_class = leaf_builder
-
-        if splitter:
             self.splitter = splitter
         else:
-            self.splitter = Splitter
+            self.check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
 
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
@@ -91,32 +56,6 @@ class DecisionTree:
         self.n_features = -1
         self.n_obs = -1
         self.skip_check_input = skip_check_input
-
-    def __getstate__(self):
-        d = dict()
-        d["max_depth"] = self.max_depth
-        d["tree_type"] = self.tree_type
-        d["n_nodes"] = self.n_nodes
-        d["n_features"] = self.n_features
-        d["n_obs"] = self.n_obs
-        d["leaf_nodes"] = self.leaf_nodes
-        d["root"] = self.root
-        d["predictor"] = self.predictor
-        return d
-
-    def __setstate__(self, d):
-        self.max_depth=d["max_depth"]
-        self.tree_type=d["tree_type"]
-        self.n_nodes=d["n_nodes"]
-        self.n_features=d["n_features"]
-        self.n_obs=d["n_obs"]
-        self.leaf_nodes=d["leaf_nodes"]
-        self.root=d["root"]
-        self.predictor=d["predictor"]
-
-    def __reduce__(self):
-        d = self.__getstate__()
-        return (DecisionTree, (d['tree_type'], ), d)
 
     def __error_check_max_features(self, max_features):
         if max_features is None:

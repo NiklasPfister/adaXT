@@ -1,5 +1,4 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
@@ -50,22 +49,7 @@ cdef int[::1] sort_feature(int[::1] indices):
 
 
 cdef class Splitter:
-    """
-    Splitter class used to create splits of the data
-    """
     def __init__(self, double[:, ::1] X, double[::1] Y, criteria: Criteria):
-        '''
-        Class initializer
-        ----------------
-        Parameters
-        ----------
-            x: memoryview of NDArray
-                The feature values of the dataset
-            y: memoryview of NDArray
-                The response values of the dataset
-            criteria: Criteria
-                The criteria class used to find the impurity of a split
-        '''
         self.features = X
         self.response = Y
         self.n_features = X.shape[1]
@@ -73,23 +57,6 @@ cdef class Splitter:
         self.n_class = len(np.unique(Y))
 
     cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
-        """
-        Function that finds the best split of the dataset
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            Indices constituting the dataset
-
-        Returns
-        -----------
-        (list, double, int, double, double)
-            Returns the best split of the dataset, with the values being:
-            (1) a list containing the left and right indices, (2) the best
-            threshold for doing the splits, (3) what feature to split on,
-            (4) the best criteria score, and (5) the best impurity
-        """
         global current_feature_values
         self.indices = indices
         self.n_indices = indices.shape[0]

@@ -1,6 +1,6 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-from .nodes import LeafNode, LinearRegressionLeafNode
+from ..decision_tree.nodes import LeafNode, LinearRegressionLeafNode
 import numpy as np
 cimport numpy as cnp
 
