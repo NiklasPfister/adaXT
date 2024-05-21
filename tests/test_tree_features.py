@@ -12,7 +12,10 @@ import numpy as np
 
 def uniform_x_y(n, m):
     np.random.seed(2024)
-    return (np.random.uniform(1, 1000, (n, m)), np.random.uniform(1, 1000, (n)))
+    return (
+        np.random.uniform(
+            1, 1000, (n, m)), np.random.uniform(
+            1, 1000, (n)))
 
 
 def test_predict_leaf_matrix_classification():
@@ -220,8 +223,9 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        impurity_tol=impurity_tol_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -256,8 +260,9 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_samples_leaf=min_samples_leaf_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -273,8 +278,9 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_improvement=min_improvement_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -337,7 +343,8 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
             assert np.array_equal(
                 node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(
+        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
