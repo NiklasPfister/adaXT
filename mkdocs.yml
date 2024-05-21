@@ -64,8 +64,6 @@ nav:
       - Decision trees:
           - Getting started: user_guide/getting_started.md
           - Creating custom criteria: user_guide/creatingCriteria.md
-      - Random Forest:
-          - Chosing n_jobs parameter: RandomForest/user_guide/chosing_n_jobs.md
   - API reference:
       - DecisionTree: api_docs/DecisionTree.md
       - Criteria: api_docs/Criteria.md

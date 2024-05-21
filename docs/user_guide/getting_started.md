@@ -90,7 +90,7 @@ the list of classes (in the correct order) use .classes on the
 ## RandomForest
 The RandomForest algorithm operates similarly to the DecisionTree,
 yet it has currently been designed exclusively for use with both Classification and Regression DecisionTrees.
-As such, you can create a [RandomForest](/docs/api_docs/RandomForest.md) as shown:
+As such, you can create a [RandomForest](../api_docs/RandomForest.md) as shown:
 ```python
 from adaXT.random_forest import RandomForest
 from adaXT.criteria import Gini_index
@@ -100,7 +100,7 @@ forest = RandomForest("Classification", criteria=Gini_index)
 forest.fit(X, Y)
 ```
 
-Once the RandomForest has been fitted, it can be used to predict in the same manner as the [DecisionTree](/docs/api_docs/DecisionTree.md).
+Once the RandomForest has been fitted, it can be used to predict in the same manner as the [DecisionTree](../api_docs/DecisionTree.md).
 
 ```python
 forest.predict(X)  # results in [0, 1]
