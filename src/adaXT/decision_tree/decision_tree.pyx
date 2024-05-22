@@ -11,13 +11,13 @@ from ..predict import Predict
 from ..criteria import Criteria
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
-from ..general_model import GeneralModel
+from ..base_model import BaseModel
 
 
 cdef double EPSILON = np.finfo('double').eps
 
 
-class DecisionTree(GeneralModel):
+class DecisionTree(BaseModel):
     def __init__(
             self,
             tree_type: str | None = None,
@@ -33,7 +33,7 @@ class DecisionTree(GeneralModel):
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
 
-        # Function defined in GeneralModel
+        # Function defined in BaseModel
         if skip_check_input:
             self.criteria_class = criteria
             self.predict_class = predict

@@ -12,7 +12,7 @@ from .leaf_builder.leaf_builder cimport LeafBuilderClassification, LeafBuilderRe
 import numpy as np
 
 
-class GeneralModel:
+class BaseModel:
     def check_tree_type(
         self,
         tree_type: str | None,

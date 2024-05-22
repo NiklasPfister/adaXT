@@ -13,7 +13,7 @@ from numpy import float64 as DOUBLE
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
 from ..decision_tree.splitter import Splitter
-from ..general_model import GeneralModel
+from ..base_model import BaseModel
 from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
@@ -123,7 +123,7 @@ def shared_numpy_array(array):
     return shared_array_np
 
 
-class RandomForest(GeneralModel):
+class RandomForest(BaseModel):
     """
     The Random Forest
     """
