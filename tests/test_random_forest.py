@@ -11,6 +11,7 @@ from adaXT.random_forest import RandomForest
 import numpy as np
 import json
 from multiprocessing import cpu_count
+import sys
 
 # We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forest
 # on this data, we should have predictions that are always equal to the
@@ -61,15 +62,18 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
     return forest
 
 
-def run_squared_error(X, Y, n_jobs, n_estimators, seed):
+def run_squared_error(
+    X, Y, n_jobs, n_estimators, seed, max_samples=5, max_depth=sys.maxsize
+):
     forest = RandomForest(
         forest_type="Regression",
         criteria=Squared_error,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         bootstrap=True,
-        max_samples=5,
+        max_samples=max_samples,
         random_state=seed,
+        max_depth=max_depth,
     )
     forest.fit(X, Y)
     return forest
@@ -251,9 +255,31 @@ def test_quantile_regression_forest():
     ), "Forest predicts different than tree when it should be equal."
 
 
+def test_random_forest_weights():
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 100
+    m = 10
+    n_estimators = 100
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    squared_forest = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=cpu_count(),
+        n_estimators=n_estimators,
+        seed=seed,
+        max_samples=1.0,
+        max_depth=2,
+    )
+    res = squared_forest.get_forest_weight()
+    print(res)
+    print(res.shape)
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_linear_regression_forest()
-    test_quantile_regression_forest()
+    # test_quantile_regression_forest()
+    test_random_forest_weights()
     print("Done")

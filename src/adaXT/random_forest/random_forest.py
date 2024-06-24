@@ -128,7 +128,7 @@ class RandomForest(BaseModel):
         n_estimators: int = 100,
         bootstrap: bool = True,
         n_jobs: int = -1,
-        max_samples: int | None = None,
+        max_samples: int | float | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
         max_depth: int = sys.maxsize,
@@ -154,7 +154,7 @@ class RandomForest(BaseModel):
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
             The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
-        max_samples : int, default=None
+        max_samples : int | float | None, default=None
             The number of samples drawn when doing bootstrap
         max_features: int | float | Literal["sqrt", "log2"] | None = None
             The number of features to consider when looking for a split,
@@ -375,7 +375,7 @@ class RandomForest(BaseModel):
 
         return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-    def predict_proba(self, X: np.ndarray, **kwargs):
+    def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
@@ -407,3 +407,11 @@ class RandomForest(BaseModel):
         # predict_proba from one tree
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
+
+    def get_forest_weight(self) -> np.ndarray:
+        if not self.forest_fitted:
+            raise AttributeError(
+                "The forest has not been fitted before trying to call get_forest_weight"
+            )
+        tree_weights = list(map(lambda x: x.get_leaf_matrix(scale=False), self.trees))
+        return np.sum(tree_weights, axis=0) / self.n_estimators

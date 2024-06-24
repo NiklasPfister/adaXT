@@ -169,7 +169,7 @@ class DecisionTree(BaseModel):
             raise ValueError("The tree has not been trained before trying to predict")
 
         leaf_nodes = self.leaf_nodes
-        n_obs = self.n_obs
+        n_obs = self.n_rows
 
         matrix = np.zeros((n_obs, n_obs))
         if (not leaf_nodes):  # make sure that there are calculated observations
@@ -423,6 +423,7 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
+        tree.n_rows = X.shape[0]
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = X.shape[1]
