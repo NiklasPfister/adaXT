@@ -9,6 +9,7 @@ clean:
 	rm -f ./src/adaXT/criteria/*.so ./src/adaXT/criteria/*.html ./src/adaXT/criteria/*.cpp
 	rm -f ./src/adaXT/predict/*.so ./src/adaXT/predict/*.html ./src/adaXT/predict/*.cpp
 	rm -f ./src/adaXT/leaf_builder/*.so ./src/adaXT/leaf_builder/*.html ./src/adaXT/leaf_builder/*.cpp
+	rm -f ./src/adaXT/*.so ./src/adaXT/*.html ./src/adaXT/*.cpp
 
 lint:
 	cython-lint src/* --max-line-length=127

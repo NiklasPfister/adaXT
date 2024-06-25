@@ -18,6 +18,10 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
+def get_single_leaf(tree: DecisionTree, scale: bool):
+    return tree.get_leaf_matrix(scale=scale)
+
+
 def get_sample_indices(
     n_obs: int,
     max_samples: int | None,
@@ -85,10 +89,8 @@ def fill_with_zeros_for_missing_classes_in_tree(
 
 
 def predict_proba_single_tree(
-        tree: DecisionTree,
-        predict_values: np.ndarray,
-        classes: np.ndarray,
-        **kwargs):
+    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray, **kwargs
+):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
         tree.classes,
@@ -100,10 +102,7 @@ def predict_proba_single_tree(
     return ret_val
 
 
-def predict_single_tree(
-        tree: DecisionTree,
-        predict_values: np.ndarray,
-        **kwargs):
+def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
     return tree.predict(predict_values, **kwargs)
 
 
@@ -117,8 +116,7 @@ def shared_numpy_array(array):
     else:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(
-            shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
     np.copyto(shared_array_np, array)
     return shared_array_np
 
@@ -134,7 +132,7 @@ class RandomForest(BaseModel):
         n_estimators: int = 100,
         bootstrap: bool = True,
         n_jobs: int = -1,
-        max_samples: int | None = None,
+        max_samples: int | float | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
         max_depth: int = sys.maxsize,
@@ -160,7 +158,7 @@ class RandomForest(BaseModel):
             Whether bootstrap is used when building trees
         n_jobs : int, default=1
             The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
-        max_samples : int, default=None
+        max_samples : int | float | None, default=None
             The number of samples drawn when doing bootstrap
         max_features: int | float | Literal["sqrt", "log2"] | None = None
             The number of features to consider when looking for a split,
@@ -179,12 +177,7 @@ class RandomForest(BaseModel):
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
-        self.check_tree_type(
-            forest_type,
-            criteria,
-            splitter,
-            leaf_builder,
-            predict)
+        self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
         self.ctx = multiprocessing.get_context("spawn")
         self.X, self.Y = None, None
         self.max_features = max_features
@@ -213,8 +206,7 @@ class RandomForest(BaseModel):
     def __get_max_samples(self, max_samples):
         if isinstance(max_samples, int):
             if max_samples > self.n_obs:
-                raise ValueError(
-                    "max_samples can not be larger than total samples")
+                raise ValueError("max_samples can not be larger than total samples")
             return max_samples
         elif isinstance(max_samples, float):
             return max(round(self.n_obs * max_samples), 1)
@@ -342,8 +334,7 @@ class RandomForest(BaseModel):
             response values
         """
         if not self.bootstrap and self.max_samples:
-            raise AttributeError(
-                "Bootstrap can not be False while max_samples is set")
+            raise AttributeError("Bootstrap can not be False while max_samples is set")
 
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
@@ -388,7 +379,7 @@ class RandomForest(BaseModel):
 
         return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-    def predict_proba(self, X: np.ndarray, **kwargs):
+    def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
@@ -419,5 +410,16 @@ class RandomForest(BaseModel):
         # Predict_proba using all the trees, each element of list is the
         # predict_proba from one tree
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
-        return self.predict_class.forest_predict_proba(
-            tree_predictions, **kwargs)
+        return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
+
+    def get_forest_weight(self) -> np.ndarray:
+        if not self.forest_fitted:
+            raise AttributeError(
+                "The forest has not been fitted before trying to call get_forest_weight"
+            )
+        partial_func = partial(get_single_leaf, scale=False)
+        with self.ctx.Pool(self.n_jobs) as p:
+            promise = p.map_async(partial_func, self.trees)
+            tree_weights = promise.get()
+        print(tree_weights)
+        return np.sum(tree_weights, axis=0) / self.n_estimators

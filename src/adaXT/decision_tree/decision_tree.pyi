@@ -7,7 +7,6 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
-
 class DecisionTree:
     """
     Attributes
@@ -28,6 +27,8 @@ class DecisionTree:
         The number of classes in the training data. None for "Regression" tree.
     n_obs: int
         The number of observations in the training data.
+    n_rows: int
+        The length of the training data.
     classes: np.ndarray
         A list of all class labels. None for "Regression" tree.
     """
@@ -40,6 +41,7 @@ class DecisionTree:
     n_features: int
     n_classes: int
     n_obs: int
+    n_rows: int
     classes: np.ndarray
 
     def __init__(
