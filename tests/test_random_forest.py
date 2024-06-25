@@ -73,7 +73,7 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
 
 
 def run_squared_error(
-    X, Y, n_jobs, n_estimators, seed, max_samples=5, max_depth=sys.maxsize
+    X, Y, n_jobs, n_estimators, seed, max_samples: int | float=5, max_depth=sys.maxsize
 ):
     forest = RandomForest(
         forest_type="Regression",

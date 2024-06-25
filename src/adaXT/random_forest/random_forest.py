@@ -18,6 +18,10 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
+def get_single_leaf(tree: DecisionTree, scale: bool):
+    return tree.get_leaf_matrix(scale=scale)
+
+
 def get_sample_indices(
     n_obs: int,
     max_samples: int | None,
@@ -413,5 +417,9 @@ class RandomForest(BaseModel):
             raise AttributeError(
                 "The forest has not been fitted before trying to call get_forest_weight"
             )
-        tree_weights = list(map(lambda x: x.get_leaf_matrix(scale=False), self.trees))
+        partial_func = partial(get_single_leaf, scale=False)
+        with self.ctx.Pool(self.n_jobs) as p:
+            promise = p.map_async(partial_func, self.trees)
+            tree_weights = promise.get()
+        print(tree_weights)
         return np.sum(tree_weights, axis=0) / self.n_estimators

@@ -165,22 +165,29 @@ class DecisionTree(BaseModel):
         return np.asarray(self.predictor.predict_proba(X))
 
     def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
+        cdef:
+            int i, j
+            int[::1] indices
+            int n_node
+
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
 
         leaf_nodes = self.leaf_nodes
-        n_obs = self.n_rows
-
-        matrix = np.zeros((n_obs, n_obs))
         if (not leaf_nodes):  # make sure that there are calculated observations
-            return matrix
-        for node in leaf_nodes:
-            if scale:
-                n_node = node.indices.shape[0]
-                matrix[np.ix_(node.indices, node.indices)] = 1/n_node
-            else:
-                matrix[np.ix_(node.indices, node.indices)] = 1
+            raise ValueError("The tree has no leaf nodes")
 
+        n_obs = self.n_rows
+        matrix = np.zeros((n_obs, n_obs))
+        for node in leaf_nodes:
+            indices = node.indices
+            for i in indices:
+                for j in indices:
+                    if scale:
+                        n_node = len(node.indices)
+                        matrix[i, j] += 1/n_node
+                    else:
+                        matrix[i, j] += 1
         return matrix
 
     def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
