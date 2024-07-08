@@ -24,11 +24,11 @@ def get_single_leaf(tree: DecisionTree, scale: bool):
 
 def get_sample_indices(
     n_obs: int,
-    max_samples: int | None,
+    max_samples: int,
     random_state: np.random.RandomState,
-    bootstrap: bool,
+    sampling: str | None,
 ):
-    if max_samples and bootstrap:
+    if max_samples:
         return random_state.randint(low=0, high=n_obs, size=max_samples)
     else:
         return None
@@ -130,8 +130,8 @@ class RandomForest(BaseModel):
         self,
         forest_type: str | None,
         n_estimators: int = 100,
-        bootstrap: bool = True,
         n_jobs: int = -1,
+        sampling: str | None = "bootstrap",
         max_samples: int | float | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
@@ -145,6 +145,7 @@ class RandomForest(BaseModel):
         predict: type[Predict] | None = None,
         splitter: type[Splitter] | None = None,
     ):
+        #TODO: Update bootstrap to instead be sampling
         """
         Parameters
         ----------
@@ -183,7 +184,7 @@ class RandomForest(BaseModel):
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.bootstrap = bootstrap
+        self.sampling = sampling
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.max_samples = max_samples
         self.max_depth = max_depth
@@ -239,9 +240,8 @@ class RandomForest(BaseModel):
             partial_sample = partial(
                 get_sample_indices,
                 random_state=self.random_state,
-                n_obs=self.n_obs,
+                n_obs=self.n_rows,
                 max_samples=max_samples,
-                bootstrap=self.bootstrap,
             )
             with self.ctx.Pool(self.n_jobs) as p:
                 sample_indices = [
@@ -333,17 +333,14 @@ class RandomForest(BaseModel):
         Y : np.ndarray
             response values
         """
-        if not self.bootstrap and self.max_samples:
-            raise AttributeError("Bootstrap can not be False while max_samples is set")
-
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
-        self.n_obs, self.n_features = self.X.shape
+        self.n_rows, self.n_features = self.X.shape
         if self.forest_type == "Classification":
             self.classes = np.unique(self.Y)
         if self.max_samples is None:
-            self.max_samples = self.n_obs
+            self.max_samples = self.n_rows
 
         # Fit trees
         self.__build_trees()
@@ -421,5 +418,4 @@ class RandomForest(BaseModel):
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
             tree_weights = promise.get()
-        print(tree_weights)
         return np.sum(tree_weights, axis=0) / self.n_estimators

@@ -13,8 +13,22 @@ from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
 from ..base_model import BaseModel
 
-
 cdef double EPSILON = np.finfo('double').eps
+
+class refit_object():
+    def __init__(
+        self, 
+        idx: int,
+        depth: int,
+        parent: DecisionNode,
+        is_left: bool):
+        self.indices = [idx]
+        self.depth = depth
+        self.parent = parent
+        self.is_left = is_left
+
+    def add_idx(self, idx: int):
+        self.indices.append(idx)
 
 
 class DecisionTree(BaseModel):
@@ -54,7 +68,6 @@ class DecisionTree(BaseModel):
         self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
-        self.n_obs = -1
         self.skip_check_input = skip_check_input
 
     def __error_check_max_features(self, max_features):
@@ -141,6 +154,7 @@ class DecisionTree(BaseModel):
 
         # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
         sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+        self.criteria = self.criteria_class(X, Y, sample_weight)
 
         builder = DepthTreeBuilder(
             X=X,
@@ -148,7 +162,7 @@ class DecisionTree(BaseModel):
             sample_indices=sample_indices,
             int_max_features=self.int_max_features,
             sample_weight=sample_weight,
-            criteria=self.criteria_class(X, Y, sample_weight),
+            criteria=self.criteria,
             leaf_builder_class = self.leaf_builder_class,
             predict_class=self.predict_class,
             splitter=self.splitter)
@@ -169,6 +183,7 @@ class DecisionTree(BaseModel):
             int i, j
             int[::1] indices
             int n_node
+            int n_rows
 
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
@@ -177,8 +192,8 @@ class DecisionTree(BaseModel):
         if (not leaf_nodes):  # make sure that there are calculated observations
             raise ValueError("The tree has no leaf nodes")
 
-        n_obs = self.n_rows
-        matrix = np.zeros((n_obs, n_obs))
+        n_rows = self.n_rows
+        matrix = np.zeros((n_rows, n_rows))
         for node in leaf_nodes:
             indices = node.indices
             for i in indices:
@@ -194,6 +209,74 @@ class DecisionTree(BaseModel):
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf_matrix(X, scale)
+
+    def refit_leaf_nodes(self, indices: np.ndarray, **kwargs):
+        if not self.root:
+            raise ValueError("The tree has not been trained before trying to\
+                             refit leaf nodes")
+        cdef:  
+            int i, cur_split_idx, idx, n_obs, n_nodes, depth
+            double cur_threshold
+            object cur_node
+            int[:] all_idx
+        X, Y = self.X[indices], self.Y[indices]
+        # Reset all current leaf nodes to None
+        n_nodes = len(self.leaf_nodes)
+        for i in range(n_nodes):
+            self.leaf_nodes[i] = None
+        
+        # Create new leaf_builder instance
+        all_idx = np.arange(X.shape[0])
+        
+        # Find the leaf node, all samples would have been placed in
+        refit_objs = []
+        n_obs = X.shape[0]
+        for i in range(n_obs):
+            cur_node = self.root
+            depth = 0
+            while isinstance(cur_node, DecisionNode):
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
+                    if cur_node.left_child == None:
+                        cur_node.left_child = refit_object(indices[i], depth,
+                                                           cur_node)
+                        refit_objs.append(cur_node.left_child)
+                    elif isinstance(cur_node.left_child, refit_object):
+                        cur_node.left_child.add_idx(i)
+                    else:
+                        cur_node = cur_node.left_child
+                else:
+                    if cur_node.right_child == None:
+                        cur_node.right_child = refit_object(indices[i], depth,
+                                                           cur_node)
+                        refit_objs.append(cur_node.right_child)
+                    elif isinstance(cur_node.right_child, refit_object):
+                        cur_node.right_child.add_idx(i)
+                    else:
+                        cur_node = cur_node.right_child
+                depth += 1
+                
+        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
+        criteria = self.criteria
+        # Make refit objects into leaf_nodes
+        n_obs = len(refit_objs)
+        for i in range(n_obs):
+            obj = refit_objs[i]
+            indices = np.ndarray(obj.indices)
+            new_node = leaf_builder.build_leaf(
+                    i,
+                    indices,
+                    obj.depth,
+                    criteria.impurity(indices),
+                    indices.shape[0],
+                    obj.parent,
+                    )
+            if obj.is_left:
+                obj.parent.left_child = new_node
+            else:
+                obj.parent.right_child = new_node
+        return
 
 
 # From below here, it is the DepthTreeBuilder
@@ -330,6 +413,7 @@ class DepthTreeBuilder:
 
         # Update the tree now that we have the correct samples
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
+        # TODO: n_obs should be the weighted total samples
         n_obs = all_idx.shape[0]
 
         queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
@@ -344,7 +428,8 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            n_samples = len(indices)
+            #TODO: n_samples should be the weighted samples in node
+            n_samples = len(indices) 
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
@@ -370,6 +455,7 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
+                    #TODO: N_t should be the weighted samples left and right
                     N_t_L = len(split[0])
                     N_t_R = len(split[1])
                     is_leaf = (
@@ -434,7 +520,6 @@ class DepthTreeBuilder:
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = X.shape[1]
-        tree.n_obs = n_obs
         tree.root = root
         tree.leaf_nodes = leaf_node_list
         tree.predictor = self.predict_class(self.X, self.Y, root)
