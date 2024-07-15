@@ -210,80 +210,78 @@ class DecisionTree(BaseModel):
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf_matrix(X, scale)
 
-    def refit_leaf_nodes(self, indices: np.ndarray, **kwargs):
-        if not self.root:
-            raise ValueError("The tree has not been trained before trying to\
-                             refit leaf nodes")
-        cdef:  
-            int i, cur_split_idx, idx, n_obs, n_nodes, depth
-            double cur_threshold
-            object cur_node
-            int[:] all_idx
-        X, Y = self.X[indices], self.Y[indices]
-        # Reset all current leaf nodes to None
+    def __remove_leaf_nodes(self) -> None:
+        cdef:
+            int i, n_nodes
+            object parent
         n_nodes = len(self.leaf_nodes)
         for i in range(n_nodes):
-            self.leaf_nodes[i].parent.left_child = None
-            self.leaf_nodes[i].parent.right_child = None
+            parent = self.leaf_nodes[i].parent
+            if parent.left_child == self.leaf_nodes[i]:
+                parent.left_child = None
+            else:
+                parent.right_child = None
             self.leaf_nodes[i] = None
-        
-        all_idx = np.arange(0, X.shape[0], dtype=np.int32)
-        
-        # Find the leaf node, all samples would have been placed in
+
+    def __fit_new_leaf_nodes(self, indices: np.ndarray) -> None:
+        cdef:
+            int idx, n_obs, depth, cur_split_idx
+            double cur_threshold
+            object cur_node
+            int[::1] all_idx
+            int[::1] leaf_indices
+
         refit_objs = []
-        n_obs = X.shape[0]
-        for i in range(n_obs):
+        n_obs = indices.shape[0]
+        for idx in indices:
             cur_node = self.root
             depth = 0
-            while isinstance(cur_node, DecisionNode):
+            while isinstance(cur_node, DecisionNode) :
                 # mark the done as visited
                 cur_node.visited = 1
                 cur_split_idx = cur_node.split_idx
                 cur_threshold = cur_node.threshold
 
                 # Check if X should be go to the left or right
-                if X[i, cur_split_idx] < cur_threshold:
+                if self.X[idx, cur_split_idx] < cur_threshold:
                     # If the left or right is none, then there previously was a
                     # leaf node, and we create a new refit object
                     if cur_node.left_child == None:
-                        cur_node.left_child = refit_object(indices[i], depth,
+                        cur_node.left_child = refit_object(idx, depth,
                                                            cur_node, True)
                         refit_objs.append(cur_node.left_child)
                     # If there already is a refit object, add this new index to
                     # the refit object
                     elif isinstance(cur_node.left_child, refit_object):
-                        cur_node.left_child.add_idx(i)
+                        cur_node.left_child.add_idx(idx)
 
-                    # If neither None of refit object, this is another
-                    # DecisionNode
-                    else:
-                        cur_node = cur_node.left_child
+                    cur_node = cur_node.left_child
                 else:
                     if cur_node.right_child == None:
-                        cur_node.right_child = refit_object(indices[i], depth,
+                        cur_node.right_child = refit_object(idx, depth,
                                                            cur_node, False)
                         refit_objs.append(cur_node.right_child)
                     elif isinstance(cur_node.right_child, refit_object):
-                        cur_node.right_child.add_idx(i)
-                    else:
-                        cur_node = cur_node.right_child
+                        cur_node.right_child.add_idx(idx)
+
+                    cur_node = cur_node.right_child
                 depth += 1
-                
-        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
+
+        all_idx = np.arange(0, indices.shape[0], dtype=np.int32)
+        leaf_builder = self.leaf_builder_class(self.X, self.Y, all_idx)
         criteria = self.criteria
         # Make refit objects into leaf_nodes
         n_obs = len(refit_objs)
-        print("refit_objs: ", n_obs)
         nodes = []
         for i in range(n_obs):
             obj = refit_objs[i]
-            indices = np.ndarray(obj.indices)
+            leaf_indices = np.array(obj.indices, dtype=np.int32)
             new_node = leaf_builder.build_leaf(
                     i,
-                    indices,
+                    leaf_indices,
                     obj.depth,
-                    criteria.impurity(indices),
-                    indices.shape[0],
+                    criteria.impurity(leaf_indices),
+                    leaf_indices.shape[0],
                     obj.parent,
                     )
             new_node.visited = 1
@@ -293,10 +291,11 @@ class DecisionTree(BaseModel):
             else:
                 obj.parent.right_child = new_node
         self.leaf_nodes = nodes
-        # Now squash all the DecisionNodes not visited
+
+    # Assumes that each noted has been visited during fit_new_leaf_nodes
+    def __squash_tree(self) -> None:
+
         decision_queue = []
-        
-        decision_queue.append(self.root)
         decision_queue.append(self.root)
         while len(decision_queue) > 0:
             cur_node = decision_queue.pop(0)
@@ -309,7 +308,6 @@ class DecisionTree(BaseModel):
             # child 
             if (cur_node.left_child == None) or (cur_node.left_child.visited ==
                                                  0):
-                print("Left child updated")
                 parent = cur_node.parent
                 # Root node
                 if parent == None:
@@ -330,7 +328,6 @@ class DecisionTree(BaseModel):
             # Same for the right
             elif (cur_node.right_child == None) or (cur_node.right_child.visited
                                                     == 0):
-                print("right child updated")
                 parent = cur_node.parent
 
                 # Root node
@@ -353,6 +350,22 @@ class DecisionTree(BaseModel):
                 # Neither need squashing, add both to the queue
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
+
+
+    def refit_leaf_nodes(self, indices: np.ndarray, **kwargs):
+        if not self.root:
+            raise ValueError("The tree has not been trained before trying to\
+                             refit leaf nodes")
+        # Remove current leaf nodes
+        indices = np.array(indices, dtype=np.int32)
+        self.__remove_leaf_nodes()
+        
+        
+        # Find the leaf node, all samples would have been placed in
+        self.__fit_new_leaf_nodes(indices)
+
+        # Now squash all the DecisionNodes not visited
+        self.__squash_tree()
         return
 
 
