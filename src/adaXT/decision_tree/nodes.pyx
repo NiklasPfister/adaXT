@@ -13,6 +13,7 @@ class Node:
         self.depth = depth
         self.impurity = impurity
         self.n_samples = n_samples
+        self.visited = 0
 
 
 class DecisionNode(Node):

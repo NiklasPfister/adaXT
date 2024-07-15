@@ -148,7 +148,7 @@ class DecisionTree(BaseModel):
             sample_weight: np.ndarray | None = None) -> None:
 
         if not self.skip_check_input:
-            X, Y = self.__check_input(X, Y)
+            self.X, self.Y = self.__check_input(X, Y)
         row, col = X.shape
         self.int_max_features = self.__parse_max_features(self.max_features, col)
 
@@ -223,10 +223,11 @@ class DecisionTree(BaseModel):
         # Reset all current leaf nodes to None
         n_nodes = len(self.leaf_nodes)
         for i in range(n_nodes):
+            self.leaf_nodes[i].parent.left_child = None
+            self.leaf_nodes[i].parent.right_child = None
             self.leaf_nodes[i] = None
         
-        # Create new leaf_builder instance
-        all_idx = np.arange(X.shape[0])
+        all_idx = np.arange(0, X.shape[0], dtype=np.int32)
         
         # Find the leaf node, all samples would have been placed in
         refit_objs = []
@@ -235,21 +236,32 @@ class DecisionTree(BaseModel):
             cur_node = self.root
             depth = 0
             while isinstance(cur_node, DecisionNode):
+                # mark the done as visited
+                cur_node.visited = 1
                 cur_split_idx = cur_node.split_idx
                 cur_threshold = cur_node.threshold
+
+                # Check if X should be go to the left or right
                 if X[i, cur_split_idx] < cur_threshold:
+                    # If the left or right is none, then there previously was a
+                    # leaf node, and we create a new refit object
                     if cur_node.left_child == None:
                         cur_node.left_child = refit_object(indices[i], depth,
-                                                           cur_node)
+                                                           cur_node, True)
                         refit_objs.append(cur_node.left_child)
+                    # If there already is a refit object, add this new index to
+                    # the refit object
                     elif isinstance(cur_node.left_child, refit_object):
                         cur_node.left_child.add_idx(i)
+
+                    # If neither None of refit object, this is another
+                    # DecisionNode
                     else:
                         cur_node = cur_node.left_child
                 else:
                     if cur_node.right_child == None:
                         cur_node.right_child = refit_object(indices[i], depth,
-                                                           cur_node)
+                                                           cur_node, False)
                         refit_objs.append(cur_node.right_child)
                     elif isinstance(cur_node.right_child, refit_object):
                         cur_node.right_child.add_idx(i)
@@ -261,6 +273,8 @@ class DecisionTree(BaseModel):
         criteria = self.criteria
         # Make refit objects into leaf_nodes
         n_obs = len(refit_objs)
+        print("refit_objs: ", n_obs)
+        nodes = []
         for i in range(n_obs):
             obj = refit_objs[i]
             indices = np.ndarray(obj.indices)
@@ -272,10 +286,73 @@ class DecisionTree(BaseModel):
                     indices.shape[0],
                     obj.parent,
                     )
+            new_node.visited = 1
+            nodes.append(new_node)
             if obj.is_left:
                 obj.parent.left_child = new_node
             else:
                 obj.parent.right_child = new_node
+        self.leaf_nodes = nodes
+        # Now squash all the DecisionNodes not visited
+        decision_queue = []
+        
+        decision_queue.append(self.root)
+        decision_queue.append(self.root)
+        while len(decision_queue) > 0:
+            cur_node = decision_queue.pop(0)
+            # If we don't have a decision node, just continue
+            if not isinstance(cur_node, DecisionNode):
+                continue
+
+
+            # If left child was not visited, then squash current node and right
+            # child 
+            if (cur_node.left_child == None) or (cur_node.left_child.visited ==
+                                                 0):
+                print("Left child updated")
+                parent = cur_node.parent
+                # Root node
+                if parent == None:
+                    self.root = cur_node.right_child
+                # if current node is left child
+                elif parent.left_child == cur_node:
+                    # update parent to point to the child that has been visited
+                    # instead
+                    parent.left_child = cur_node.right_child
+                else:
+                    parent.right_child = cur_node.right_child
+
+                cur_node.right_child.parent = parent
+
+                # Only add this squashed child to the queue
+                decision_queue.append(cur_node.right_child)
+
+            # Same for the right
+            elif (cur_node.right_child == None) or (cur_node.right_child.visited
+                                                    == 0):
+                print("right child updated")
+                parent = cur_node.parent
+
+                # Root node
+                if parent == None:
+                    self.root = cur_node.right_child
+
+                # if current node is left child
+                elif parent.left_child == cur_node:
+                    # update parent to point to the child that has been visited
+                    # instead
+                    parent.left_child = cur_node.left_child
+                else:
+                    parent.right_child = cur_node.left_child
+
+                cur_node.left_child.parent = parent
+
+                # Only add this squashed child to the queue
+                decision_queue.append(cur_node.left_child)
+            else:
+                # Neither need squashing, add both to the queue
+                decision_queue.append(cur_node.left_child)
+                decision_queue.append(cur_node.right_child)
         return
 
 
