@@ -190,13 +190,35 @@ class DecisionTree:
         Parameters
         ----------
         X : np.ndarray
-            new values to be fitted
+            New values to be fitted
         scale : bool, optional
-            whether to scale the entries, by default False
+            Whether to scale the entries, by default False
 
         Returns
         -------
         np.ndarray
             NxN matrix
+        """
+        pass
+
+    def refit_leaf_nodes(self, X:np.ndarray, Y:np.ndarray,
+                         sample_weight:np.ndarray, prediction_indices:
+                         np.ndarray) -> None:
+        """
+        Removes all leafnodes create on the initial fit, and replaces them by
+        predicting all prediction_indices and placing them into new leaf nodes.
+
+        This is used for honest RandomForests.
+
+        Parameters
+        ----------
+        X : array-like object
+            The feature values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+        Y : array-like object
+            The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+        sample_weight : np.ndarray | None, optional
+            Sample weights. Currently not implemented.
+        prediction_indices: np.ndarray
+            Values to create new leaf nodes with
         """
         pass

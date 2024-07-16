@@ -148,21 +148,19 @@ class DecisionTree(BaseModel):
             sample_weight: np.ndarray | None = None) -> None:
 
         if not self.skip_check_input:
-            self.X, self.Y = self.__check_input(X, Y)
+            X, Y = self.__check_input(X, Y)
         row, col = X.shape
         self.int_max_features = self.__parse_max_features(self.max_features, col)
 
         # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
         sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
-        self.criteria = self.criteria_class(X, Y, sample_weight)
-
         builder = DepthTreeBuilder(
             X=X,
             Y=Y,
             sample_indices=sample_indices,
             int_max_features=self.int_max_features,
             sample_weight=sample_weight,
-            criteria=self.criteria,
+            criteria=self.criteria_class(X, Y, sample_weight),
             leaf_builder_class = self.leaf_builder_class,
             predict_class=self.predict_class,
             splitter=self.splitter)
@@ -223,7 +221,8 @@ class DecisionTree(BaseModel):
                 parent.right_child = None
             self.leaf_nodes[i] = None
 
-    def __fit_new_leaf_nodes(self, indices: np.ndarray) -> None:
+    def __fit_new_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
+                             np.ndarray, indices: np.ndarray) -> None:
         cdef:
             int idx, n_obs, depth, cur_split_idx
             double cur_threshold
@@ -243,7 +242,7 @@ class DecisionTree(BaseModel):
                 cur_threshold = cur_node.threshold
 
                 # Check if X should be go to the left or right
-                if self.X[idx, cur_split_idx] < cur_threshold:
+                if X[idx, cur_split_idx] < cur_threshold:
                     # If the left or right is none, then there previously was a
                     # leaf node, and we create a new refit object
                     if cur_node.left_child == None:
@@ -268,8 +267,8 @@ class DecisionTree(BaseModel):
                 depth += 1
 
         all_idx = np.arange(0, indices.shape[0], dtype=np.int32)
-        leaf_builder = self.leaf_builder_class(self.X, self.Y, all_idx)
-        criteria = self.criteria
+        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
+        criteria = self.criteria_class(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
         n_obs = len(refit_objs)
         nodes = []
@@ -352,17 +351,18 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.right_child)
 
 
-    def refit_leaf_nodes(self, indices: np.ndarray, **kwargs):
+    def refit_leaf_nodes(self, X: np.ndarray, Y:np.ndarray, sample_weight:
+                         np.ndarray, prediction_indices: np.ndarray, **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
         # Remove current leaf nodes
-        indices = np.array(indices, dtype=np.int32)
+        indices = np.array(prediction_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
         
         
         # Find the leaf node, all samples would have been placed in
-        self.__fit_new_leaf_nodes(indices)
+        self.__fit_new_leaf_nodes(X, Y, sample_weight, indices)
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
@@ -503,8 +503,7 @@ class DepthTreeBuilder:
 
         # Update the tree now that we have the correct samples
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
-        # TODO: n_obs should be the weighted total samples
-        n_obs = all_idx.shape[0]
+        weighted_total = np.sum(self.sample_weight)
 
         queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
         n_nodes = 0
@@ -518,15 +517,15 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            #TODO: n_samples should be the weighted samples in node
-            n_samples = len(indices) 
+            weighted_samples = np.sum(list(map(lambda x: self.sample_weight[x],
+                                          indices)))
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
             is_leaf = (
                 (depth >= max_depth)
                 or (impurity <= impurity_tol + EPSILON)
-                or (n_samples <= min_samples_split)
+                or (weighted_samples <= min_samples_split)
             )
 
             if depth > max_depth_seen:  # keep track of the max depth seen
@@ -545,22 +544,25 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
-                    #TODO: N_t should be the weighted samples left and right
-                    N_t_L = len(split[0])
-                    N_t_R = len(split[1])
+                    weight_left = np.sum(list(map(lambda x:
+                                                  self.sample_weight[x],
+                                                  split[0])))
+                    weight_right = np.sum(list(map(lambda x:
+                                                   self.sample_weight[x],
+                                                   split[1])))
                     is_leaf = (
                         (
-                            n_samples
-                            / n_obs
+                            weighted_samples
+                            / weighted_total
                             * (
                                 impurity
-                                - (N_t_L / n_samples) * child_imp[0]
-                                - (N_t_R / n_samples) * child_imp[1]
+                                - (weight_left / weighted_samples) * child_imp[0]
+                                - (weight_right / weighted_samples) * child_imp[1]
                             )
                             < min_improvement + EPSILON
                         )
-                        or (N_t_L < min_samples_leaf)
-                        or (N_t_R < min_samples_leaf)
+                        or (weight_left < min_samples_leaf)
+                        or (weight_right < min_samples_leaf)
                     )
 
             if not is_leaf:
@@ -569,7 +571,7 @@ class DepthTreeBuilder:
                     indices,
                     depth,
                     impurity,
-                    n_samples,
+                    int(weighted_samples),
                     best_threshold,
                     best_index,
                     parent=parent,
@@ -593,7 +595,7 @@ class DepthTreeBuilder:
                         indices,
                         depth,
                         impurity,
-                        n_samples,
+                        int(weighted_samples),
                         parent)
 
                 if is_left and parent:  # if there is a parent
