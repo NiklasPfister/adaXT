@@ -15,13 +15,15 @@ from ..base_model import BaseModel
 
 cdef double EPSILON = np.finfo('double').eps
 
+
 class refit_object():
     def __init__(
-        self, 
-        idx: int,
-        depth: int,
-        parent: DecisionNode,
-        is_left: bool):
+            self,
+            idx: int,
+            depth: int,
+            parent: DecisionNode,
+            is_left: bool):
+
         self.indices = [idx]
         self.depth = depth
         self.parent = parent
@@ -245,7 +247,7 @@ class DecisionTree(BaseModel):
                 if X[idx, cur_split_idx] < cur_threshold:
                     # If the left or right is none, then there previously was a
                     # leaf node, and we create a new refit object
-                    if cur_node.left_child == None:
+                    if cur_node.left_child is None:
                         cur_node.left_child = refit_object(idx, depth,
                                                            cur_node, True)
                         refit_objs.append(cur_node.left_child)
@@ -256,9 +258,9 @@ class DecisionTree(BaseModel):
 
                     cur_node = cur_node.left_child
                 else:
-                    if cur_node.right_child == None:
+                    if cur_node.right_child is None:
                         cur_node.right_child = refit_object(idx, depth,
-                                                           cur_node, False)
+                                                            cur_node, False)
                         refit_objs.append(cur_node.right_child)
                     elif isinstance(cur_node.right_child, refit_object):
                         cur_node.right_child.add_idx(idx)
@@ -302,14 +304,13 @@ class DecisionTree(BaseModel):
             if not isinstance(cur_node, DecisionNode):
                 continue
 
-
             # If left child was not visited, then squash current node and right
-            # child 
-            if (cur_node.left_child == None) or (cur_node.left_child.visited ==
+            # child
+            if (cur_node.left_child is None) or (cur_node.left_child.visited ==
                                                  0):
                 parent = cur_node.parent
                 # Root node
-                if parent == None:
+                if parent is None:
                     self.root = cur_node.right_child
                 # if current node is left child
                 elif parent.left_child == cur_node:
@@ -325,12 +326,12 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.right_child)
 
             # Same for the right
-            elif (cur_node.right_child == None) or (cur_node.right_child.visited
+            elif (cur_node.right_child is None) or (cur_node.right_child.visited
                                                     == 0):
                 parent = cur_node.parent
 
                 # Root node
-                if parent == None:
+                if parent is None:
                     self.root = cur_node.right_child
 
                 # if current node is left child
@@ -350,8 +351,7 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
-
-    def refit_leaf_nodes(self, X: np.ndarray, Y:np.ndarray, sample_weight:
+    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
                          np.ndarray, prediction_indices: np.ndarray, **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
@@ -359,8 +359,7 @@ class DecisionTree(BaseModel):
         # Remove current leaf nodes
         indices = np.array(prediction_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
-        
-        
+
         # Find the leaf node, all samples would have been placed in
         self.__fit_new_leaf_nodes(X, Y, sample_weight, indices)
 
@@ -518,7 +517,7 @@ class DepthTreeBuilder:
                 obj.is_left,
             )
             weighted_samples = np.sum(list(map(lambda x: self.sample_weight[x],
-                                          indices)))
+                                      indices)))
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
