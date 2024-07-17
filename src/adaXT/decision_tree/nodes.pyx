@@ -1,7 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 
-
+#TODO: Update n_samples to instead be the weighted_samples
 class Node:
     def __init__(
             self,
@@ -15,7 +15,7 @@ class Node:
         self.n_samples = n_samples
         self.visited = 0
 
-
+#TODO: Remove number of samples of decisionNode
 class DecisionNode(Node):
     def __init__(
             self,
