@@ -412,6 +412,7 @@ class RandomForest(BaseModel):
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
 
+    # TODO Predict forest weight instead 
     def get_forest_weight(self) -> np.ndarray:
         if not self.forest_fitted:
             raise AttributeError(

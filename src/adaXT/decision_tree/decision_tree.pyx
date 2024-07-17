@@ -190,6 +190,7 @@ class DecisionTree(BaseModel):
                         matrix[i, j] += 1
         return matrix
 
+    #TODO: Make get_leaf_matrix private, and call it if X is none.
     def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
