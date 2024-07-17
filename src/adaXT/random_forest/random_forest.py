@@ -27,10 +27,8 @@ def get_sample_indices(
     random_state: np.random.RandomState,
     sampling_parameter: int|tuple[int, int],
     sampling: str,
-) -> tuple[np.ndarray, np.ndarray|None]:
+) -> tuple[np.ndarray|None, np.ndarray|None]:
     if sampling == "bootstrap":
-        assert isinstance(sampling_parameter, int), "Sampling parameter is not an \
-        integer for bootstrap"
          
         return (random_state.randint(low=0, high=n_obs,
                                      size=sampling_parameter), None)
@@ -50,7 +48,7 @@ def get_sample_indices(
                                             size=sampling_parameter[1])
         return (fitting_data, prediction_data)
     else:
-        raise ValueError("The given sampling is not currently implemented")
+        return (None, None)
 
 def honest_refit(tree: DecisionTree, prediction_indices:np.ndarray, X:
                  np.ndarray, Y:np.ndarray, sample_weight:np.ndarray):
@@ -155,7 +153,7 @@ class RandomForest(BaseModel):
         forest_type: str | None,
         n_estimators: int = 100,
         n_jobs: int = -1,
-        sampling: str | None = "bootstrap",
+        sampling: str | None = None,
         sampling_parameter: int | float | tuple[int, int] | None=None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
@@ -242,13 +240,46 @@ class RandomForest(BaseModel):
         else:
             raise ValueError("Random state either has to be Integral or None")
 
-    def __get_max_samples(self, max_samples):
-        if isinstance(max_samples, int):
-            if max_samples > self.n_obs:
-                raise ValueError("max_samples can not be larger than total samples")
-            return max_samples
-        elif isinstance(max_samples, float):
-            return max(round(self.n_obs * max_samples), 1)
+    def __get_sampling_parameter(self, sampling_parameter):
+        if self.sampling == "bootstrap":
+            if isinstance(sampling_parameter, int):
+                if sampling_parameter > self.n_rows:
+                    raise ValueError("sampling_parameter can not be larger than total samples")
+                return sampling_parameter
+            elif isinstance(sampling_parameter, float):
+                return max(round(self.n_rows * sampling_parameter), 1)
+            elif sampling_parameter is None:
+                return self.n_rows
+            else:
+                raise ValueError("Sampling is bootstrap, but sampling parameter \
+                    is neither an integer nor a float")
+        elif self.sampling == "honest_forest":
+            if sampling_parameter is None:
+                sampling_parameter = (self.n_rows/2, self.n_rows)
+            if not isinstance(sampling_parameter, tuple):
+                raise ValueError("Sampling is honest_forest, but sampling\
+                    parameter is not a tuple")
+            split_idx, number_chosen = sampling_parameter
+            if not isinstance(split_idx, int):
+                raise ValueError("Given split_idx is not an integer")
+            if not isinstance(number_chosen, int):
+                raise ValueError("Given number of elements to bootstrap is not\
+                                 an integer")
+            return (split_idx, number_chosen)
+        elif self.sampling == "honest_tree":
+            if sampling_parameter is None:
+                sampling_parameter = self.n_rows
+            if isinstance(sampling_parameter, int):
+                if sampling_parameter > self.n_rows:
+                    raise ValueError("sampling_parameter can not be larger than total samples")
+                return sampling_parameter
+            elif isinstance(sampling_parameter, float):
+                return max(round(self.n_rows * sampling_parameter), 1)
+            else:
+                raise ValueError("Sampling is honest_tree, but sampling parameter \
+                    is neither an integer nor a float")
+        else:
+            return None
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -259,9 +290,10 @@ class RandomForest(BaseModel):
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
-                fitting_indices, prediction_indices = get_sample_indices(n_obs=len(self.X),
-                                                   random_state=self.random_state,
-                                                   sampling=self.sampling)
+                fitting_indices, prediction_indices = get_sample_indices(n_obs=self.n_rows,
+                                   random_state=self.random_state,
+                                   sampling_parameter=self.sampling_parameter,
+                                   sampling=self.sampling)
                 tree.fit(self.X, self.Y, sample_indices=fitting_indices,
                          sample_weight=self.sample_weight)
                 if self.__is_honest():
@@ -402,7 +434,7 @@ class RandomForest(BaseModel):
             self.sample_weight = np.ones(self.X.shape[0])
         else:
             self.sample_weight = sample_weight
-
+        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
         # Fit trees
         self.__build_trees()
 

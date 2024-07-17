@@ -492,9 +492,10 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = np.arange(X.shape[0])
         if self.sample_indices is not None:
             all_idx = np.array(self.sample_indices)
+        else:
+            all_idx = np.arange(X.shape[0])
 
         all_idx = np.array(
             [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32
