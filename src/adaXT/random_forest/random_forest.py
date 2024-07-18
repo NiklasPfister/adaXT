@@ -177,16 +177,18 @@ class RandomForest(BaseModel):
         n_jobs : int, default=1
             The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
         sampling: str | None, default="bootstrap"
-            Either bootstrap, honest_tree or honest_forest
+            Either bootstrap, honest_tree or honest_forest. See sampling_parameter
+            for exact behaviour.
         sampling_parameter: int | float | tuple[int, int] | None
-            A parameter used for the specified sampling type.
+            A parameter used to control the behaviour of the sampling.
             For bootstrap it can be int representing number of randomly drawn
-            indices to fit on or float for a percentage.
-            For honest_forest it is a tuple of two ints. First being a splitting
-            index with all indices on the left is used for fitting on all trees and
-            all indices on the right is used for prediction. The second value is
-            the number of randomly drawn indices to use for both fitting and
-            prediction.
+            indices (with replacement) to fit on or float for a percentage.
+            For honest_forest it is a tuple of two ints: The first value specifies
+            a splitting index such that the indices on the left are used in the
+            fitting of all trees and the indices on the right are used for prediction
+            (i.e., populating the leafs). The second value specifies
+            the number of randomly drawn (with replacement) indices used for both
+            fitting and prediction.
             For honest_tree it is the number of elements to use for both fitting
             and prediction, where there might be overlap between trees in
             fitting and prediction data, but not for an individual tree.

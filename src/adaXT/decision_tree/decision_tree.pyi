@@ -205,10 +205,14 @@ class DecisionTree:
                          sample_weight:np.ndarray, prediction_indices:
                          np.ndarray) -> None:
         """
-        Removes all leafnodes create on the initial fit, and replaces them by
+        Removes all leafnodes created on the initial fit and replaces them by
         predicting all prediction_indices and placing them into new leaf nodes.
 
-        This is used for honest RandomForests.
+        This method can be used to update the leafs node in decision tree based
+        on a new data while keeping the original splitting rules. If X does not
+        contain the original training data the tree structure might change as
+        leaf nodes without samples are collapsed. The method is also used to
+        create honest splitting in RandomForests.
 
         Parameters
         ----------

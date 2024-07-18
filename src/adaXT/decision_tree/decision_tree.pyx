@@ -238,12 +238,12 @@ class DecisionTree(BaseModel):
             cur_node = self.root
             depth = 0
             while isinstance(cur_node, DecisionNode) :
-                # mark the done as visited
+                # Mark cur_node as visited
                 cur_node.visited = 1
                 cur_split_idx = cur_node.split_idx
                 cur_threshold = cur_node.threshold
 
-                # Check if X should be go to the left or right
+                # Check if X should go to the left or right
                 if X[idx, cur_split_idx] < cur_threshold:
                     # If the left or right is none, then there previously was a
                     # leaf node, and we create a new refit object
@@ -293,7 +293,7 @@ class DecisionTree(BaseModel):
                 obj.parent.right_child = new_node
         self.leaf_nodes = nodes
 
-    # Assumes that each noted has been visited during fit_new_leaf_nodes
+    # Assumes that each node has been visited during __fit_new_leaf_nodes
     def __squash_tree(self) -> None:
 
         decision_queue = []
@@ -329,11 +329,9 @@ class DecisionTree(BaseModel):
             elif (cur_node.right_child is None) or (cur_node.right_child.visited
                                                     == 0):
                 parent = cur_node.parent
-
                 # Root node
                 if parent is None:
                     self.root = cur_node.right_child
-
                 # if current node is left child
                 elif parent.left_child == cur_node:
                     # update parent to point to the child that has been visited
