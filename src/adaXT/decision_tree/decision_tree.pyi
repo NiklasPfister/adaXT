@@ -25,8 +25,6 @@ class DecisionTree:
         The number of features in the training data.
     n_classes: int
         The number of classes in the training data. None for "Regression" tree.
-    n_obs: int
-        The number of observations in the training data.
     n_rows: int
         The length of the training data.
     classes: np.ndarray
@@ -40,7 +38,6 @@ class DecisionTree:
     n_nodes: int
     n_features: int
     n_classes: int
-    n_obs: int
     n_rows: int
     classes: np.ndarray
 
