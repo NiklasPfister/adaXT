@@ -35,7 +35,7 @@ def test_predict_leaf_matrix_classification():
 
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     res2 = tree.predict_leaf_matrix(X)
     assert res1.shape == res2.shape
     row, col = res1.shape
@@ -61,7 +61,7 @@ def test_predict_leaf_matrix_regression():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     res2 = tree.predict_leaf_matrix(X)
     assert res1.shape == res2.shape
     row, col = res1.shape
@@ -87,7 +87,7 @@ def test_predict_leaf_matrix_regression_with_scaling():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     for i in range(res1.shape[0]):
         res1[i] = res1[i] / np.sum(res1[i])
     res2 = tree.predict_leaf_matrix(X, scale=True)
@@ -179,7 +179,7 @@ def test_NxN_matrix():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    leaf_matrix = tree.get_leaf_matrix()
+    leaf_matrix = tree.predict_leaf_matrix(X=None)
     true_weight = np.array(
         [
             [1, 0, 0, 0, 1, 0, 1, 0],

@@ -285,7 +285,7 @@ def test_random_forest_weights():
         max_samples=1.0,
         max_depth=2,
     )
-    res = squared_forest.get_forest_weight()
+    res = squared_forest.predict_forest_weight(X=None)
     print(res)
     print(res.shape)
 

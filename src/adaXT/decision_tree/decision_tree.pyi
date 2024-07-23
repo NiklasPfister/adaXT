@@ -158,28 +158,7 @@ class DecisionTree:
         """
         pass
 
-    def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
-        """
-        Creates NxN matrix,
-        where N is the number of observations.
-        If A_{i,j} = 1 then i and j are in the same LeafNode, otherwise 0.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node.
-
-
-        Parameters
-        ----------
-        scale : bool, optional
-            whether to scale the entries, by default False
-
-        Returns
-        -------
-        np.ndarray
-            NxN matrix
-        """
-        pass
-
-    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False) -> np.ndarray:
+    def predict_leaf_matrix(self, X: np.ndarray|None, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations in X.
@@ -190,7 +169,7 @@ class DecisionTree:
         Parameters
         ----------
         X : np.ndarray
-            new values to be fitted
+            New values to be fitted, if None returns leaf matrix
         scale : bool, optional
             whether to scale the entries, by default False
 

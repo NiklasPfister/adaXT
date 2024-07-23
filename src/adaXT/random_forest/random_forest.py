@@ -19,7 +19,10 @@ from ..leaf_builder import LeafBuilder
 
 
 def get_single_leaf(tree: DecisionTree, scale: bool):
-    return tree.get_leaf_matrix(scale=scale)
+    return tree.predict_leaf_matrix(None, scale=scale)
+
+def predict_single_leaf(tree: DecisionTree, X:np.ndarray, scale: bool):
+    return tree.predict_leaf_matrix(X, scale=scale)
 
 
 def get_sample_indices(
@@ -411,16 +414,24 @@ class RandomForest(BaseModel):
         # predict_proba from one tree
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
-
-    # TODO Predict forest weight instead 
-    def get_forest_weight(self) -> np.ndarray:
-        if not self.forest_fitted:
-            raise AttributeError(
-                "The forest has not been fitted before trying to call get_forest_weight"
-            )
-        partial_func = partial(get_single_leaf, scale=False)
+    def __get_forest_matrix(self, scale:bool=False):
+        partial_func = partial(get_single_leaf, scale=scale)
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
             tree_weights = promise.get()
-        print(tree_weights)
+        return np.sum(tree_weights, axis=0) / self.n_estimators
+
+
+    def predict_forest_weight(self, X: np.ndarray|None, scale:bool=False) -> np.ndarray:
+        if not self.forest_fitted:
+            raise AttributeError(
+                "The forest has not been fitted before trying to call\
+                predict_forest_weight"
+            )
+        if X is None:
+            return self.__get_forest_matrix(scale=scale)
+        partial_func = partial(predict_single_leaf, X=X, scale=scale)
+        with self.ctx.Pool(self.n_jobs) as p:
+            promise = p.map_async(partial_func, self.trees)
+            tree_weights = promise.get()
         return np.sum(tree_weights, axis=0) / self.n_estimators

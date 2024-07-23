@@ -164,7 +164,7 @@ class DecisionTree(BaseModel):
             raise AttributeError("The tree has not been fitted before trying to call predict_proba")
         return np.asarray(self.predictor.predict_proba(X))
 
-    def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
+    def __get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
         cdef:
             int i, j
             int[::1] indices
@@ -190,8 +190,9 @@ class DecisionTree(BaseModel):
                         matrix[i, j] += 1
         return matrix
 
-    #TODO: Make get_leaf_matrix private, and call it if X is none.
-    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False):
+    def predict_leaf_matrix(self, X: np.ndarray|None, scale: bool = False):
+        if X is None:
+            return self.__get_leaf_matrix(scale=scale)
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf_matrix(X, scale)
