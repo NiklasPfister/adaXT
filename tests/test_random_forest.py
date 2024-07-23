@@ -72,8 +72,15 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
     return forest
 
 
-def run_squared_error( X, Y, n_jobs, n_estimators, seed, max_samples: int |
-    float=5, max_depth=sys.maxsize, sampling: str|None ="bootstrap"):
+def run_squared_error(
+        X,
+        Y,
+        n_jobs,
+        n_estimators,
+        seed,
+        max_samples: int | float = 5,
+        max_depth=sys.maxsize,
+        sampling: str | None = "bootstrap"):
     forest = RandomForest(
         forest_type="Regression",
         criteria=Squared_error,
@@ -104,7 +111,7 @@ def test_dominant_feature():
         n_estimators=100,
         criteria=Gini_index,
         sampling="bootstrap"
-        )
+    )
     forest.fit(X, Y)
 
     # Create data for predict
@@ -289,9 +296,10 @@ def test_random_forest_weights():
     trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
     for item in trees:
         item.fit(X_reg, Y_reg)
-    tree_sum = np.mean([tree.predict_leaf_matrix(X=None, scale=False) for tree in
-        trees], axis=0)
+    tree_sum = np.mean([tree.predict_leaf_matrix(
+        X=None, scale=False) for tree in trees], axis=0)
     assert np.array_equal(tree_sum, res)
+
 
 def __check_leaf_count(forest: RandomForest, expected_weight: float):
     for tree in forest.trees:
@@ -307,12 +315,20 @@ def test_honest_sampling_leaf_samples():
     n_fit = 5
     n_estimators = 5
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
-    honest_tree = \
-    RandomForest("Regression",n_estimators=n_estimators,sampling="honest_tree",
-                 sampling_parameter=n_fit, max_depth=4)
-    honest_forest = \
-    RandomForest("Regression",n_estimators=n_estimators,sampling="honest_forest",
-                 sampling_parameter=(n//2, n_fit), max_depth=4)
+    honest_tree = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        sampling="honest_tree",
+        sampling_parameter=n_fit,
+        max_depth=4)
+    honest_forest = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        sampling="honest_forest",
+        sampling_parameter=(
+            n // 2,
+            n_fit),
+        max_depth=4)
     honest_tree.fit(X_reg, Y_reg)
     honest_forest.fit(X_reg, Y_reg)
     __check_leaf_count(honest_tree, n_fit)

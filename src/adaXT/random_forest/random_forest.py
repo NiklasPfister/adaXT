@@ -21,16 +21,17 @@ from ..leaf_builder import LeafBuilder
 def get_single_leaf(tree: DecisionTree, scale: bool):
     return tree.predict_leaf_matrix(None, scale=scale)
 
-def predict_single_leaf(tree: DecisionTree, X:np.ndarray, scale: bool):
+
+def predict_single_leaf(tree: DecisionTree, X: np.ndarray, scale: bool):
     return tree.predict_leaf_matrix(X, scale=scale)
 
 
 def get_sample_indices(
     n_rows: int,
     random_state: np.random.RandomState,
-    sampling_parameter: int|tuple[int, int],
+    sampling_parameter: int | tuple[int, int],
     sampling: str,
-) -> tuple[np.ndarray|None, np.ndarray|None]:
+) -> tuple[np.ndarray | None, np.ndarray | None]:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -52,10 +53,12 @@ def get_sample_indices(
     else:
         return (None, None)
 
+
 def honest_refit(tree: DecisionTree, prediction_indices: np.ndarray, X:
                  np.ndarray, Y: np.ndarray, sample_weight: np.ndarray):
     tree.refit_leaf_nodes(X, Y, sample_weight, prediction_indices)
     return tree
+
 
 def build_single_tree(
     sample_indices: np.ndarray | None,
@@ -73,7 +76,7 @@ def build_single_tree(
     min_improvement: float = 0,
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
     skip_check_input: bool = True,
-    sample_weight:np.ndarray|None=None,
+    sample_weight: np.ndarray | None = None,
 ):
     # subset the feature indices
     tree = DecisionTree(
@@ -113,8 +116,10 @@ def fill_with_zeros_for_missing_classes_in_tree(
 
 
 def predict_proba_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray, **kwargs
-):
+        tree: DecisionTree,
+        predict_values: np.ndarray,
+        classes: np.ndarray,
+        **kwargs):
     tree_predict_proba = tree.predict_proba(predict_values)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
         tree.classes,
@@ -126,7 +131,10 @@ def predict_proba_single_tree(
     return ret_val
 
 
-def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
+def predict_single_tree(
+        tree: DecisionTree,
+        predict_values: np.ndarray,
+        **kwargs):
     return tree.predict(predict_values, **kwargs)
 
 
@@ -140,7 +148,8 @@ def shared_numpy_array(array):
     else:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(
+            shape=row, dtype=np.double, buffer=shared_array)
     np.copyto(shared_array_np, array)
     return shared_array_np
 
@@ -156,7 +165,7 @@ class RandomForest(BaseModel):
         n_estimators: int = 100,
         n_jobs: int = -1,
         sampling: str | None = "bootstrap",
-        sampling_parameter: int | float | tuple[int, int] | None=None,
+        sampling_parameter: int | float | tuple[int, int] | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
         max_depth: int = sys.maxsize,
@@ -217,7 +226,12 @@ class RandomForest(BaseModel):
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
-        self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
+        self.check_tree_type(
+            forest_type,
+            criteria,
+            splitter,
+            leaf_builder,
+            predict)
         self.ctx = multiprocessing.get_context("spawn")
         self.X, self.Y = None, None
         self.max_features = max_features
@@ -255,13 +269,14 @@ class RandomForest(BaseModel):
             integer, a float or None as required.")
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
-                sampling_parameter = (self.n_rows/2, self.n_rows/2)
+                sampling_parameter = (self.n_rows / 2, self.n_rows / 2)
             elif not isinstance(sampling_parameter, tuple):
                 raise ValueError("The provided sampling parameter is not a\
                                  tuple for honest_forest.")
             split_idx, number_chosen = sampling_parameter
             if not isinstance(split_idx, int):
-                raise ValueError("The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
+                raise ValueError(
+                    "The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
             if (split_idx > self.n_rows) or (split_idx < 0):
                 raise ValueError("The split index does not fit for the given\
                     dataset")
@@ -271,16 +286,16 @@ class RandomForest(BaseModel):
                                        1))
             elif isinstance(number_chosen, int):
                 return (split_idx, number_chosen)
-            
+
             elif number_chosen is None:
-                return (split_idx, self.n_rows/2)
+                return (split_idx, self.n_rows / 2)
 
             raise ValueError("The provided number of resamples (given as the\
             second entry in sampling_parameter) is not an integer, float or None")
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
-                sampling_parameter = self.n_rows/2
+                sampling_parameter = self.n_rows / 2
             if isinstance(sampling_parameter, int):
                 if sampling_parameter > self.n_rows:
                     raise ValueError("Sample parameter can not be larger than\
@@ -292,7 +307,8 @@ class RandomForest(BaseModel):
                     1 for a float with honest_tree")
                 return max(round(self.n_rows * sampling_parameter), 1)
             else:
-                raise ValueError("Provided sampling parameter is not an integer\
+                raise ValueError(
+                    "Provided sampling parameter is not an integer\
                 a float of None")
         else:
             return None
@@ -300,16 +316,16 @@ class RandomForest(BaseModel):
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
 
-
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
+
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
                 fitting_indices, prediction_indices = get_sample_indices(n_rows=self.n_rows,
-                                   random_state=self.random_state,
-                                   sampling_parameter=self.sampling_parameter,
-                                   sampling=self.sampling)
+                                                                         random_state=self.random_state,
+                                                                         sampling_parameter=self.sampling_parameter,
+                                                                         sampling=self.sampling)
                 tree.fit(self.X, self.Y, sample_indices=fitting_indices,
                          sample_weight=self.sample_weight)
                 if self.__is_honest():
@@ -347,12 +363,14 @@ class RandomForest(BaseModel):
                 sample_weight=self.sample_weight,
             )
             with self.ctx.Pool(self.n_jobs) as p:
-                fitting_indices, prediction_indices =zip(*[p.apply(partial_sample) for _ in range(self.n_estimators)])
+                fitting_indices, prediction_indices = zip(
+                    *[p.apply(partial_sample) for _ in range(self.n_estimators)])
                 promise = p.map_async(partial_func, fitting_indices)
                 trees = promise.get()
                 if self.__is_honest():
-                    promise = p.starmap_async(partial_honest, zip(trees,
-                                                                prediction_indices))
+                    promise = p.starmap_async(
+                        partial_honest, zip(
+                            trees, prediction_indices))
                     trees = promise.get()
                 self.trees = trees
 
@@ -428,7 +446,7 @@ class RandomForest(BaseModel):
         return X, Y
 
     def fit(self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray |
-        None=None):
+            None = None):
         """
         Function used to fit a forest using many DecisionTrees for the given data
 
@@ -450,7 +468,8 @@ class RandomForest(BaseModel):
             self.sample_weight = np.ones(self.X.shape[0])
         else:
             self.sample_weight = sample_weight
-        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
+        self.sampling_parameter = self.__get_sampling_parameter(
+            self.sampling_parameter)
         # Fit trees
         self.__build_trees()
 
@@ -516,16 +535,20 @@ class RandomForest(BaseModel):
         # Predict_proba using all the trees, each element of list is the
         # predict_proba from one tree
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
-        return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
-    def __get_forest_matrix(self, scale:bool=False):
+        return self.predict_class.forest_predict_proba(
+            tree_predictions, **kwargs)
+
+    def __get_forest_matrix(self, scale: bool = False):
         partial_func = partial(get_single_leaf, scale=scale)
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
             tree_weights = promise.get()
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
-
-    def predict_forest_weight(self, X: np.ndarray|None, scale:bool=False) -> np.ndarray:
+    def predict_forest_weight(
+            self,
+            X: np.ndarray | None,
+            scale: bool = False) -> np.ndarray:
         if not self.forest_fitted:
             raise AttributeError(
                 "The forest has not been fitted before trying to call\
