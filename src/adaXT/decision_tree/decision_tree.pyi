@@ -26,7 +26,7 @@ class DecisionTree:
     n_classes: int
         The number of classes in the training data. None for "Regression" tree.
     n_rows: int
-        The length of the training data.
+        The number of rows in the training data.
     classes: np.ndarray
         A list of all class labels. None for "Regression" tree.
     """
