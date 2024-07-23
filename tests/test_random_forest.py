@@ -72,15 +72,14 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
     return forest
 
 
-def run_squared_error(
-    X, Y, n_jobs, n_estimators, seed, max_samples: int | float=5, max_depth=sys.maxsize
-):
+def run_squared_error( X, Y, n_jobs, n_estimators, seed, max_samples: int |
+    float=5, max_depth=sys.maxsize, sampling: str|None ="bootstrap"):
     forest = RandomForest(
         forest_type="Regression",
         criteria=Squared_error,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        sampling="bootstrap",
+        sampling=sampling,
         sampling_parameter=max_samples,
         random_state=seed,
         max_depth=max_depth,
@@ -274,7 +273,7 @@ def test_random_forest_weights():
     seed = 2024
     n = 100
     m = 10
-    n_estimators = 100
+    n_estimators = 5
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     squared_forest = run_squared_error(
         X_reg,
@@ -282,18 +281,22 @@ def test_random_forest_weights():
         n_jobs=cpu_count(),
         n_estimators=n_estimators,
         seed=seed,
-        max_samples=1.0,
         max_depth=2,
+        sampling=None,
     )
-    res = squared_forest.predict_forest_weight(X=None)
-    print(res)
-    print(res.shape)
+    res = squared_forest.predict_forest_weight(X=None, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    for item in trees:
+        item.fit(X_reg, Y_reg)
+    tree_sum = np.mean([tree.predict_leaf_matrix(X=None, scale=False) for tree in
+        trees], axis=0)
+    assert np.array_equal(tree_sum, res)
 
 
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    test_linear_regression_forest()
-    test_quantile_regression_forest()
-    # test_random_forest_weights()
+    # test_linear_regression_forest()
+    # test_quantile_regression_forest()
+    test_random_forest_weights()
     print("Done")
