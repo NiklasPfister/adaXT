@@ -8,7 +8,7 @@ from numbers import Integral
 from typing import Literal
 
 import numpy as np
-from numpy import float64 as DOUBLE
+from numpy import float64 as DOUBLE, number
 
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
@@ -28,30 +28,29 @@ def get_sample_indices(
     sampling_parameter: int|tuple[int, int],
     sampling: str,
 ) -> tuple[np.ndarray|None, np.ndarray|None]:
+    """
+    Assumes there has been a previous call to self.__get_sample_indices on the
+    RandomForest.
+    """
     if sampling == "bootstrap":
-         
         return (random_state.randint(low=0, high=n_obs,
                                      size=sampling_parameter), None)
     elif sampling == "honest_tree":
-        assert isinstance(sampling_parameter, int), "Sampling parameter is not an \
-        integer for honest_tree"
         indices = np.arange(0, n_obs)
         random_state.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
-        assert isinstance(sampling_parameter, tuple), "Sampling parameter is \
-        not tuple for honest_forest"
         fitting_data = random_state.randint(low=0, high=sampling_parameter[0],
-                                         size=sampling_parameter[1])
-        prediction_data = random_state.randint(low=sampling_parameter[0],
-                                            high=n_obs,
                                             size=sampling_parameter[1])
+        prediction_data = random_state.randint(low=sampling_parameter[0],
+                                               high=n_obs,
+                                               size=sampling_parameter[1])
         return (fitting_data, prediction_data)
     else:
         return (None, None)
 
-def honest_refit(tree: DecisionTree, prediction_indices:np.ndarray, X:
-                 np.ndarray, Y:np.ndarray, sample_weight:np.ndarray):
+def honest_refit(tree: DecisionTree, prediction_indices: np.ndarray, X:
+                 np.ndarray, Y: np.ndarray, sample_weight: np.ndarray):
     tree.refit_leaf_nodes(X, Y, sample_weight, prediction_indices)
     return tree
 
@@ -245,41 +244,45 @@ class RandomForest(BaseModel):
     def __get_sampling_parameter(self, sampling_parameter):
         if self.sampling == "bootstrap":
             if isinstance(sampling_parameter, int):
-                if sampling_parameter > self.n_rows:
-                    raise ValueError("sampling_parameter can not be larger than total samples")
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
                 return max(round(self.n_rows * sampling_parameter), 1)
             elif sampling_parameter is None:
                 return self.n_rows
-            else:
-                raise ValueError("Sampling is bootstrap, but sampling parameter \
-                    is neither an integer nor a float")
+            raise ValueError("Provided sampling_parameter is not an\
+            integer, a float or None as required.")
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
                 sampling_parameter = (self.n_rows/2, self.n_rows)
-            if not isinstance(sampling_parameter, tuple):
-                raise ValueError("Sampling is honest_forest, but sampling\
-                    parameter is not a tuple")
+            elif not isinstance(sampling_parameter, tuple):
+                raise ValueError("The provided sampling parameter is not a\
+                                 tuple for honest_forest.")
             split_idx, number_chosen = sampling_parameter
             if not isinstance(split_idx, int):
-                raise ValueError("Given split_idx is not an integer")
-            if not isinstance(number_chosen, int):
-                raise ValueError("Given number of elements to bootstrap is not\
-                                 an integer")
-            return (split_idx, number_chosen)
+                raise ValueError("The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
+
+            if isinstance(number_chosen, float):
+                return (split_idx, max(round(self.n_rows * sampling_parameter),
+                                       1))
+            elif isinstance(number_chosen, int):
+                return (split_idx, number_chosen)
+            
+            elif number_chosen is None:
+                return (split_idx, self.n_rows/2)
+
+            raise ValueError("The provided number of resamples (given as the\
+            second entry in sampling_parameter) is not an integer, float or None")
+
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
                 sampling_parameter = self.n_rows
             if isinstance(sampling_parameter, int):
-                if sampling_parameter > self.n_rows:
-                    raise ValueError("sampling_parameter can not be larger than total samples")
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
                 return max(round(self.n_rows * sampling_parameter), 1)
             else:
-                raise ValueError("Sampling is honest_tree, but sampling parameter \
-                    is neither an integer nor a float")
+                raise ValueError("Provided sampling parameter is not an integer\
+                a float of None")
         else:
             return None
 
