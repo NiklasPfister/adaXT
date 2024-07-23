@@ -351,12 +351,12 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.right_child)
 
     def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                         np.ndarray, prediction_indices: np.ndarray, **kwargs):
+                         np.ndarray, sample_indices: np.ndarray, **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
         # Remove current leaf nodes
-        indices = np.array(prediction_indices, dtype=np.int32)
+        indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
 
         # Find the leaf node, all samples would have been placed in

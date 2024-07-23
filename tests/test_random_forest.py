@@ -240,6 +240,7 @@ def test_linear_regression_forest():
         leaf_builder=LeafBuilderLinearRegression,
         predict=PredictLinearRegression,
         criteria=Linear_regression,
+        sampling=None,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
@@ -258,7 +259,7 @@ def test_quantile_regression_forest():
     tree = DecisionTree(
         "Quantile",
     )
-    forest = RandomForest("Quantile")
+    forest = RandomForest("Quantile", sampling=None)
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
     tree_predict = tree.predict(X_reg, quantile=0.95)
@@ -303,7 +304,7 @@ def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
     n = 10
     m = 10
-    n_fit = 50
+    n_fit = 5
     n_estimators = 5
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     honest_tree = \
@@ -324,6 +325,6 @@ if __name__ == "__main__":
     # test_linear_regression_forest()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
-    # test_honest_sampling_leaf_samples()
+    test_honest_sampling_leaf_samples()
 
     print("Done")

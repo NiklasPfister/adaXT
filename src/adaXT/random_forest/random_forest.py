@@ -2,7 +2,7 @@ import ctypes
 import multiprocessing
 import sys
 from functools import partial
-from multiprocessing import RawArray, cpu_count
+from multiprocessing import RawArray, Value, cpu_count
 from multiprocessing.managers import BaseManager
 from numbers import Integral
 from typing import Literal
@@ -262,6 +262,9 @@ class RandomForest(BaseModel):
             split_idx, number_chosen = sampling_parameter
             if not isinstance(split_idx, int):
                 raise ValueError("The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
+            if (split_idx > self.n_rows) or (split_idx < 0):
+                raise ValueError("The split index does not fit for the given\
+                    dataset")
 
             if isinstance(number_chosen, float):
                 return (split_idx, max(round(self.n_rows * sampling_parameter),
@@ -279,8 +282,14 @@ class RandomForest(BaseModel):
             if sampling_parameter is None:
                 sampling_parameter = self.n_rows/2
             if isinstance(sampling_parameter, int):
+                if sampling_parameter > self.n_rows:
+                    raise ValueError("Sample parameter can not be larger than\
+                    number of rows of X")
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
+                if (sampling_parameter < 0) or (sampling_parameter > 1):
+                    raise ValueError("Sampling parameter must be between 0 and\
+                    1 for a float with honest_tree")
                 return max(round(self.n_rows * sampling_parameter), 1)
             else:
                 raise ValueError("Provided sampling parameter is not an integer\
