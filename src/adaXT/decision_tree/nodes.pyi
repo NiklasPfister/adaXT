@@ -29,6 +29,7 @@ class DecisionNode(Node):
     left_child: Node|None
     right_child: Node|None
     parent: DecisionNode|None
+    visited: int
 
     def __init__(
             self,

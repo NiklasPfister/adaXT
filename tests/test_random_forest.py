@@ -50,8 +50,8 @@ def run_gini_index(X, Y, n_jobs, n_estimators, seed):
         criteria=Gini_index,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=5,
+        sampling="bootstrap",
+        sampling_parameter=5,
         random_state=seed,
     )
     forest.fit(X, Y)
@@ -64,8 +64,8 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
         criteria=Entropy,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=5,
+        sampling="bootstrap",
+        sampling_parameter=5,
         random_state=seed,
     )
     forest.fit(X, Y)
@@ -80,8 +80,8 @@ def run_squared_error(
         criteria=Squared_error,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=max_samples,
+        sampling="bootstrap",
+        sampling_parameter=max_samples,
         random_state=seed,
         max_depth=max_depth,
     )
@@ -104,7 +104,8 @@ def test_dominant_feature():
         "Classification",
         n_estimators=100,
         criteria=Gini_index,
-        bootstrap=False)
+        sampling="bootstrap"
+        )
     forest.fit(X, Y)
 
     # Create data for predict
@@ -133,7 +134,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest1.fit(X, Y)
 
@@ -142,7 +143,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest2.fit(X, Y)
 
@@ -167,7 +168,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap"
     )
     forest1.fit(X, Y)
 
@@ -176,7 +177,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest2.fit(X, Y)
 
@@ -240,7 +241,6 @@ def test_linear_regression_forest():
         leaf_builder=LeafBuilderLinearRegression,
         predict=PredictLinearRegression,
         criteria=Linear_regression,
-        bootstrap=False,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
@@ -259,7 +259,7 @@ def test_quantile_regression_forest():
     tree = DecisionTree(
         "Quantile",
     )
-    forest = RandomForest("Quantile", bootstrap=False)
+    forest = RandomForest("Quantile")
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
     tree_predict = tree.predict(X_reg, quantile=0.95)
@@ -293,7 +293,7 @@ def test_random_forest_weights():
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    # test_linear_regression_forest()
-    # test_quantile_regression_forest()
-    test_random_forest_weights()
+    test_linear_regression_forest()
+    test_quantile_regression_forest()
+    # test_random_forest_weights()
     print("Done")
