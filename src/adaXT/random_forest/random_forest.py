@@ -23,7 +23,7 @@ def get_single_leaf(tree: DecisionTree, scale: bool):
 
 
 def get_sample_indices(
-    n_obs: int,
+    n_rows: int,
     random_state: np.random.RandomState,
     sampling_parameter: int|tuple[int, int],
     sampling: str,
@@ -33,17 +33,17 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "bootstrap":
-        return (random_state.randint(low=0, high=n_obs,
+        return (random_state.randint(low=0, high=n_rows,
                                      size=sampling_parameter), None)
     elif sampling == "honest_tree":
-        indices = np.arange(0, n_obs)
+        indices = np.arange(0, n_rows)
         random_state.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
         fitting_data = random_state.randint(low=0, high=sampling_parameter[0],
                                             size=sampling_parameter[1])
         prediction_data = random_state.randint(low=sampling_parameter[0],
-                                               high=n_obs,
+                                               high=n_rows,
                                                size=sampling_parameter[1])
         return (fitting_data, prediction_data)
     else:
@@ -220,7 +220,6 @@ class RandomForest(BaseModel):
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.sampling = sampling
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.sampling = sampling
         self.sampling_parameter = sampling_parameter
@@ -295,7 +294,7 @@ class RandomForest(BaseModel):
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
-                fitting_indices, prediction_indices = get_sample_indices(n_obs=self.n_rows,
+                fitting_indices, prediction_indices = get_sample_indices(n_rows=self.n_rows,
                                    random_state=self.random_state,
                                    sampling_parameter=self.sampling_parameter,
                                    sampling=self.sampling)
@@ -325,7 +324,7 @@ class RandomForest(BaseModel):
             partial_sample = partial(
                 get_sample_indices,
                 random_state=self.random_state,
-                n_obs=self.n_rows,
+                n_rows=self.n_rows,
                 sampling=self.sampling,
                 sampling_parameter=self.sampling_parameter,
             )

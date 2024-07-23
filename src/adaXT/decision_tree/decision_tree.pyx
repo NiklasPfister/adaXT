@@ -236,7 +236,7 @@ class DecisionTree(BaseModel):
         n_obs = indices.shape[0]
         for idx in indices:
             cur_node = self.root
-            depth = 0
+            depth = 1
             while isinstance(cur_node, DecisionNode) :
                 # Mark cur_node as visited
                 cur_node.visited = 1
@@ -274,7 +274,7 @@ class DecisionTree(BaseModel):
         # Make refit objects into leaf_nodes
         n_obs = len(refit_objs)
         nodes = []
-        for i in range(n_obs):
+        for i in range(n_objs):
             obj = refit_objs[i]
             leaf_indices = np.array(obj.indices, dtype=np.int32)
             new_node = leaf_builder.build_leaf(
@@ -293,7 +293,7 @@ class DecisionTree(BaseModel):
                 obj.parent.right_child = new_node
         self.leaf_nodes = nodes
 
-    # Assumes that each node has been visited during __fit_new_leaf_nodes
+    # Assumes that each visited node is marked during __fit_new_leaf_nodes
     def __squash_tree(self) -> None:
 
         decision_queue = []
@@ -331,7 +331,7 @@ class DecisionTree(BaseModel):
                 parent = cur_node.parent
                 # Root node
                 if parent is None:
-                    self.root = cur_node.right_child
+                    self.root = cur_node.left_child
                 # if current node is left child
                 elif parent.left_child == cur_node:
                     # update parent to point to the child that has been visited
