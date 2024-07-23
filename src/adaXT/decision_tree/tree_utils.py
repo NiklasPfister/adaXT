@@ -60,7 +60,7 @@ def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
                 f"""\
             Leaf Node\n\
             Impurity: {node.impurity:.3f}\n\
-            samples: {node.n_samples}\n\
+            weighted_samples: {node.weighted_samples}\n\
             value: {['%.2f' % x for x in node.value]}
             """
             ),

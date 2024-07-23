@@ -14,7 +14,7 @@ cdef class LeafBuilder:
                             int[::1] indices,
                             int depth,
                             double impurity,
-                            int n_samples,
+                            double weighted_samples,
                             object parent):
         raise NotImplementedError("Build leaf not implemented for this LeafBuilder")
 
@@ -24,11 +24,12 @@ cdef class LeafBuilderClassification(LeafBuilder):
         self.classes = np.array(np.unique(y.base[all_idx]), dtype=np.double)
         self.n_classes = self.classes.shape[0]
 
-    cdef double[::1] __get_mean(self, int[::1] indices, int n_samples):
+    cdef double[::1] __get_mean(self, int[::1] indices):
         cdef:
             cnp.ndarray[double, ndim=1] ret
-            int i, idx
+            int i, idx, n_samples
 
+        n_samples = indices.shape[0]
         ret = np.zeros(self.n_classes)
         for idx in range(n_samples):
             for i in range(self.n_classes):
@@ -44,10 +45,11 @@ cdef class LeafBuilderClassification(LeafBuilder):
                             int[::1] indices,
                             int depth,
                             double impurity,
-                            int n_samples,
+                            double weighted_samples,
                             object parent):
-        cdef double[::1] mean = self.__get_mean(indices, n_samples)
-        return LeafNode(leaf_id, indices, depth, impurity, n_samples, mean, parent)
+        cdef double[::1] mean = self.__get_mean(indices)
+        return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
+                        mean, parent)
 
 
 cdef class LeafBuilderRegression(LeafBuilder):
@@ -68,11 +70,12 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             int[::1] indices,
                             int depth,
                             double impurity,
-                            int n_samples,
+                            double weighted_samples,
                             object parent):
 
         cdef double[::1] mean = np.array(self.__get_mean(indices), dtype=np.double, ndmin=1)
-        return LeafNode(leaf_id, indices, depth, impurity, n_samples, mean, parent)
+        return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
+                        mean, parent)
 
 cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
 
@@ -132,7 +135,7 @@ cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
                             int[::1] indices,
                             int depth,
                             double impurity,
-                            int n_samples,
+                            double weighted_samples,
                             object parent):
         cdef:
             double[::1] mean
@@ -141,6 +144,6 @@ cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
         theta0, theta1, muY = self.theta(indices)
         mean = np.array(muY, dtype=np.double, ndmin=1)
 
-        return LinearRegressionLeafNode(
-                leaf_id, indices, depth, impurity, n_samples, mean, parent, theta0, theta1
-                )
+        return LinearRegressionLeafNode(leaf_id, indices, depth, impurity,
+                                        weighted_samples, mean, parent, theta0,
+                                        theta1)

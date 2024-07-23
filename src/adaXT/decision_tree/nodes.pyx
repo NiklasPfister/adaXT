@@ -7,12 +7,11 @@ class Node:
             self,
             indices: np.ndarray,
             depth: int,
-            impurity: float,
-            n_samples: int) -> None:
+            impurity: float) -> None:
         self.indices = np.asarray(indices)
         self.depth = depth
         self.impurity = impurity
-        self.n_samples = n_samples
+        self.visited = 0
 
 
 class DecisionNode(Node):
@@ -21,13 +20,12 @@ class DecisionNode(Node):
             indices: np.ndarray,
             depth: int,
             impurity: float,
-            n_samples: int,
             threshold: float,
             split_idx: int,
             left_child: "DecisionNode|LeafNode|None" = None,
             right_child: "DecisionNode|LeafNode|None" = None,
             parent: "DecisionNode|None" = None) -> None:
-        super().__init__(indices, depth, impurity, n_samples)
+        super().__init__(indices, depth, impurity)
         self.threshold = threshold
         self.split_idx = split_idx
         self.left_child = left_child
@@ -42,10 +40,11 @@ class LeafNode(Node):
             indices: np.ndarray,
             depth: int,
             impurity: float,
-            n_samples: int,
+            weighted_samples: float,
             value: np.ndarray,
             parent: object) -> None:
-        super().__init__(indices, depth, impurity, n_samples)
+        super().__init__(indices, depth, impurity)
+        self.weighted_samples = weighted_samples
         self.parent = parent
         self.id = id
         self.value = np.asarray(value)
@@ -58,11 +57,11 @@ class LinearRegressionLeafNode(LeafNode):
             indices: np.ndarray,
             depth: int,
             impurity: float,
-            n_samples: int,
+            weighted_samples: float,
             value: np.ndarray,
             parent: object,
             theta0: float,
             theta1: float) -> None:
-        super().__init__(id, indices, depth, impurity, n_samples, value, parent)
+        super().__init__(id, indices, depth, impurity, weighted_samples, value, parent)
         self.theta0 = theta0
         self.theta1 = theta1

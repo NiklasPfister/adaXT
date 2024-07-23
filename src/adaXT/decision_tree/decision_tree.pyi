@@ -7,7 +7,6 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
-
 class DecisionTree:
     """
     Attributes
@@ -26,8 +25,8 @@ class DecisionTree:
         The number of features in the training data.
     n_classes: int
         The number of classes in the training data. None for "Regression" tree.
-    n_obs: int
-        The number of observations in the training data.
+    n_rows: int
+        The number of rows in the training data.
     classes: np.ndarray
         A list of all class labels. None for "Regression" tree.
     """
@@ -39,7 +38,7 @@ class DecisionTree:
     n_nodes: int
     n_features: int
     n_classes: int
-    n_obs: int
+    n_rows: int
     classes: np.ndarray
 
     def __init__(
@@ -156,28 +155,7 @@ class DecisionTree:
         """
         pass
 
-    def get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
-        """
-        Creates NxN matrix,
-        where N is the number of observations.
-        If A_{i,j} = 1 then i and j are in the same LeafNode, otherwise 0.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node.
-
-
-        Parameters
-        ----------
-        scale : bool, optional
-            whether to scale the entries, by default False
-
-        Returns
-        -------
-        np.ndarray
-            NxN matrix
-        """
-        pass
-
-    def predict_leaf_matrix(self, X: np.ndarray, scale: bool = False) -> np.ndarray:
+    def predict_leaf_matrix(self, X: np.ndarray|None, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations in X.
@@ -188,13 +166,39 @@ class DecisionTree:
         Parameters
         ----------
         X : np.ndarray
-            new values to be fitted
+            New values to be fitted, if None returns leaf matrix
         scale : bool, optional
-            whether to scale the entries, by default False
+            Whether to scale the entries, by default False
 
         Returns
         -------
         np.ndarray
             NxN matrix
+        """
+        pass
+
+    def refit_leaf_nodes(self, X:np.ndarray, Y:np.ndarray,
+                         sample_weight:np.ndarray, prediction_indices:
+                         np.ndarray) -> None:
+        """
+        Removes all leafnodes created on the initial fit and replaces them by
+        predicting all prediction_indices and placing them into new leaf nodes.
+
+        This method can be used to update the leafs node in decision tree based
+        on a new data while keeping the original splitting rules. If X does not
+        contain the original training data the tree structure might change as
+        leaf nodes without samples are collapsed. The method is also used to
+        create honest splitting in RandomForests.
+
+        Parameters
+        ----------
+        X : array-like object
+            The feature values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+        Y : array-like object
+            The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
+        sample_weight : np.ndarray | None, optional
+            Sample weights. Currently not implemented.
+        prediction_indices: np.ndarray
+            Values to create new leaf nodes with
         """
         pass

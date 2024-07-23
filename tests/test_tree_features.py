@@ -35,7 +35,7 @@ def test_predict_leaf_matrix_classification():
 
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     res2 = tree.predict_leaf_matrix(X)
     assert res1.shape == res2.shape
     row, col = res1.shape
@@ -61,7 +61,7 @@ def test_predict_leaf_matrix_regression():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     res2 = tree.predict_leaf_matrix(X)
     assert res1.shape == res2.shape
     row, col = res1.shape
@@ -87,7 +87,7 @@ def test_predict_leaf_matrix_regression_with_scaling():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.get_leaf_matrix()
+    res1 = tree.predict_leaf_matrix(X=None)
     for i in range(res1.shape[0]):
         res1[i] = res1[i] / np.sum(res1[i])
     res2 = tree.predict_leaf_matrix(X, scale=True)
@@ -179,7 +179,7 @@ def test_NxN_matrix():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    leaf_matrix = tree.get_leaf_matrix()
+    leaf_matrix = tree.predict_leaf_matrix(X=None)
     true_weight = np.array(
         [
             [1, 0, 0, 0, 1, 0, 1, 0],
@@ -246,10 +246,10 @@ def test_min_samples_split_setting():
         min_samples_split=min_samples_split_desired,
     )
     tree.fit(X, Y)
-
     for node in tree.leaf_nodes:
         assert (
-            min_samples_split_desired <= node.parent.n_samples
+            min_samples_split_desired <=
+            (len(node.parent.indices))
         ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
@@ -267,7 +267,7 @@ def test_min_samples_leaf_setting():
 
     for node in tree.leaf_nodes:
         assert (
-            min_samples_leaf_desired <= node.n_samples
+            min_samples_leaf_desired <= node.weighted_samples
         ), f"Failed as node had a parent with {min_samples_leaf_desired}, but which should have been a leaf node"
 
 
@@ -315,7 +315,6 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
         assert (
             node1.impurity == node2.impurity
         ), f"{t1.tree_type}: {node1.impurity} != {node2.impurity}"
-        assert node1.n_samples == node2.n_samples
 
         if isinstance(node1, DecisionNode):
             assert isinstance(node2, DecisionNode)
@@ -323,7 +322,6 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
                 node1.threshold == node2.threshold
             ), f"{t1.tree_type}: {node1.threshold} != {node2.threshold}"
             assert node1.depth == node2.depth
-            assert node1.n_samples == node2.n_samples
             assert node1.split_idx == node2.split_idx
             if node1.left_child:
                 assert (
@@ -339,7 +337,7 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
                 q2.append(node2.right_child)
 
         elif isinstance(node1, LeafNode):
-            isinstance(node2, LeafNode)
+            assert node1.weighted_samples == node2.weighted_samples
             assert np.array_equal(
                 node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
