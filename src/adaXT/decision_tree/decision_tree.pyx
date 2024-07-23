@@ -228,7 +228,7 @@ class DecisionTree(BaseModel):
     def __fit_new_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
                              np.ndarray, indices: np.ndarray) -> None:
         cdef:
-            int idx, n_obs, depth, cur_split_idx
+            int idx, n_obs, n_objs, depth, cur_split_idx
             double cur_threshold
             object cur_node
             int[::1] all_idx
@@ -274,7 +274,7 @@ class DecisionTree(BaseModel):
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
         criteria = self.criteria_class(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
-        n_obs = len(refit_objs)
+        n_objs = len(refit_objs)
         nodes = []
         for i in range(n_objs):
             obj = refit_objs[i]
