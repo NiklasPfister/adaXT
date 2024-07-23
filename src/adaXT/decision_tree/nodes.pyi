@@ -4,7 +4,6 @@ class Node:
     indices: np.ndarray
     depth: int
     impurity: float
-    n_samples: int
 
     def __init__(
             self,
@@ -21,8 +20,6 @@ class Node:
             depth of noe
         impurity : float
             impurity of node
-        n_samples : int
-            number of samples in node
         """
         pass
 
@@ -38,7 +35,6 @@ class DecisionNode(Node):
             indices: np.ndarray,
             depth: int,
             impurity: float,
-            n_samples: int,
             threshold: float,
             split_idx: int,
             left_child: "DecisionNode|LeafNode|None" = None,
@@ -53,8 +49,6 @@ class DecisionNode(Node):
             depth of node
         impurity : float
             impurity in node
-        n_samples : int
-            number of samples in node
         threshold : float
             the threshold value of a split
         split_idx : int
@@ -72,6 +66,7 @@ class LeafNode(Node):
     value: list[float]
     parent: DecisionNode|None
     id: int
+    weighted_samples: float
     def __init__(
             self,
             id: int,
@@ -90,8 +85,8 @@ class LeafNode(Node):
             depth the leaf node is located at
         impurity : float
             Impurity of leaf node
-        n_samples : int
-            Number of samples in leaf node
+        weighted_samples : float
+            Weight of the samples in the LeafNode
         value : list[float]
             The mean values of classes in leaf node
         parent : DecisionNode

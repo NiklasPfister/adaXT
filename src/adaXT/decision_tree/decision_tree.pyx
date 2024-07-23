@@ -392,12 +392,11 @@ class DepthTreeBuilder:
             if not is_leaf:
                 # Add the decision node to the List of nodes
                 new_node = DecisionNode(
-                    indices,
-                    depth,
-                    impurity,
-                    n_samples,
-                    best_threshold,
-                    best_index,
+                    indices=indices,
+                    depth=depth,
+                    impurity=impurity,
+                    threshold=best_threshold,
+                    split_idx=best_index,
                     parent=parent,
                 )
                 if is_left and parent:  # if there is a parent
@@ -415,12 +414,12 @@ class DepthTreeBuilder:
 
             else:
                 new_node = leaf_builder.build_leaf(
-                        leaf_count,
-                        indices,
-                        depth,
-                        impurity,
-                        n_samples,
-                        parent)
+                        leaf_id=leaf_count,
+                        indices=indices,
+                        depth=depth,
+                        impurity=impurity,
+                        weighted_samples=weighted_samples,
+                        parent=parent)
 
                 if is_left and parent:  # if there is a parent
                     parent.left_child = new_node
