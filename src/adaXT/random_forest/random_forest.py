@@ -2,13 +2,13 @@ import ctypes
 import multiprocessing
 import sys
 from functools import partial
-from multiprocessing import RawArray, cpu_count
+from multiprocessing import RawArray, Value, cpu_count
 from multiprocessing.managers import BaseManager
 from numbers import Integral
 from typing import Literal
 
 import numpy as np
-from numpy import float64 as DOUBLE
+from numpy import float64 as DOUBLE, number
 
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
@@ -18,16 +18,46 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
+def get_single_leaf(tree: DecisionTree, scale: bool):
+    return tree.predict_leaf_matrix(None, scale=scale)
+
+
+def predict_single_leaf(tree: DecisionTree, X: np.ndarray, scale: bool):
+    return tree.predict_leaf_matrix(X, scale=scale)
+
+
 def get_sample_indices(
-    n_obs: int,
-    max_samples: int | None,
+    n_rows: int,
     random_state: np.random.RandomState,
-    bootstrap: bool,
-):
-    if max_samples and bootstrap:
-        return random_state.randint(low=0, high=n_obs, size=max_samples)
+    sampling_parameter: int | tuple[int, int],
+    sampling: str,
+) -> tuple[np.ndarray | None, np.ndarray | None]:
+    """
+    Assumes there has been a previous call to self.__get_sample_indices on the
+    RandomForest.
+    """
+    if sampling == "bootstrap":
+        return (random_state.randint(low=0, high=n_rows,
+                                     size=sampling_parameter), None)
+    elif sampling == "honest_tree":
+        indices = np.arange(0, n_rows)
+        random_state.shuffle(indices)
+        return (indices[:sampling_parameter], indices[sampling_parameter:])
+    elif sampling == "honest_forest":
+        fitting_data = random_state.randint(low=0, high=sampling_parameter[0],
+                                            size=sampling_parameter[1])
+        prediction_data = random_state.randint(low=sampling_parameter[0],
+                                               high=n_rows,
+                                               size=sampling_parameter[1])
+        return (fitting_data, prediction_data)
     else:
-        return None
+        return (None, None)
+
+
+def honest_refit(tree: DecisionTree, prediction_indices: np.ndarray, X:
+                 np.ndarray, Y: np.ndarray, sample_weight: np.ndarray):
+    tree.refit_leaf_nodes(X, Y, sample_weight, prediction_indices)
+    return tree
 
 
 def build_single_tree(
@@ -46,6 +76,7 @@ def build_single_tree(
     min_improvement: float = 0,
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
     skip_check_input: bool = True,
+    sample_weight: np.ndarray | None = None,
 ):
     # subset the feature indices
     tree = DecisionTree(
@@ -62,7 +93,7 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(X, Y, sample_indices=sample_indices)
+    tree.fit(X, Y, sample_indices=sample_indices, sample_weight=sample_weight)
 
     return tree
 
@@ -132,9 +163,9 @@ class RandomForest(BaseModel):
         self,
         forest_type: str | None,
         n_estimators: int = 100,
-        bootstrap: bool = True,
         n_jobs: int = -1,
-        max_samples: int | None = None,
+        sampling: str | None = "bootstrap",
+        sampling_parameter: int | float | tuple[int, int] | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
         max_depth: int = sys.maxsize,
@@ -152,16 +183,26 @@ class RandomForest(BaseModel):
         ----------
         forest_type : str
             Classification or Regression
-        criteria : Criteria
-            The criteria function used to evaluate a split in a DecisionTree
         n_estimators : int, default=100
             The number of trees in the forest.
-        bootstrap : bool, default=True
-            Whether bootstrap is used when building trees
         n_jobs : int, default=1
             The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
-        max_samples : int, default=None
-            The number of samples drawn when doing bootstrap
+        sampling: str | None, default="bootstrap"
+            Either bootstrap, honest_tree or honest_forest. See sampling_parameter
+            for exact behaviour.
+        sampling_parameter: int | float | tuple[int, int|float] | None
+            A parameter used to control the behaviour of the sampling.
+            For bootstrap it can be int representing number of randomly drawn
+            indices (with replacement) to fit on or float for a percentage.
+            For honest_forest it is a tuple of two ints: The first value specifies
+            a splitting index such that the indices on the left are used in the
+            fitting of all trees and the indices on the right are used for prediction
+            (i.e., populating the leafs). The second value specifies
+            the number of randomly drawn (with replacement) indices used for both
+            fitting and prediction.
+            For honest_tree it is the number of elements to use for both fitting
+            and prediction, where there might be overlap between trees in
+            fitting and prediction data, but not for an individual tree.
         max_features: int | float | Literal["sqrt", "log2"] | None = None
             The number of features to consider when looking for a split,
         random_state: int
@@ -176,6 +217,12 @@ class RandomForest(BaseModel):
             the minimum amount of samples in a leaf node, by default 1
         min_improvement: float
             the minimum improvement gained from performing a split, by default 0
+        criteria : Criteria
+            The criteria function used to evaluate a split in a DecisionTree
+        leaf_builder : LeafBuilder
+            LeafBuilder class used for prediction
+        predict: Predict
+            Prediction class used when predicting
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
@@ -190,9 +237,9 @@ class RandomForest(BaseModel):
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.bootstrap = bootstrap
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
-        self.max_samples = max_samples
+        self.sampling = sampling
+        self.sampling_parameter = sampling_parameter
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
@@ -210,23 +257,80 @@ class RandomForest(BaseModel):
         else:
             raise ValueError("Random state either has to be Integral or None")
 
-    def __get_max_samples(self, max_samples):
-        if isinstance(max_samples, int):
-            if max_samples > self.n_obs:
+    def __get_sampling_parameter(self, sampling_parameter):
+        if self.sampling == "bootstrap":
+            if isinstance(sampling_parameter, int):
+                return sampling_parameter
+            elif isinstance(sampling_parameter, float):
+                return max(round(self.n_rows * sampling_parameter), 1)
+            elif sampling_parameter is None:
+                return self.n_rows
+            raise ValueError("Provided sampling_parameter is not an\
+            integer, a float or None as required.")
+        elif self.sampling == "honest_forest":
+            if sampling_parameter is None:
+                sampling_parameter = (self.n_rows / 2, self.n_rows / 2)
+            elif not isinstance(sampling_parameter, tuple):
+                raise ValueError("The provided sampling parameter is not a\
+                                 tuple for honest_forest.")
+            split_idx, number_chosen = sampling_parameter
+            if not isinstance(split_idx, int):
                 raise ValueError(
-                    "max_samples can not be larger than total samples")
-            return max_samples
-        elif isinstance(max_samples, float):
-            return max(round(self.n_obs * max_samples), 1)
+                    "The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
+            if (split_idx > self.n_rows) or (split_idx < 0):
+                raise ValueError("The split index does not fit for the given\
+                    dataset")
+
+            if isinstance(number_chosen, float):
+                return (split_idx, max(round(self.n_rows * sampling_parameter),
+                                       1))
+            elif isinstance(number_chosen, int):
+                return (split_idx, number_chosen)
+
+            elif number_chosen is None:
+                return (split_idx, self.n_rows / 2)
+
+            raise ValueError("The provided number of resamples (given as the\
+            second entry in sampling_parameter) is not an integer, float or None")
+
+        elif self.sampling == "honest_tree":
+            if sampling_parameter is None:
+                sampling_parameter = self.n_rows / 2
+            if isinstance(sampling_parameter, int):
+                if sampling_parameter > self.n_rows:
+                    raise ValueError("Sample parameter can not be larger than\
+                    number of rows of X")
+                return sampling_parameter
+            elif isinstance(sampling_parameter, float):
+                if (sampling_parameter < 0) or (sampling_parameter > 1):
+                    raise ValueError("Sampling parameter must be between 0 and\
+                    1 for a float with honest_tree")
+                return max(round(self.n_rows * sampling_parameter), 1)
+            else:
+                raise ValueError(
+                    "Provided sampling parameter is not an integer\
+                a float of None")
+        else:
+            return None
+
+    def __is_honest(self) -> bool:
+        return self.sampling in ["honest_tree", "honest_forest"]
 
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
+
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
-                tree.fit(self.X, self.Y)
+                fitting_indices, prediction_indices = get_sample_indices(n_rows=self.n_rows,
+                                                                         random_state=self.random_state,
+                                                                         sampling_parameter=self.sampling_parameter,
+                                                                         sampling=self.sampling)
+                tree.fit(self.X, self.Y, sample_indices=fitting_indices,
+                         sample_weight=self.sample_weight)
+                if self.__is_honest():
+                    tree.refit_leaf_nodes(prediction_indices)
         else:
-            max_samples = self.__get_max_samples(self.max_samples)
             partial_func = partial(
                 build_single_tree,
                 X=self.X,
@@ -243,20 +347,31 @@ class RandomForest(BaseModel):
                 min_improvement=self.min_improvement,
                 max_features=self.max_features,
                 skip_check_input=True,
+                sample_weight=self.sample_weight,
             )
             partial_sample = partial(
                 get_sample_indices,
                 random_state=self.random_state,
-                n_obs=self.n_obs,
-                max_samples=max_samples,
-                bootstrap=self.bootstrap,
+                n_rows=self.n_rows,
+                sampling=self.sampling,
+                sampling_parameter=self.sampling_parameter,
+            )
+            partial_honest = partial(
+                honest_refit,
+                X=self.X,
+                Y=self.Y,
+                sample_weight=self.sample_weight,
             )
             with self.ctx.Pool(self.n_jobs) as p:
-                sample_indices = [
-                    p.apply(partial_sample) for _ in range(self.n_estimators)
-                ]
-                promise = p.map_async(partial_func, sample_indices)
+                fitting_indices, prediction_indices = zip(
+                    *[p.apply(partial_sample) for _ in range(self.n_estimators)])
+                promise = p.map_async(partial_func, fitting_indices)
                 trees = promise.get()
+                if self.__is_honest():
+                    promise = p.starmap_async(
+                        partial_honest, zip(
+                            trees, prediction_indices))
+                    trees = promise.get()
                 self.trees = trees
 
     # Function to call predict on all the trees of the forest, differentiates
@@ -330,7 +445,8 @@ class RandomForest(BaseModel):
 
         return X, Y
 
-    def fit(self, X: np.ndarray, Y: np.ndarray):
+    def fit(self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray |
+            None = None):
         """
         Function used to fit a forest using many DecisionTrees for the given data
 
@@ -341,19 +457,19 @@ class RandomForest(BaseModel):
         Y : np.ndarray
             response values
         """
-        if not self.bootstrap and self.max_samples:
-            raise AttributeError(
-                "Bootstrap can not be False while max_samples is set")
-
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
-        self.n_obs, self.n_features = self.X.shape
+        self.n_rows, self.n_features = self.X.shape
         if self.forest_type == "Classification":
             self.classes = np.unique(self.Y)
-        if self.max_samples is None:
-            self.max_samples = self.n_obs
 
+        if sample_weight is None:
+            self.sample_weight = np.ones(self.X.shape[0])
+        else:
+            self.sample_weight = sample_weight
+        self.sampling_parameter = self.__get_sampling_parameter(
+            self.sampling_parameter)
         # Fit trees
         self.__build_trees()
 
@@ -388,7 +504,7 @@ class RandomForest(BaseModel):
 
         return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-    def predict_proba(self, X: np.ndarray, **kwargs):
+    def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
@@ -421,3 +537,27 @@ class RandomForest(BaseModel):
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(
             tree_predictions, **kwargs)
+
+    def __get_forest_matrix(self, scale: bool = False):
+        partial_func = partial(get_single_leaf, scale=scale)
+        with self.ctx.Pool(self.n_jobs) as p:
+            promise = p.map_async(partial_func, self.trees)
+            tree_weights = promise.get()
+        return np.sum(tree_weights, axis=0) / self.n_estimators
+
+    def predict_forest_weight(
+            self,
+            X: np.ndarray | None,
+            scale: bool = False) -> np.ndarray:
+        if not self.forest_fitted:
+            raise AttributeError(
+                "The forest has not been fitted before trying to call\
+                predict_forest_weight"
+            )
+        if X is None:
+            return self.__get_forest_matrix(scale=scale)
+        partial_func = partial(predict_single_leaf, X=X, scale=scale)
+        with self.ctx.Pool(self.n_jobs) as p:
+            promise = p.map_async(partial_func, self.trees)
+            tree_weights = promise.get()
+        return np.sum(tree_weights, axis=0) / self.n_estimators

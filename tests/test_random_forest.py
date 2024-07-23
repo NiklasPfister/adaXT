@@ -11,6 +11,7 @@ from adaXT.random_forest import RandomForest
 import numpy as np
 import json
 from multiprocessing import cpu_count
+import sys
 
 # We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forest
 # on this data, we should have predictions that are always equal to the
@@ -49,8 +50,8 @@ def run_gini_index(X, Y, n_jobs, n_estimators, seed):
         criteria=Gini_index,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=5,
+        sampling="bootstrap",
+        sampling_parameter=5,
         random_state=seed,
     )
     forest.fit(X, Y)
@@ -63,23 +64,32 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
         criteria=Entropy,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=5,
+        sampling="bootstrap",
+        sampling_parameter=5,
         random_state=seed,
     )
     forest.fit(X, Y)
     return forest
 
 
-def run_squared_error(X, Y, n_jobs, n_estimators, seed):
+def run_squared_error(
+        X,
+        Y,
+        n_jobs,
+        n_estimators,
+        seed,
+        max_samples: int | float = 5,
+        max_depth=sys.maxsize,
+        sampling: str | None = "bootstrap"):
     forest = RandomForest(
         forest_type="Regression",
         criteria=Squared_error,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        bootstrap=True,
-        max_samples=5,
+        sampling=sampling,
+        sampling_parameter=max_samples,
         random_state=seed,
+        max_depth=max_depth,
     )
     forest.fit(X, Y)
     return forest
@@ -100,7 +110,8 @@ def test_dominant_feature():
         "Classification",
         n_estimators=100,
         criteria=Gini_index,
-        bootstrap=False)
+        sampling="bootstrap"
+    )
     forest.fit(X, Y)
 
     # Create data for predict
@@ -129,7 +140,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest1.fit(X, Y)
 
@@ -138,7 +149,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest2.fit(X, Y)
 
@@ -163,7 +174,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap"
     )
     forest1.fit(X, Y)
 
@@ -172,7 +183,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         random_state=tree_state,
-        bootstrap=True,
+        sampling="bootstrap",
     )
     forest2.fit(X, Y)
 
@@ -236,7 +247,7 @@ def test_linear_regression_forest():
         leaf_builder=LeafBuilderLinearRegression,
         predict=PredictLinearRegression,
         criteria=Linear_regression,
-        bootstrap=False,
+        sampling=None,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
@@ -255,7 +266,7 @@ def test_quantile_regression_forest():
     tree = DecisionTree(
         "Quantile",
     )
-    forest = RandomForest("Quantile", bootstrap=False)
+    forest = RandomForest("Quantile", sampling=None)
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
     tree_predict = tree.predict(X_reg, quantile=0.95)
@@ -265,9 +276,71 @@ def test_quantile_regression_forest():
     ), "Forest predicts different than tree when it should be equal."
 
 
+def test_random_forest_weights():
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 100
+    m = 10
+    n_estimators = 5
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    squared_forest = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=cpu_count(),
+        n_estimators=n_estimators,
+        seed=seed,
+        max_depth=2,
+        sampling=None,
+    )
+    res = squared_forest.predict_forest_weight(X=None, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    for item in trees:
+        item.fit(X_reg, Y_reg)
+    tree_sum = np.mean([tree.predict_leaf_matrix(
+        X=None, scale=False) for tree in trees], axis=0)
+    assert np.array_equal(tree_sum, res)
+
+
+def __check_leaf_count(forest: RandomForest, expected_weight: float):
+    for tree in forest.trees:
+        tree_sum = np.sum([node.weighted_samples for node in tree.leaf_nodes])
+        assert tree_sum == expected_weight, f"The expected leaf node failed for\
+        the given forest"
+
+
+def test_honest_sampling_leaf_samples():
+    random_state = np.random.RandomState(2024)
+    n = 10
+    m = 10
+    n_fit = 5
+    n_estimators = 5
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    honest_tree = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        sampling="honest_tree",
+        sampling_parameter=n_fit,
+        max_depth=4)
+    honest_forest = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        sampling="honest_forest",
+        sampling_parameter=(
+            n // 2,
+            n_fit),
+        max_depth=4)
+    honest_tree.fit(X_reg, Y_reg)
+    honest_forest.fit(X_reg, Y_reg)
+    __check_leaf_count(honest_tree, n_fit)
+    __check_leaf_count(honest_forest, n_fit)
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_linear_regression_forest()
-    test_quantile_regression_forest()
+    # test_quantile_regression_forest()
+    # test_random_forest_weights()
+    test_honest_sampling_leaf_samples()
+
     print("Done")
