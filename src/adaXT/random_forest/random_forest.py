@@ -155,7 +155,7 @@ class RandomForest(BaseModel):
         forest_type: str | None,
         n_estimators: int = 100,
         n_jobs: int = -1,
-        sampling: str | None = None,
+        sampling: str | None = "bootstrap",
         sampling_parameter: int | float | tuple[int, int] | None=None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         random_state: int | None = None,
@@ -181,7 +181,7 @@ class RandomForest(BaseModel):
         sampling: str | None, default="bootstrap"
             Either bootstrap, honest_tree or honest_forest. See sampling_parameter
             for exact behaviour.
-        sampling_parameter: int | float | tuple[int, int] | None
+        sampling_parameter: int | float | tuple[int, int|float] | None
             A parameter used to control the behaviour of the sampling.
             For bootstrap it can be int representing number of randomly drawn
             indices (with replacement) to fit on or float for a percentage.
@@ -255,7 +255,7 @@ class RandomForest(BaseModel):
             integer, a float or None as required.")
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
-                sampling_parameter = (self.n_rows/2, self.n_rows)
+                sampling_parameter = (self.n_rows/2, self.n_rows/2)
             elif not isinstance(sampling_parameter, tuple):
                 raise ValueError("The provided sampling parameter is not a\
                                  tuple for honest_forest.")
@@ -277,7 +277,7 @@ class RandomForest(BaseModel):
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
-                sampling_parameter = self.n_rows
+                sampling_parameter = self.n_rows/2
             if isinstance(sampling_parameter, int):
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
