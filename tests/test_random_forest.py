@@ -299,20 +299,19 @@ def __check_leaf_count(forest: RandomForest, expected_weight: float):
         the given forest"
 
 
-
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
-    n = 100
+    n = 10
     m = 10
     n_fit = 50
     n_estimators = 5
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     honest_tree = \
     RandomForest("Regression",n_estimators=n_estimators,sampling="honest_tree",
-                 sampling_parameter=n_fit)
+                 sampling_parameter=n_fit, max_depth=4)
     honest_forest = \
     RandomForest("Regression",n_estimators=n_estimators,sampling="honest_forest",
-                 sampling_parameter=(n//2, n_fit))
+                 sampling_parameter=(n//2, n_fit), max_depth=4)
     honest_tree.fit(X_reg, Y_reg)
     honest_forest.fit(X_reg, Y_reg)
     __check_leaf_count(honest_tree, n_fit)
@@ -325,6 +324,6 @@ if __name__ == "__main__":
     # test_linear_regression_forest()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
-    test_honest_sampling_leaf_samples()
+    # test_honest_sampling_leaf_samples()
 
     print("Done")

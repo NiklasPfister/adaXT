@@ -246,13 +246,10 @@ def test_min_samples_split_setting():
         min_samples_split=min_samples_split_desired,
     )
     tree.fit(X, Y)
-    #TODO: What should we do with this test, now that the parent(DecisionNode)
-    # does not have a n_samples attribute
     for node in tree.leaf_nodes:
         assert (
             min_samples_split_desired <=
-            (node.parent.left_child.weighted_samples +
-                node.parent.right_child.weighted_samples)
+            (len(node.parent.indices))
         ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
