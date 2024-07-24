@@ -2,13 +2,14 @@ import ctypes
 import multiprocessing
 import sys
 from functools import partial
-from multiprocessing import RawArray, Value, cpu_count
+from multiprocessing import RawArray, cpu_count
 from multiprocessing.managers import BaseManager
 from numbers import Integral
 from typing import Literal
 
 import numpy as np
-from numpy import float64 as DOUBLE, number
+from numpy import float64 as DOUBLE
+
 
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
@@ -37,25 +38,35 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "bootstrap":
-        return (random_state.randint(low=0, high=n_rows,
-                                     size=sampling_parameter), None)
+        return (
+            random_state.randint(
+                low=0,
+                high=n_rows,
+                size=sampling_parameter),
+            None)
     elif sampling == "honest_tree":
         indices = np.arange(0, n_rows)
         random_state.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
-        fitting_data = random_state.randint(low=0, high=sampling_parameter[0],
-                                            size=sampling_parameter[1])
-        prediction_data = random_state.randint(low=sampling_parameter[0],
-                                               high=n_rows,
-                                               size=sampling_parameter[1])
+        fitting_data = random_state.randint(
+            low=0, high=sampling_parameter[0], size=sampling_parameter[1]
+        )
+        prediction_data = random_state.randint(
+            low=sampling_parameter[0], high=n_rows, size=sampling_parameter[1]
+        )
         return (fitting_data, prediction_data)
     else:
         return (None, None)
 
 
-def honest_refit(tree: DecisionTree, prediction_indices: np.ndarray, X:
-                 np.ndarray, Y: np.ndarray, sample_weight: np.ndarray):
+def honest_refit(
+    tree: DecisionTree,
+    prediction_indices: np.ndarray,
+    X: np.ndarray,
+    Y: np.ndarray,
+    sample_weight: np.ndarray,
+):
     tree.refit_leaf_nodes(X, Y, sample_weight, prediction_indices)
     return tree
 
@@ -265,51 +276,59 @@ class RandomForest(BaseModel):
                 return max(round(self.n_rows * sampling_parameter), 1)
             elif sampling_parameter is None:
                 return self.n_rows
-            raise ValueError("Provided sampling_parameter is not an\
-            integer, a float or None as required.")
+            raise ValueError(
+                "Provided sampling_parameter is not an integer, a float or None as required."
+            )
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
-                sampling_parameter = (self.n_rows / 2, self.n_rows / 2)
+                sampling_parameter = (self.n_rows // 2, self.n_rows // 2)
             elif not isinstance(sampling_parameter, tuple):
-                raise ValueError("The provided sampling parameter is not a\
-                                 tuple for honest_forest.")
+                raise ValueError(
+                    "The provided sampling parameter is not a tuple for honest_forest."
+                )
             split_idx, number_chosen = sampling_parameter
             if not isinstance(split_idx, int):
                 raise ValueError(
-                    "The provided splitting index (given as the first entry in sampling_parameter) is not an integer")
+                    "The provided splitting index (given as the first entry in sampling_parameter) is not an integer"
+                )
             if (split_idx > self.n_rows) or (split_idx < 0):
-                raise ValueError("The split index does not fit for the given\
-                    dataset")
+                raise ValueError(
+                    "The split index does not fit for the given dataset")
 
             if isinstance(number_chosen, float):
-                return (split_idx, max(round(self.n_rows * sampling_parameter),
-                                       1))
+                return (
+                    split_idx, max(
+                        round(
+                            self.n_rows * sampling_parameter), 1))
             elif isinstance(number_chosen, int):
                 return (split_idx, number_chosen)
 
             elif number_chosen is None:
-                return (split_idx, self.n_rows / 2)
+                return (split_idx, int(self.n_rows / 2))
 
-            raise ValueError("The provided number of resamples (given as the\
-            second entry in sampling_parameter) is not an integer, float or None")
+            raise ValueError(
+                "The provided number of resamples (given as the second entry in sampling_parameter) is not an integer, float or None"
+            )
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
                 sampling_parameter = self.n_rows / 2
             if isinstance(sampling_parameter, int):
                 if sampling_parameter > self.n_rows:
-                    raise ValueError("Sample parameter can not be larger than\
-                    number of rows of X")
+                    raise ValueError(
+                        "Sample parameter can not be larger than number of rows of X"
+                    )
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
                 if (sampling_parameter < 0) or (sampling_parameter > 1):
-                    raise ValueError("Sampling parameter must be between 0 and\
-                    1 for a float with honest_tree")
+                    raise ValueError(
+                        "Sampling parameter must be between 0 and 1 for a float with honest_tree"
+                    )
                 return max(round(self.n_rows * sampling_parameter), 1)
             else:
                 raise ValueError(
-                    "Provided sampling parameter is not an integer\
-                a float of None")
+                    "Provided sampling parameter is not an integer a float of None"
+                )
         else:
             return None
 
@@ -322,12 +341,18 @@ class RandomForest(BaseModel):
     def __build_trees(self):
         if self.n_jobs == 1:
             for tree in self.trees:
-                fitting_indices, prediction_indices = get_sample_indices(n_rows=self.n_rows,
-                                                                         random_state=self.random_state,
-                                                                         sampling_parameter=self.sampling_parameter,
-                                                                         sampling=self.sampling)
-                tree.fit(self.X, self.Y, sample_indices=fitting_indices,
-                         sample_weight=self.sample_weight)
+                fitting_indices, prediction_indices = get_sample_indices(
+                    n_rows=self.n_rows,
+                    random_state=self.random_state,
+                    sampling_parameter=self.sampling_parameter,
+                    sampling=self.sampling,
+                )
+                tree.fit(
+                    self.X,
+                    self.Y,
+                    sample_indices=fitting_indices,
+                    sample_weight=self.sample_weight,
+                )
                 if self.__is_honest():
                     tree.refit_leaf_nodes(prediction_indices)
         else:
@@ -363,14 +388,15 @@ class RandomForest(BaseModel):
                 sample_weight=self.sample_weight,
             )
             with self.ctx.Pool(self.n_jobs) as p:
-                fitting_indices, prediction_indices = zip(
-                    *[p.apply(partial_sample) for _ in range(self.n_estimators)])
+                fitting_indices, prediction_indices = zip(*[
+                    p.apply(partial_sample) for _ in range(self.n_estimators)
+                ])
                 promise = p.map_async(partial_func, fitting_indices)
                 trees = promise.get()
                 if self.__is_honest():
                     promise = p.starmap_async(
-                        partial_honest, zip(
-                            trees, prediction_indices))
+                        partial_honest, zip(trees, prediction_indices)
+                    )
                     trees = promise.get()
                 self.trees = trees
 
@@ -445,8 +471,8 @@ class RandomForest(BaseModel):
 
         return X, Y
 
-    def fit(self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray |
-            None = None):
+    def fit(self, X: np.ndarray, Y: np.ndarray,
+            sample_weight: np.ndarray | None = None):
         """
         Function used to fit a forest using many DecisionTrees for the given data
 
@@ -546,9 +572,8 @@ class RandomForest(BaseModel):
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
     def predict_forest_weight(
-            self,
-            X: np.ndarray | None,
-            scale: bool = False) -> np.ndarray:
+        self, X: np.ndarray | None, scale: bool = False
+    ) -> np.ndarray:
         if not self.forest_fitted:
             raise AttributeError(
                 "The forest has not been fitted before trying to call\
