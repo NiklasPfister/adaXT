@@ -277,8 +277,7 @@ class RandomForest(BaseModel):
             elif sampling_parameter is None:
                 return self.n_rows
             raise ValueError(
-                "Provided sampling_parameter is not an\
-            integer, a float or None as required."
+                "Provided sampling_parameter is not an integer, a float or None as required."
             )
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
