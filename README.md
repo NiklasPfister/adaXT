@@ -12,6 +12,40 @@ features, ask for help, or leave general comments.
 
 Website: [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io/adaXT)
 
+### Getting started
+
+adaXT is available on [pypi](https://pypi.org/project/adaXT) and can be
+installed via pip
+```bash
+pip install adaXT
+```
+It can be used directly to fit decision trees or
+random forests as illustrated in the following example:
+```python
+from adaXT.random_forest import RandomForest
+import numpy as np
+
+# Create toy regression data
+n = 100
+X = np.random.normal(0, 1, (n, 2))
+Y = X + np.random.normal(0, 1, n)
+Xtest = np.c_[np.linspace(-1, 1, n), np.random.uniform(0, 1, n)]
+
+# Fit regression forest
+forest = RandomForest("Regression")
+forest.fit(X, Y)
+
+# Predict on test data
+Ypred = forest.predict(Xtest)
+
+# Predict forest weight on X or Xtest
+# -- can be used a similarity measure on the predictor space
+weight_train = forest.predict_forest_weight()
+weight_test = forest.predict_forest_weight(Xtest)
+```
+However, the main advantage of adaXT is its modularity and
+extendability, which are discussed in more detail in the
+[documentation](https://NiklasPfister.github.io/adaXT).
 
 ### Goals
 
@@ -24,7 +58,7 @@ algorithms.
 adaXT aims to provide an intuitive user experience that is similar to
 the [scikit-learn](https://scikit-learn.org) implementations of
 decision trees both in terms model-based syntax and
-hyperparameter. Under the hood, however, adaXT stikes a different
+hyperparameter. Under the hood, however, adaXT strikes a different
 balance between speed and ease of adapting and extending the code.
 
 #### Adaptable and extendable
