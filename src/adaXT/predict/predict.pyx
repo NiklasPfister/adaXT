@@ -223,11 +223,8 @@ cdef class PredictQuantile(Predict):
             int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
-            double[:] Y
-            double quantile
             bint save_indices
-
-        quantile = <double> kwargs['quantile']
+        quantile = kwargs['quantile']
         if "save_indices" in kwargs.keys():
             save_indices = <bint> kwargs['save_indices']
         else:
@@ -235,7 +232,8 @@ cdef class PredictQuantile(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+
+        Y = np.empty((n_obs, len(quantile)))
 
         for i in range(n_obs):
             cur_node = self.root
@@ -255,5 +253,5 @@ cdef class PredictQuantile(Predict):
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        quantile = <double> kwargs['quantile']
+        quantile = kwargs['quantile']
         return np.quantile(predictions, quantile, axis=1)

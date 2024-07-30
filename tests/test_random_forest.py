@@ -304,9 +304,12 @@ def test_random_forest_weights():
 def __check_leaf_count(forest: RandomForest, expected_weight: float):
     for tree in forest.trees:
         tree_sum = np.sum([node.weighted_samples for node in tree.leaf_nodes])
-        assert tree_sum == expected_weight, f"The expected leaf node failed for\
+        assert tree_sum == expected_weight, "The expected leaf node failed for\
         the given forest"
 
+
+# TODO: add test where n_jobs = 1 vs the default and make sure we get the same
+# forest. Also n_jobs=1 not working atm.
 
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
@@ -335,12 +338,27 @@ def test_honest_sampling_leaf_samples():
     __check_leaf_count(honest_forest, n_fit)
 
 
+def test_n_jobs():
+    random_state = np.random.RandomState(2024)
+    n = 1000
+    m = 10
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    forest_1 = run_squared_error(
+        X_reg, Y_reg, n_jobs=1, n_estimators=100, seed=2024)
+    forest_5 = run_squared_error(
+        X_reg, Y_reg, n_jobs=5, n_estimators=100, seed=2024)
+    pred_1 = forest_1.predict(X_reg)
+    pred_2 = forest_5.predict(X_reg)
+    assert np.allclose(pred_1, pred_2)
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_linear_regression_forest()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
-    test_honest_sampling_leaf_samples()
+    # test_honest_sampling_leaf_samples()
+    test_n_jobs()
 
     print("Done")
