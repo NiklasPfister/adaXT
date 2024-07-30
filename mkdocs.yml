@@ -61,24 +61,24 @@ theme:
 nav:
   - Overview: index.md
   - User Guide:
-      - Installation
+      - Installation: user_guide/installation.md
       - Existing functionality:
-          - Decision trees: user_guide/getting_started.md
-          - Random forests: 
-          - Existing tree types:
-          - Honest splitting:
-          - Tree-based weights:
-          - Utils:
+          - Decision trees: user_guide/decision_tree.md
+          - Random forests: user_guide/random_forest.md 
+          - Existing tree types: user_guide/tree_types.md
+          - Honest splitting: user_guide/honest_splitting.md
+          - Tree-based weights: user_guide/tree_based_weights.md
+          - Visualizing and debugging: user_guide/vis_and_debug.md
       - Modifying and extending:
-          - Overview of components:
+          - Overview of components: user_guide/overview_components.md
           - Creating custom criteria: user_guide/creatingCriteria.md
-          - Creating custom prediction:  
+          - Creating custom prediction: user_guide/creatingPrediction.md
   - API reference:
       - DecisionTree: api_docs/DecisionTree.md
       - RandomForest: api_docs/RandomForest.md
       - Criteria: api_docs/Criteria.md
-      - LeafBuilder: api_docs/LeafBuilder.md
       - Prediction: api_docs/Prediction.md
+      - LeafBuilder: api_docs/LeafBuilder.md
       - Splitter: api_docs/Splitter.md
       - Tree utilities: api_docs/tree_utils.md
 
