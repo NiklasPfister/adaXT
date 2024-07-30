@@ -1,4 +1,4 @@
-# Creating a custom criteriadecision_tree
+# Creating a custom criteria
 
 In the following we explain how to create a custom criteria function
 by walking through the required steps. We start by creating .pyx file.
