@@ -65,7 +65,6 @@ nav:
       - Existing functionality:
           - Decision trees: user_guide/decision_tree.md
           - Random forests: user_guide/random_forest.md 
-          - Existing tree types: user_guide/tree_types.md
           - Honest splitting: user_guide/honest_splitting.md
           - Tree-based weights: user_guide/tree_based_weights.md
           - Visualizing and debugging: user_guide/vis_and_debug.md
