@@ -16,11 +16,17 @@ Website: [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io
 
 adaXT is available on [pypi](https://pypi.org/project/adaXT) and can be
 installed via pip
+
 ```bash
 pip install adaXT
 ```
-It can be used directly to fit decision trees or
-random forests as illustrated in the following example:
+
+Currently the package contains several pre-defined tree
+types that can be used directly for regression, classification
+and quantile regression.
+The following example illustrates how to fit a
+regression forest and a quantile forest:
+
 ```python
 from adaXT.random_forest import RandomForest
 import numpy as np
@@ -28,22 +34,30 @@ import numpy as np
 # Create toy regression data
 n = 100
 X = np.random.normal(0, 1, (n, 2))
-Y = X + np.random.normal(0, 1, n)
+Y = X[:, 0] + np.random.normal(0, 1, n)
 Xtest = np.c_[np.linspace(-1, 1, n), np.random.uniform(0, 1, n)]
 
-# Fit regression forest
-forest = RandomForest("Regression")
-forest.fit(X, Y)
+# Task 1: Fit regression forest
+rf = RandomForest("Regression")
+rf.fit(X, Y)
 
 # Predict on test data
-Ypred = forest.predict(Xtest)
+Ypred = rf.predict(Xtest)
 
 # Predict forest weight on X or Xtest
 # -- can be used a similarity measure on the predictor space
-weight_train = forest.predict_forest_weight()
-weight_test = forest.predict_forest_weight(Xtest)
+weight_train = rf.predict_forest_weight()
+weight_test = rf.predict_forest_weight(Xtest)
+
+# Task 2: Fit a quantile regression
+qf = RandomForest("Quantile")
+qf.fit(X, Y)
+
+# Predict 10% and 90% conditional quantile on test data
+Ybdd = qf.predict(Xtest, quantile=[0.1, 0.9])
 ```
-However, the main advantage of adaXT is its modularity and
+
+The main advantage of adaXT is however its modularity and
 extendability, which are discussed in more detail in the
 [documentation](https://NiklasPfister.github.io/adaXT).
 
@@ -83,7 +97,6 @@ trees, quanitle regression trees and survial trees. Additionally to
 this modular structure, all other operations are kept as vanilla as
 possible allowing users to easily change parts of the code (e.g., the
 splitting procedure).
-
 
 #### Speed
 
