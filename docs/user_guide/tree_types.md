@@ -1,3 +1,0 @@
-# Existing tree types
-
-## TODO
