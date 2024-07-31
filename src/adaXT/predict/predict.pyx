@@ -3,6 +3,7 @@ import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
+cimport numpy as cnp
 
 cdef class Predict():
 
@@ -35,7 +36,7 @@ cdef class Predict():
     cpdef list predict_proba(self, object X):
         raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
-    cpdef double[:, ::1] predict_leaf_matrix(self, object X, bint scale = False):
+    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
         cdef:
             int i
             int row

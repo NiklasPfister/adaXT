@@ -19,12 +19,8 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
-def get_single_leaf(tree: DecisionTree, scale: bool):
-    return tree.predict_leaf_matrix(None, scale=scale)
-
-
-def predict_single_leaf(tree: DecisionTree, X: np.ndarray, scale: bool):
-    return tree.predict_leaf_matrix(X, scale=scale)
+def predict_single_leaf(tree: DecisionTree, X: np.ndarray | None, scale: bool):
+    return tree.predict_leaf_matrix(X=X, scale=scale)
 
 
 def get_sample_indices(
@@ -586,10 +582,11 @@ class RandomForest(BaseModel):
         if self.n_jobs == 1:
             tree_weights = []
             for tree in self.trees:
-                tree_weights.append(get_single_leaf(tree=tree, scale=scale))
+                tree_weights.append(predict_single_leaf(
+                    tree=tree, X=None, scale=scale))
             return np.sum(tree_weights, axis=0) / self.n_estimators
 
-        partial_func = partial(get_single_leaf, scale=scale)
+        partial_func = partial(predict_single_leaf, X=None, scale=scale)
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
             tree_weights = promise.get()
