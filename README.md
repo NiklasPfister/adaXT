@@ -21,11 +21,10 @@ installed via pip
 pip install adaXT
 ```
 
-Currently the package contains several pre-defined tree
-types that can be used directly for regression, classification
-and quantile regression.
-The following example illustrates how to fit a
-regression forest and a quantile forest:
+Several pre-defined tree
+types including for regression, classification
+and quantile regression, are available and can
+be easily used as follows:
 
 ```python
 from adaXT.random_forest import RandomForest
@@ -57,22 +56,23 @@ qf.fit(X, Y)
 Ybdd = qf.predict(Xtest, quantile=[0.1, 0.9])
 ```
 
-The main advantage of adaXT is however its modularity and
-extendability, which are discussed in more detail in the
+The main advantage of adaXT over existing tree-based
+ML packages is its modularity and
+extendability, which is discussed in detail in the
 [documentation](https://NiklasPfister.github.io/adaXT).
 
 ### Goals
 
-The goal of adaXT is to provide a flexible and unified code-base for
+This project aims to provide a flexible and unified code-base for
 various tree-based algorithms that strikes a balance between speed and
-ease with which the code can be adapted and extended. It intends to
+ease with which the code can be adapted and extended. It should
 provide researchers a simple toolkit for prototyping new tree-based
 algorithms.
 
-adaXT aims to provide an intuitive user experience that is similar to
+adaXT provides an intuitive user experience that is similar to
 the [scikit-learn](https://scikit-learn.org) implementations of
 decision trees both in terms model-based syntax and
-hyperparameter. Under the hood, however, adaXT strikes a different
+hyperparameters. Under the hood, however, adaXT strikes a different
 balance between speed and ease of adapting and extending the code.
 
 #### Adaptable and extendable
@@ -93,7 +93,7 @@ tree implementation that takes four input components:
 
 By specifying these three components a range of different tree
 algorithms can be created, e.g., regression trees, classification
-trees, quanitle regression trees and survial trees. Additionally to
+trees, quantile regression trees and survival trees. Additionally to
 this modular structure, all other operations are kept as vanilla as
 possible allowing users to easily change parts of the code (e.g., the
 splitting procedure).
@@ -106,7 +106,7 @@ compiled language. adaXT implements all computationally expensive
 operations in [Cython](https://cython.org/). This results in speeds
 similar (although a few factors slower) than the corresponding
 [scikit-learn](https://scikit-learn.org) implementations. However, due
-to its modular structure and the avoidence of technical speed-ups
+to its modular structure and the avoidance of technical speed-ups
 adaXT is not intended to provide state-of-the-art speed and users
 mainly concerned with speed should consider more targeted
 implementations.
