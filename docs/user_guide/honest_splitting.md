@@ -20,12 +20,12 @@ in adaXT.
 ## Honest splitting in adaXT
 
 In its most basic form honest splitting consists of dividing the training data
-into two disjoint subsets; a fitting set (called `fitting_indices` in the code
-base) used to create a tree and a prediction set (called `prediction_indices` in
-the code base) used to populate the leaf nodes that are later used when
+into two disjoint subsets; a fitting set, called `fitting_indices` in the code,
+used to create a fitted tree and a prediction set, called `prediction_indices`
+in the code, used to populate the leaf nodes that are later used when
 predicting.
 
-This basic version of honest splitting can be achieved manually in adaXT by
+This basic version of honest splitting can be performed manually in adaXT by
 using the `refit_leaf_nodes` function as follows:
 
 ```python
@@ -55,11 +55,11 @@ tree.refit_leaf_nodes(X, Y, sample_indices=prediction_indices)
 print(tree.predict(np.array([[-1, 0], [1, 0]])))
 ```
 
-Using the refitting function manually is tedious when fitting random forests.
-Therefore the RandomForest class has an optional parameter to perform honest
-splitting. The precise behaviour is controlled by the parameters `sampling` and
-`sampling_parameter`. Currently there are two version of honest splitting
-available:
+Using the `refit_leaf_nodes` function directly is tedious when fitting random
+forests. Therefore the RandomForest class has an optional parameter to perform
+honest splitting. The precise behaviour is controlled by the parameters
+`sampling` and `sampling_parameter`. Currently there are two version of honest
+splitting available:
 
 - **honest_tree**: In this case, for each tree in the forest, a new split into
   `fitting_indices` and `prediction_indices` is randomly drawn and used to fit
