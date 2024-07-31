@@ -155,7 +155,7 @@ class DecisionTree:
         """
         pass
 
-    def predict_leaf_matrix(self, X: np.ndarray|None, scale: bool = False) -> np.ndarray:
+    def predict_leaf_matrix(self, X: np.ndarray | None, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix,
         where N is the number of observations in X.
@@ -177,9 +177,9 @@ class DecisionTree:
         """
         pass
 
-    def refit_leaf_nodes(self, X:np.ndarray, Y:np.ndarray,
-                         sample_weight:np.ndarray, sample_indices:
-                         np.ndarray) -> None:
+    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray,
+                         sample_weight: np.ndarray | None,
+                         sample_indices: np.ndarray | None) -> None:
         """
         Removes all leafnodes created on the initial fit and replaces them by
         predicting all prediction_indices and placing them into new leaf nodes.
