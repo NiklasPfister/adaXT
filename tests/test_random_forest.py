@@ -352,6 +352,31 @@ def test_n_jobs():
     assert np.allclose(pred_1, pred_2)
 
 
+def test_n_jobs_predict_forest():
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 100
+    m = 10
+    n_estimators = 5
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    squared_forest = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=1,
+        n_estimators=n_estimators,
+        seed=seed,
+        max_depth=2,
+        sampling=None,
+    )
+    res = squared_forest.predict_forest_weight(X=X_reg, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    for item in trees:
+        item.fit(X_reg, Y_reg)
+    tree_sum = np.mean([tree.predict_leaf_matrix(
+        X=X_reg, scale=False) for tree in trees], axis=0)
+    assert np.array_equal(tree_sum, res)
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
@@ -359,6 +384,6 @@ if __name__ == "__main__":
     # test_quantile_regression_forest()
     # test_random_forest_weights()
     # test_honest_sampling_leaf_samples()
-    test_n_jobs()
+    test_n_jobs_predict_forest()
 
     print("Done")

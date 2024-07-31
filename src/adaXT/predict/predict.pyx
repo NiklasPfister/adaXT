@@ -2,6 +2,7 @@
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
+from collections.abc import Sequence
 
 cdef class Predict():
 
@@ -232,8 +233,11 @@ cdef class PredictQuantile(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-
-        Y = np.empty((n_obs, len(quantile)))
+        # Check if quantile is an array
+        if isinstance(quantile, Sequence):
+            Y = np.empty((n_obs, len(quantile)))
+        else:
+            Y = np.empty(n_obs)
 
         for i in range(n_obs):
             cur_node = self.root

@@ -598,7 +598,6 @@ class RandomForest(BaseModel):
     def predict_forest_weight(
         self, X: np.ndarray | None = None, scale: bool = False
     ) -> np.ndarray:
-        # TODO: fix this function for n_jobs. same as in the predict
         if not self.forest_fitted:
             raise AttributeError(
                 "The forest has not been fitted before trying to call\
