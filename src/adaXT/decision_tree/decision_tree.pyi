@@ -178,7 +178,7 @@ class DecisionTree:
         pass
 
     def refit_leaf_nodes(self, X:np.ndarray, Y:np.ndarray,
-                         sample_weight:np.ndarray, prediction_indices:
+                         sample_weight:np.ndarray, sample_indices:
                          np.ndarray) -> None:
         """
         Removes all leafnodes created on the initial fit and replaces them by
@@ -198,7 +198,7 @@ class DecisionTree:
             The response values used for training. Internally it will be converted to np.ndarray with dtype=np.float64.
         sample_weight : np.ndarray | None, optional
             Sample weights. Currently not implemented.
-        prediction_indices: np.ndarray
+        sample_indices: np.ndarray
             Values to create new leaf nodes with
         """
         pass

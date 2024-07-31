@@ -350,8 +350,13 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
-    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                         np.ndarray, sample_indices: np.ndarray, **kwargs):
+    def refit_leaf_nodes(
+            self,
+            X: np.ndarray,
+            Y: np.ndarray,
+            sample_weight: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
+            **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")

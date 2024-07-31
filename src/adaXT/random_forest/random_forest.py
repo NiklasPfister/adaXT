@@ -312,7 +312,7 @@ class RandomForest(BaseModel):
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
-                sampling_parameter = self.n_rows / 2
+                sampling_parameter = int(self.n_rows / 2)
             if isinstance(sampling_parameter, int):
                 if sampling_parameter > self.n_rows:
                     raise ValueError(
@@ -330,7 +330,7 @@ class RandomForest(BaseModel):
                     "Provided sampling parameter is not an integer a float of None"
                 )
         else:
-            return None
+            raise ValueError(f"Provided sampling ({self.sampling}) does not exist")
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
