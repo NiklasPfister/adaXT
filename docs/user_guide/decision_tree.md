@@ -1,4 +1,4 @@
-# Getting started with adaXT
+# Decision Trees
 
 A [decision tree](https://en.wikipedia.org/wiki/Decision_tree) is a machine
 learning model, which can trained or fitted to data in order to perform
@@ -6,10 +6,26 @@ prediction or data analysis. Decisions trees have a tree structure, where each
 internal node splits the dataset based on some threshold value for a given
 feature index.
 
-The [DecisionTree](../api_docs/DecisionTree.md) class is used when creating both
-a regression and classification tree.
+The [DecisionTree](../api_docs/DecisionTree.md) class is used to create decision
+trees in adaXT. On an abstract level a decision tree defines two operations:
 
-## Classification trees
+1. **Fit**: Given training data create a list of nodes arranged in a tree
+   structure, with three types of nodes: (1) A root node, (2) decision nodes and
+   (3) leaf nodes. In adaXT this operation is determined by the `criteria`,
+   `leaf_builder` and `splitter` parameters, as well as several other
+   hyperparameters that are common across all decision trees.
+2. **Predict**: Given test data create predictions for all test samples by
+   propagating them through the tree structure and using the leaf node they land
+   in to create a prediction. In adaXT this operation is determined by the
+   `prediction` parameter.
+
+For a given application, one needs to fully specify these two operations. In
+adaXT, this can either be done by specifying an existing default `tree_type` or
+by directly specifying all components manually.
+
+## Tree types
+
+### Classification trees
 
 ```py
 from adaXT.decision_tree import DecisionTree
@@ -24,7 +40,7 @@ In the example above we are creating and fitting a classification tree with the
 [Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index)
 criteria function using the X and Y data specified as training data.
 
-## Regression trees
+### Regression trees
 
 Regression trees work similar to classification trees, with one small difference
 demonstrated by the following example:
@@ -43,6 +59,10 @@ classification tree, and adaXT takes care of the rest. The reason for this
 specification is that regression and classification trees need to have some
 small differences in saved objects. This is for example relevant when making
 predictions as shown next.
+
+### Quantile trees
+
+### Custom tree types
 
 ## Using the fitted tree
 
