@@ -45,13 +45,13 @@ def get_sample_indices(
         random_state.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
-        fitting_data = random_state.randint(
+        fitting_indices = random_state.randint(
             low=0, high=sampling_parameter[0], size=sampling_parameter[1]
         )
-        prediction_data = random_state.randint(
+        prediction_indices = random_state.randint(
             low=sampling_parameter[0], high=n_rows, size=sampling_parameter[1]
         )
-        return (fitting_data, prediction_data)
+        return (fitting_indices, prediction_indices)
     else:
         return (None, None)
 
