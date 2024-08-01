@@ -30,7 +30,8 @@ parallel processes employed during both training and prediction stages of the
 random forest algorithm. To allow users to define their own criteria functions
 without requiring the Global Interpreter Lock (GIL) to be released, we chose
 multiprocessing over multithreading. We implemented this using Python's built-in
-[multiprocessing](https://docs.python.org/3/library/multiprocessing.html) library.
+[multiprocessing](https://docs.python.org/3/library/multiprocessing.html)
+library.
 
 Bear in mind that initializing each new process comes with a substantial
 overhead cost. Consequently, there is an inherent trade-off between the setup
