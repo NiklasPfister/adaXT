@@ -15,10 +15,10 @@ determines for all $x,x'\in\mathcal{X}$ whether they lie in the same leaf, i.e.,
 $\mathcal{L}(x, x')=1$ if $x$ and $x'$ are in the same leaf and
 $\mathcal{L}(x,x')=0$ if $x$ and $x'$ are in different leafs. Furthermore,
 define for all $i\in\{1,\ldots,n\}$ a weight function
-$w_i:\mathcal{X}rightarrow[0,1]$ for all $x\in\mathcal{X}$ by
+$w_i:\mathcal{X}\rightarrow[0,1]$ for all $x\in\mathcal{X}$ by
 
 $$
-  w_i(x):=\frac{\mathcal{L}(X_{i}, x)}{\sum{\ell=1}^n\mathcal{L}(X_{\ell}, x)}.
+  w_i(x):=\frac{\mathcal{L}(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}(X_{\ell}, x)}.
 $$
 
 By construction it holds for all $x\in\mathcal{X}$ that $\sum_{i=1}^n w_i(x)=1$.
@@ -42,7 +42,7 @@ $M$ trees in the forest. Then, for all $i\in\{1,\ldots,n\}$ and all
 $x\in\mathcal{X}$ define the weights by
 
 $$
-  w_i(x):=\frac{1}{M}\sum_{m=1}^M\frac{\mathcal{L}_m(X_{i}, x)}{\sum{\ell=1}^n\mathcal{L}_m(X_{\ell}, x)}.
+  w_i(x):=\frac{1}{M}\sum_{m=1}^M\frac{\mathcal{L}_m(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}_m(X_{\ell}, x)}.
 $$
 
 In general $w_i(x)$ and $Y_i$ are dependent since the sample $i$ appears also in
