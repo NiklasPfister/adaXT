@@ -445,6 +445,7 @@ class RandomForest(BaseModel):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
+                # TODO: The following should probably be predict_proba?
                 predictions.append(tree.predict(X))
         else:
             predict_value = shared_numpy_array(X)

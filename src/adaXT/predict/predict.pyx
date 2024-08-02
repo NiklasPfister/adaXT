@@ -76,11 +76,11 @@ cdef class Predict():
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+        raise NotImplementedError("The forest predict function is not implemented for this Predict class")
 
     @staticmethod
     def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+        raise NotImplementedError("The forest predict function is not implemented for this Predict class")
 
 cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):

@@ -17,7 +17,7 @@ For more advanced modifications, it might be necessary to change how the
 splitting is performed. This can be done by passing a custom
 [Splitter](Splitter.md) class.
 
-The DecisionTree class and can be loaded as follows:
+The DecisionTree class and can be imported as follows:
 
 ```python
 from adaXT.decision_tree import DecisionTree
