@@ -163,9 +163,47 @@ def shared_numpy_array(array):
 
 class RandomForest(BaseModel):
     """
-    The Random Forest
+    Attributes
+    ----------
+    max_features: int | float | Literal["sqrt", "log2"] | None = None
+        The number of features to consider when looking for a split.
+    max_depth : int
+        The maximum depth of the tree.
+    forest_type : str
+        The type of random forest, either  a string specifying a supported type
+        (currently "Regression", "Classification" and "Quantile") or None.
+    n_estimators : int
+        The number of trees in the random forest.
+    n_jobs : int
+        The number of processes used to fit, and predict for the forest, -1
+        uses all available proccesors.
+    sampling: str | None
+        Either bootstrap, honest_tree, honest_forest or None. See
+        sampling_parameter for exact behaviour.
+    sampling_parameter: int | float | tuple[int, int|float] | None
+        A parameter used to control the behavior of the sampling. For
+        bootstrap it can be an int representing the number of randomly
+        drawn indices (with replacement) to fit on or a float for a
+        percentage.
+        For honest_forest it is a tuple of two ints: The first
+        value specifies a splitting index such that the indices on the left
+        are used in the fitting of all trees and the indices on the right
+        are used for prediction (i.e., populating the leafs). The second
+        value specifies the number of randomly drawn (with replacement)
+        indices used for both fitting and prediction.
+        For honest_tree it is the number of elements to use for both fitting
+        and prediction, where there might be overlap between trees in
+        fitting and prediction data, but not for an individual tree.
+        If None, all samples are used for each tree.
+    impurity_tol : float
+        The tolerance of impurity in a leaf node.
+    min_samples_split : int
+        The minimum number of samples in a split.
+    min_samples_leaf : int
+        The minimum number of samples in a leaf node.
+    min_improvement: float
+        The minimum improvement gained from performing a split.
     """
-    # TODO: Add attribute documentation
 
     def __init__(
         self,
@@ -335,7 +373,8 @@ class RandomForest(BaseModel):
                     "Provided sampling parameter is not an integer a float of None"
                 )
         else:
-            raise ValueError(f"Provided sampling ({self.sampling}) does not exist")
+            raise ValueError(
+                f"Provided sampling ({self.sampling}) does not exist")
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -446,7 +485,7 @@ class RandomForest(BaseModel):
         if self.n_jobs == 1:
             for tree in self.trees:
                 # TODO: The following should probably be predict_proba?
-                predictions.append(tree.predict(X))
+                predictions.append(tree.predict_proba(X))
         else:
             predict_value = shared_numpy_array(X)
             partial_func = partial(
@@ -544,7 +583,7 @@ class RandomForest(BaseModel):
         Regression:
         ----------
         Returns the average response among all trees. 
-        
+
         Quantile:
         ----------
         Returns the conditional quantile of the response, where the quantile is
