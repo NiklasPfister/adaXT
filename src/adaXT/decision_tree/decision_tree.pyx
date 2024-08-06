@@ -103,7 +103,6 @@ class DecisionTree(BaseModel):
         else:
             raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
 
-
     def __check_input(self, X: object, Y: object):
         # If the skip_check_input option is set to True in the initialization of a tree, then simply return X and Y
         if self.skip_check_input:
@@ -127,7 +126,6 @@ class DecisionTree(BaseModel):
                 Y = Y.reshape(-1)
 
         return X, Y
-
 
     def fit(
             self,
@@ -434,7 +432,7 @@ class DepthTreeBuilder:
         self.sample_indices = sample_indices
         self.sample_weight = sample_weight
 
-        row, col = X.shape
+        _, col = X.shape
         self.int_max_features = self.__parse_max_features(max_features, col)
 
         self.feature_indices = np.arange(col, dtype=np.int32)
@@ -447,7 +445,6 @@ class DepthTreeBuilder:
         # parameter calculated in build_tree
         self.predict_class = predict_class
         self.leaf_builder_class = leaf_builder_class
-
 
     def __get_feature_indices(self):
         if self.int_max_features is None:
@@ -472,7 +469,6 @@ class DepthTreeBuilder:
                 return int(np.log2(num_features))
         else:
             raise ValueError("Unable to parse max_features")
-
 
     def build_tree(self, tree: DecisionTree):
         """
