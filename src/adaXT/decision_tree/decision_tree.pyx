@@ -137,10 +137,9 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
             row, _ = X.shape
+            # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
             sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
 
-        # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
-        sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
         builder = DepthTreeBuilder(
             X=X,
             Y=Y,
