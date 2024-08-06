@@ -12,6 +12,54 @@ features, ask for help, or leave general comments.
 
 Website: [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io/adaXT)
 
+### Getting started
+
+adaXT is available on [pypi](https://pypi.org/project/adaXT) and can be
+installed via pip
+
+```bash
+pip install adaXT
+```
+
+Currently the package contains several pre-defined tree
+types that can be used directly for regression, classification
+and quantile regression.
+The following example illustrates how to fit a
+regression forest and a quantile forest:
+
+```python
+from adaXT.random_forest import RandomForest
+import numpy as np
+
+# Create toy regression data
+n = 100
+X = np.random.normal(0, 1, (n, 2))
+Y = X[:, 0] + np.random.normal(0, 1, n)
+Xtest = np.c_[np.linspace(-1, 1, n), np.random.uniform(0, 1, n)]
+
+# Task 1: Fit regression forest
+rf = RandomForest("Regression")
+rf.fit(X, Y)
+
+# Predict on test data
+Ypred = rf.predict(Xtest)
+
+# Predict forest weight on X or Xtest
+# -- can be used a similarity measure on the predictor space
+weight_train = rf.predict_forest_weight()
+weight_test = rf.predict_forest_weight(Xtest)
+
+# Task 2: Fit a quantile regression
+qf = RandomForest("Quantile")
+qf.fit(X, Y)
+
+# Predict 10% and 90% conditional quantile on test data
+Ybdd = qf.predict(Xtest, quantile=[0.1, 0.9])
+```
+
+The main advantage of adaXT is however its modularity and
+extendability, which are discussed in more detail in the
+[documentation](https://NiklasPfister.github.io/adaXT).
 
 ### Goals
 
@@ -24,7 +72,7 @@ algorithms.
 adaXT aims to provide an intuitive user experience that is similar to
 the [scikit-learn](https://scikit-learn.org) implementations of
 decision trees both in terms model-based syntax and
-hyperparameter. Under the hood, however, adaXT stikes a different
+hyperparameter. Under the hood, however, adaXT strikes a different
 balance between speed and ease of adapting and extending the code.
 
 #### Adaptable and extendable
@@ -49,7 +97,6 @@ trees, quanitle regression trees and survial trees. Additionally to
 this modular structure, all other operations are kept as vanilla as
 possible allowing users to easily change parts of the code (e.g., the
 splitting procedure).
-
 
 #### Speed
 

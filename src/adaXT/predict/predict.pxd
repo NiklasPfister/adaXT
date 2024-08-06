@@ -1,3 +1,4 @@
+cimport numpy as cnp
 
 cdef class Predict():
     cdef:
@@ -8,7 +9,7 @@ cdef class Predict():
 
     cdef double[:, ::1] __check_dimensions(self, object X)
 
-    cpdef double[:, ::1] predict_leaf_matrix(self, object X, bint scale=*)
+    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale=*)
 
     cpdef list predict_proba(self, object X)
 

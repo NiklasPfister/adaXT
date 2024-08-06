@@ -2,6 +2,8 @@
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
+from collections.abc import Sequence
+cimport numpy as cnp
 
 cdef class Predict():
 
@@ -34,7 +36,7 @@ cdef class Predict():
     cpdef list predict_proba(self, object X):
         raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
-    cpdef double[:, ::1] predict_leaf_matrix(self, object X, bint scale = False):
+    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
         cdef:
             int i
             int row
@@ -223,11 +225,8 @@ cdef class PredictQuantile(Predict):
             int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
-            double[:] Y
-            double quantile
             bint save_indices
-
-        quantile = <double> kwargs['quantile']
+        quantile = kwargs['quantile']
         if "save_indices" in kwargs.keys():
             save_indices = <bint> kwargs['save_indices']
         else:
@@ -235,7 +234,11 @@ cdef class PredictQuantile(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        # Check if quantile is an array
+        if isinstance(quantile, Sequence):
+            Y = np.empty((n_obs, len(quantile)))
+        else:
+            Y = np.empty(n_obs)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -255,5 +258,5 @@ cdef class PredictQuantile(Predict):
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        quantile = <double> kwargs['quantile']
+        quantile = kwargs['quantile']
         return np.quantile(predictions, quantile, axis=1)

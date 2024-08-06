@@ -19,12 +19,8 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
-def get_single_leaf(tree: DecisionTree, scale: bool):
-    return tree.predict_leaf_matrix(None, scale=scale)
-
-
-def predict_single_leaf(tree: DecisionTree, X: np.ndarray, scale: bool):
-    return tree.predict_leaf_matrix(X, scale=scale)
+def predict_single_leaf(tree: DecisionTree, X: np.ndarray | None, scale: bool):
+    return tree.predict_leaf_matrix(X=X, scale=scale)
 
 
 def get_sample_indices(
@@ -329,8 +325,11 @@ class RandomForest(BaseModel):
                 raise ValueError(
                     "Provided sampling parameter is not an integer a float of None"
                 )
-        else:
+        elif self.sampling is None:
             return None
+        else:
+            raise ValueError(
+                f"Provided sampling ({self.sampling}) does not exist")
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -340,21 +339,37 @@ class RandomForest(BaseModel):
 
     def __build_trees(self):
         if self.n_jobs == 1:
+            # Get all fitting indices
+            fitting_indices, prediction_indices = zip(*[get_sample_indices(
+                n_rows=self.n_rows, random_state=self.random_state,
+                sampling_parameter=self.sampling_parameter,
+                sampling=self.sampling) for _ in range(self.n_estimators)])
+
+            # Build all trees using fitting indices
+            self.trees = list(map(lambda sample_indx: build_single_tree(
+                sample_indices=sample_indx,
+                X=self.X,
+                Y=self.Y,
+                criteria=self.criteria_class,
+                predict=self.predict_class,
+                leaf_builder=self.leaf_builder_class,
+                splitter=self.splitter,
+                tree_type=self.forest_type,
+                max_depth=self.max_depth,
+                impurity_tol=self.impurity_tol,
+                min_samples_split=self.min_samples_split,
+                min_samples_leaf=self.min_samples_leaf,
+                min_improvement=self.min_improvement,
+                max_features=self.max_features,
+                skip_check_input=True,
+                sample_weight=self.sample_weight,
+            ), fitting_indices))
+
             for tree in self.trees:
-                fitting_indices, prediction_indices = get_sample_indices(
-                    n_rows=self.n_rows,
-                    random_state=self.random_state,
-                    sampling_parameter=self.sampling_parameter,
-                    sampling=self.sampling,
-                )
-                tree.fit(
-                    self.X,
-                    self.Y,
-                    sample_indices=fitting_indices,
-                    sample_weight=self.sample_weight,
-                )
                 if self.__is_honest():
-                    tree.refit_leaf_nodes(prediction_indices)
+                    tree.refit_leaf_nodes(X=self.X, Y=self.Y,
+                                          sample_weight=self.sample_weight,
+                                          prediction_indices=prediction_indices)
         else:
             partial_func = partial(
                 build_single_tree,
@@ -415,6 +430,7 @@ class RandomForest(BaseModel):
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
+
         return np.column_stack(predictions)
 
     # Function to call predict_proba on all the trees of the forest,
@@ -506,8 +522,25 @@ class RandomForest(BaseModel):
 
     def predict(self, X: np.ndarray, **kwargs):
         """
-        Predicts a y-value for given X values using the trees of the forest. In the case of a classification tree with equal majority vote,
-        the lowest class that has maximum votes is returned.
+        Predicts response values at X using fitted random forest.  The behavior
+        of this function is determined by the Prediction class used in the
+        decision tree. For currently existing tree types the corresponding
+        behavior is as follows:
+
+        Classification:
+        ----------
+        Returns the class based on majority vote among the trees. In the case
+        of tie, the lowest class with the maximum number of votes is returned.
+
+        Regression:
+        ----------
+        Returns the average response among all trees. 
+
+        Quantile:
+        ----------
+        Returns the conditional quantile of the response, where the quantile is
+        specified by passing a list of quantiles via the `quantile` parameter.
+
 
         Parameters
         ----------
@@ -565,14 +598,22 @@ class RandomForest(BaseModel):
             tree_predictions, **kwargs)
 
     def __get_forest_matrix(self, scale: bool = False):
-        partial_func = partial(get_single_leaf, scale=scale)
+        # if n_jobs = 1
+        if self.n_jobs == 1:
+            tree_weights = []
+            for tree in self.trees:
+                tree_weights.append(predict_single_leaf(
+                    tree=tree, X=None, scale=scale))
+            return np.sum(tree_weights, axis=0) / self.n_estimators
+
+        partial_func = partial(predict_single_leaf, X=None, scale=scale)
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
             tree_weights = promise.get()
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
     def predict_forest_weight(
-        self, X: np.ndarray | None, scale: bool = False
+        self, X: np.ndarray | None = None, scale: bool = False
     ) -> np.ndarray:
         if not self.forest_fitted:
             raise AttributeError(
@@ -581,6 +622,14 @@ class RandomForest(BaseModel):
             )
         if X is None:
             return self.__get_forest_matrix(scale=scale)
+        if self.n_jobs == 1:
+            tree_weights = []
+            for tree in self.trees:
+                tree_weights.append(
+                    predict_single_leaf(tree=tree, X=X, scale=scale))
+            return np.sum(tree_weights, axis=0) / self.n_estimators
+
+        X = shared_numpy_array(X)
         partial_func = partial(predict_single_leaf, X=X, scale=scale)
         with self.ctx.Pool(self.n_jobs) as p:
             promise = p.map_async(partial_func, self.trees)
