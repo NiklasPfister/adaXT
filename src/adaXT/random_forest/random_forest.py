@@ -484,7 +484,6 @@ class RandomForest(BaseModel):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
-                # TODO: The following should probably be predict_proba?
                 predictions.append(tree.predict_proba(X))
         else:
             predict_value = shared_numpy_array(X)
@@ -665,10 +664,32 @@ class RandomForest(BaseModel):
             tree_weights = promise.get()
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
-    def predict_forest_weight(
-        # TODO: Add documentation
-        self, X: np.ndarray | None = None, scale: bool = False
-    ) -> np.ndarray:
+    def predict_forest_weight(self, X: np.ndarray | None = None, scale: bool = False) -> np.ndarray:
+        """
+        Creates NxN matrix, where N is the number of observations in X.
+        If A_{i,j} = Z then i and j are in the same leafnode Z number of times.
+        If they are scaled, then A_{i,j} is instead scaled by the number
+        of elements in the leaf node. If X is None this is done over the
+        training data.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Data to predict over
+        scale : bool
+            Whether to scale the output
+
+        Returns
+        -------
+        np.ndarray
+            NxN matrix where N is the number of observations in X.
+
+        Raises
+        ------
+        AttributeError:
+            Forest not fitted prior to use.
+        """
+
         if not self.forest_fitted:
             raise AttributeError(
                 "The forest has not been fitted before trying to call\

@@ -7,6 +7,7 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
+
 class DecisionTree:
     """
     Attributes
@@ -136,7 +137,7 @@ class DecisionTree:
         Regression:
         ----------
         Returns the mean value of the response within the final leaf node.
-        
+
         Quantile:
         ----------
         Returns the conditional quantile of the response, where the quantile is
@@ -178,7 +179,7 @@ class DecisionTree:
     def predict_leaf_matrix(self, X: np.ndarray | None, scale: bool = False) -> np.ndarray:
         """
         Creates NxN matrix, where N is the number of observations in X.
-        If A_{i,j} = 1 then i and j are in the same leafnode, otherwise 0.
+        If A_{i,j} = Z then i and j are in the same leafnode, Z number of times.
         If they are scaled, then A_{i,j} is instead scaled by the number
         of elements in the leaf node.
 
