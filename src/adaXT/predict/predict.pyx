@@ -36,6 +36,7 @@ cdef class Predict():
     cpdef list predict_proba(self, object X):
         raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
+    #TODO: predict_tree.
     cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
         cdef:
             int i
@@ -124,7 +125,7 @@ cdef class PredictClassification(Predict):
 
     cpdef list predict_proba(self, object X):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs1
             double cur_threshold
             object cur_node
             list ret_val

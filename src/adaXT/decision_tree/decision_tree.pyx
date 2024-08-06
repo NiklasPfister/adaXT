@@ -208,12 +208,46 @@ class DecisionTree(BaseModel):
                         matrix[i, j] += 1
         return matrix
 
-    def predict_leaf_matrix(self, X: np.ndarray|None, scale: bool = False):
+    def __tree_based_weights(hash1, hash2, size_X0, size_X1, scaling):
+        matrix = np.zeros(size_X0, size_X1)
+        hash1_keys = hash1.keys()
+        hash2_keys = hash2.keys()
+        for xi in hash1_keys:
+            if xi in hash2_keys:
+                indicies_1 = hash1[xi]
+                indicies_2 = hash2[xi]
+                if scaling == 0: 
+                    val = 1/len(indicies_1)
+                elif scaling == 1:
+                    val = 1/(len(indicies_1) + len(indicies_2))
+                else:
+                    val = 1
+                matrix[np.ix_(indices_1, indices_2)] = val
+        return matrix
+
+    def similarity(X0, X1, scaling):
+        hash1 = self.predict_leaf(X0)
+        hash2 = self.predict_leaf(X1)
+        if scaling:
+            scaling = 1
+        else:
+            scaling = -1
+        return self.__tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
+                                         scaling)
+
+    def predict_tree_based_weights(self, X: np.ndarray|None):
+        default_hash_table = self.__get_leaf()
+        new_hash = self.predict_leaf(X)
+        #TODO: Make sure n_rows is updated refit leaf_nodes
+        return self.__tree_based_weights(default_hash_table, new_hash,
+                                         self.n_rows, X.shape[0], scaling=0)
+
+    def predict_leaf(self, X: np.ndarray|None):
         if X is None:
-            return self.__get_leaf_matrix(scale=scale)
+            return self.__get_leaf()
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
-        return self.predictor.predict_leaf_matrix(X, scale)
+        return self.predictor.predict_leaf(X)
 
     def __remove_leaf_nodes(self) -> None:
         cdef:
