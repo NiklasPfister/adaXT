@@ -1,6 +1,10 @@
 import numpy as np
 
+
 class Node:
+    """
+    Base node which other Nodes must inherit from.
+    """
     indices: np.ndarray
     depth: int
     impurity: float
@@ -23,12 +27,13 @@ class Node:
         """
         pass
 
+
 class DecisionNode(Node):
     threshold: float
     split_indx: int
-    left_child: Node|None
-    right_child: Node|None
-    parent: DecisionNode|None
+    left_child: Node | None
+    right_child: Node | None
+    parent: DecisionNode | None
     visited: int
 
     def __init__(
@@ -63,11 +68,13 @@ class DecisionNode(Node):
         """
         pass
 
+
 class LeafNode(Node):
     value: list[float]
-    parent: DecisionNode|None
+    parent: DecisionNode | None
     id: int
     weighted_samples: float
+
     def __init__(
             self,
             id: int,
@@ -92,5 +99,40 @@ class LeafNode(Node):
             The mean values of classes in leaf node
         parent : DecisionNode
             The parent node
+        """
+        pass
+
+
+class LinearRegressionLeafNode(LeafNode):
+    def __init__(
+            self,
+            id: int,
+            indices: np.ndarray,
+            depth: int,
+            impurity: float,
+            weighted_samples: float,
+            value: np.ndarray,
+            parent: object,
+            theta0: float,
+            theta1: float) -> None:
+        """
+        Parameters
+        ----------
+        indices : np.ndarray
+            Indices of leaf node
+        depth : int
+            depth the leaf node is located at
+        impurity : float
+            Impurity of leaf node
+        weighted_samples : float
+            Weight of the samples in the LeafNode
+        value : list[float]
+            The mean values of classes in leaf node
+        parent : DecisionNode
+            The parent node
+        theta0 : float
+            Theta0 used in Linear Regression.
+        theta1 : float
+            Theta1 used in Linear Regression.
         """
         pass
