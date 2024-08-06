@@ -308,9 +308,6 @@ def __check_leaf_count(forest: RandomForest, expected_weight: float):
         the given forest"
 
 
-# TODO: add test where n_jobs = 1 vs the default and make sure we get the same
-# forest. Also n_jobs=1 not working atm.
-
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
     n = 10
