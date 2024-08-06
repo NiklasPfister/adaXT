@@ -7,27 +7,28 @@ criteria used during fitting. As first proposed by
 perspective can be used to view decision trees (and in extension random forests)
 as adaptive nearest neighbor estimators. To make this more concrete, consider a
 regression setting with training data
-$(X_1, Y_1),\\ldots,(X_n, Y_n)\\in\\mathcal{X}\\times\\mathbb{R}$, where $X_i$ is a
-multivariate predictor in $\\mathcal{X}\\subseteq\\mathbb{R}^d$ and $Y_i$ is a
+$(X_1, Y_1),\ldots,(X_n, Y_n)\in\mathcal{X}\times\mathbb{R}$, where $X_i$ is a
+multivariate predictor in $\mathcal{X}\subseteq\mathbb{R}^d$ and $Y_i$ is a
 real-valued response variable. For a fitted decision tree, we define the _leaf
-function_ $\\mathcal{L}:\\mathcal{X}\\times\\mathcal{X}\\rightarrow{0,1}$ which
-determines for all $x,x'\\in\\mathcal{X}$ whether they lie in the same leaf, i.e.,
-$\\mathcal{L}(x, x')=1$ if $x$ and $x'$ are in the same leaf and
-$\\mathcal{L}(x,x')=0$ if $x$ and $x'$ are in different leafs. Furthermore,
-define for all $i\\in{1,\\ldots,n}$ a weight function
-$w_i:\\mathcal{X}\\rightarrow\[0,1\]$ for all $x\\in\\mathcal{X}$ by
+function_ $\mathcal{L}:\mathcal{X}\times\mathcal{X}\rightarrow{0,1}$ which
+determines for all $x,x'\in\mathcal{X}$ whether they lie in the same leaf, i.e.,
+$\mathcal{L}(x, x')=1$ if $x$ and $x'$ are in the same leaf and
+$\mathcal{L}(x,x')=0$ if $x$ and $x'$ are in different leafs. Furthermore,
+define for all $i\in{1,\ldots,n}$ a weight function
+$w_i:\mathcal{X}\rightarrow[0,1]$ for all $x\in\mathcal{X}$ by
+
 
 $$
-w_i(x):=\\frac{\\mathcal{L}(X\_{i}, x)}{\\sum\_{\\ell=1}^n\\mathcal{L}(X\_{\\ell}, x)}.
+w_i(x):=\frac{\mathcal{L}(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}(X_{\ell}, x)}.
 $$
 
-By construction it holds for all $x\\in\\mathcal{X}$ that $\\sum\_{i=1}^n w_i(x)=1$.
+By construction it holds for all $x\in\mathcal{X}$ that $\sum_{i=1}^n w_i(x)=1$.
 So intuitively the weights capture how close a new observation $x$ is to each of
 the training samples. Importantly, the predicted value of a regression tree at
 the $x$ is simply given by
 
 $$
-\\sum\_{i=1}^n w_i(x)Y_i,
+\sum_{i=1}^n w_i(x)Y_i,
 $$
 
 which corresponds to a weighted nearest neighbor estimator. Unlike other
@@ -37,12 +38,12 @@ response values making them _adaptive_.
 
 As random forests are just averages over a collection of trees, the discussion
 above naturally extends to them as well. For a fitted random forest, denote by
-$\\mathcal{L}\_1,\\ldots,\\mathcal{L}\_M$ denote the leaf functions for each of the
-$M$ trees in the forest. Then, for all $i\\in{1,\\ldots,n}$ and all
-$x\\in\\mathcal{X}$ define the weights by
+$\mathcal{L}_1,\ldots,\mathcal{L}_M$ denote the leaf functions for each of the
+$M$ trees in the forest. Then, for all $i\in{1,\ldots,n}$ and all
+$x\in\mathcal{X}$ define the weights by
 
 $$
-w_i(x):=\\frac{1}{M}\\sum\_{m=1}^M\\frac{\\mathcal{L}_m(X_{i}, x)}{\\sum\_{\\ell=1}^n\\mathcal{L}_m(X_{\\ell}, x)}.
+w_i(x):=\frac{1}{M}\sum_{m=1}^M\frac{\mathcal{L}_m(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}_m(X_{\ell}, x)}.
 $$
 
 In general $w_i(x)$ and $Y_i$ are dependent since the sample $i$ appears also in
@@ -85,7 +86,7 @@ weights = rf.predict_forest_weights(scale=True)
 ```
 
 Using the notation above, the weights computed in this example satisfy
-$\\texttt{weights}\[i, j\]=w_i(X_j)$.
+$\texttt{weights}[i, j]=w_i(X_j)$.
 
 **Problem:** The current behavior of the weight functions may be problematic
 after refit_leaf_nodes was called.
