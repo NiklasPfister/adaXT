@@ -149,13 +149,16 @@ class DecisionTree(BaseModel):
             sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None) -> None:
 
+        # Check inputs
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
         row, col = X.shape
+        # TODO: Check whether to move the following line fully inside the builder
         self.int_max_features = self.__parse_max_features(self.max_features, col)
-
-        # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
+        # If sample_weight is valid it is simply passed through
+        # check_sample_weight, if it is None all entries are set to 1
         sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+
         builder = DepthTreeBuilder(
             X=X,
             Y=Y,
@@ -350,11 +353,28 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
-    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                         np.ndarray, sample_indices: np.ndarray, **kwargs):
+    def refit_leaf_nodes(
+            self,
+            X: np.ndarray,
+            Y: np.ndarray,
+            sample_weight: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
+            **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
+        # Check inputs
+        if not self.skip_check_input:
+            X, Y = self.__check_input(X, Y)
+        row, _ = X.shape
+        # TODO: Should self.n_row be updated here? We probably need a bit of a
+        # rewrite/update of the predict_leaf_matrix and predict_forest_weights
+        # functions
+
+        # If sample_weight is valid it is simply passed through
+        # check_sample_weight, if it is None all entries are set to 1
+        sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+
         # Remove current leaf nodes
         indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
