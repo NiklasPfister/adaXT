@@ -61,8 +61,10 @@ Below is a short example that illustrates how to use a classification tree.
 ```py
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index
+
 X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
 Y = [0, 1, 0, 1]
+
 tree = DecisionTree("Classification", criteria=Gini_index, max_depth=1)
 tree.fit(X, Y)
 print(tree.predict(X))
@@ -108,6 +110,7 @@ following example:
 ```py
 import numpy as np
 from adaXT.decision_tree import DecisionTree
+
 n = 100
 X = np.random.normal(0, 1, (n, 2))
 Y = 2.0 * (X[:, 0] > 0) + np.random.normal(0, 0.25, n)
@@ -139,6 +142,7 @@ which quantiles to estimate. The following example illustrates this:
 ```py
 import numpy as np
 from adaXT.decision_tree import DecisionTree
+
 n = 100
 X = np.random.normal(0, 1, (n, 2))
 Y = 10.0 * (X[:, 0] > 0) + np.random.normal(0, 1, n)
