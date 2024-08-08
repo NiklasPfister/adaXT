@@ -1,7 +1,7 @@
 # Decision Trees
 
 A [decision tree](https://en.wikipedia.org/wiki/Decision_tree) is a machine
-learning model, which can trained or fitted to data in order to perform
+learning model, which is fitted to data and then used to perform
 prediction or data analysis. Decisions trees have a tree structure, where each
 internal node splits the dataset based on some threshold value for a given
 feature index.
@@ -25,7 +25,26 @@ by directly specifying all components manually.
 
 ## Tree types
 
+There are several default tree types implemented in adaXT. Currently:
+- ```Classification```: Prediction tasks in which the response is categorical.
+- ```Regression```: Prediction tasks in which the response is continuous.
+- ```Quantile```: Uncertainty quantification tasks in which the response is
+continuous and the goal is to estimate one or more quantiles of the conditional
+distribution of the response given the predictors.
+- ```LinearRegression```: Prediction tasks in which the response is continuous and in contrast to ```Regression``` it fits a linear function in the first predictor component. This tree type can be used for derivative estimation and is used in the [Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference) method.
+
+Moreover, if you want to create a custom tree type, this can be done by setting
+the tree type to None and providing all components manually. Each of the
+options is discussed in the following sections.
+
 ### Classification trees
+
+When using the ```Classification``` tree type, the following default components are used:
+- Critera class: [Entropy](../api_docs/Criteria.md#adaXT.criteria.criteria.Entropy)
+- Predict class: [PredictClassification](../api_docs/#adaXT.predict.predict.PredictClassification)
+- LeafBuilder class: [LeafBuilderClassification](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
+
+Below is a short example that illustrates how to use a classification tree.
 
 ```py
 from adaXT.decision_tree import DecisionTree
@@ -36,31 +55,47 @@ tree = DecisionTree("Classification", criteria=Gini_index)
 tree.fit(X, Y)
 ```
 
-In the example above we are creating and fitting a classification tree with the
-[Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index)
-criteria function using the X and Y data specified as training data.
+In the example above we are creating and fitting a classification tree, but
+overwrite the Criteria with the
+[Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index); it is always possible to overwrite any of the default components of a specific tree type.
 
 ### Regression trees
 
-Regression trees work similar to classification trees, with one small difference
+When using the ```Regression``` tree type, the following default components are used:
+- Critera class: [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+- Predict class: [PredictRegression](../api_docs/#adaXT.predict.predict.PredictRegression)
+- LeafBuilder class: [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+
+Regression trees work similar to classification trees as 
 demonstrated by the following example:
 
 ```py
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Squared_error
 X = [[0, 0], [1, 0]]
 Y = [0, 1]
-tree = DecisionTree("Regression", criteria=Squared_error)
+tree = DecisionTree("Regression")
 tree.fit(X, Y)
 ```
 
-You have to specify that you are now using a regression tree instead of a
-classification tree, and adaXT takes care of the rest. The reason for this
-specification is that regression and classification trees need to have some
-small differences in saved objects. This is for example relevant when making
-predictions as shown next.
-
 ### Quantile trees
+
+When using the ```Quantile``` tree type, the following default components are used:
+- Critera class: [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+- Predict class: [PredictQuantile](../api_docs/#adaXT.predict.predict.PredictQuantile)
+- LeafBuilder class: [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+
+```py
+from adaXT.decision_tree import DecisionTree
+X = [[0, 0], [1, 0]]
+Y = [0, 1]
+tree = DecisionTree("Quantile")
+tree.fit(X, Y)
+```
+
+
+
+### LinearRegression trees
+
 
 ### Custom tree types
 
