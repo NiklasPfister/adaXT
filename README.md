@@ -86,7 +86,7 @@ components:
 
 - Splitter class: Used during fitting to perform the splits.
 
-- Prediction class: Used after fitting to make predictions.
+- Predict class: Used after fitting to make predictions.
 
 By specifying these three components a range of different tree algorithms can be
 created, e.g., regression trees, classification trees, quantile regression trees
