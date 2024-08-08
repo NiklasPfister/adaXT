@@ -142,6 +142,9 @@ class DecisionTree(BaseModel):
             raise ValueError("sample_weight should have dimension (n_samples,)")
         return sample_weight
 
+    # TODO: Typing missing, also Question: Do we want np.darray here or
+    # array-like In __check_inputs above we allow for objects but we don't
+    # allow for them in the predict functions
     def fit(
             self,
             X,
