@@ -27,8 +27,13 @@ cdef class PredictRegression(Predict):
     pass
 
 
-cdef class PredictLinearRegression(PredictRegression):
+cdef class PredictLocalLinear(PredictRegression):
     pass
+
+
+cdef class PredictLocalQuadratic(PredictRegression):
+    cdef:
+        double[:, ::1] deriv_mat
 
 
 cdef class PredictQuantile(Predict):

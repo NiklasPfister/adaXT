@@ -1,5 +1,5 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
+from adaXT.criteria import Gini_index, Squared_error, Entropy, Local_linear, Local_quadratic
 
 import numpy as np
 import scipy
@@ -312,17 +312,17 @@ def sanity_entropy(n, m):
         assert Y[i] == pred[i], f"Entropy: Expected {Y[i]} Got {pred[i]}"
 
 
-def sanity_linear_regression(n, m):
+def sanity_local_linear(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.uniform(0, 10, n)
-    tree = DecisionTree("Regression", criteria=Linear_regression)
+    tree = DecisionTree("Regression", criteria=Local_linear)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
         assert isinstance(node, LeafNode)
-        # Linear regression fits on the X[:, 0] values,
-        # so for the final node X[:, 0] should have a correlation of 1 with Y
-        # in the node
+        # Local_linear fits linear regression of Y on X[:, 0], so for the fully
+        # grown tree, X[:, 0] should have a correlation of 1 with Y in the leaf
+        # nodes
         if node.indices.shape[0] > 1:
             corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
             assert abs(corr) == 1.0
@@ -334,7 +334,7 @@ def test_sanity():
     sanity_regression(n, m)
     sanity_gini(n, m)
     sanity_entropy(n, m)
-    sanity_linear_regression(n, m)
+    sanity_local_linear(n, m)
 
 
 if __name__ == "__main__":
@@ -343,5 +343,5 @@ if __name__ == "__main__":
     # test_entropy_single()
     # test_entropy_multi()
     test_regression()
-    # test_sanity()
+    test_sanity()
     # print("Done.")

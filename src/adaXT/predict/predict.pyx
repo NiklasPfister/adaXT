@@ -225,14 +225,20 @@ cdef class PredictLocalQuadratic(PredictRegression):
 
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, ind
             double cur_threshold
             object cur_node
-            double[:] Y
+            double[:, ::1] deriv_mat
+
+        if "order" not in kwargs.keys():
+            order = [0, 1, 2]
+        else:
+            order = kwargs['order']
+            # TODO: ADD checks
 
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty((n_obs, 3))
+        deriv_mat = np.empty((n_obs, len(order)))
 
         for i in range(n_obs):
             cur_node = self.root
@@ -243,9 +249,22 @@ cdef class PredictLocalQuadratic(PredictRegression):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i, 0] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0] ** 2
-            Y[i, 1] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
-        return Y
+            ind = 0
+            for oo in order:
+                if oo == 0:
+                    deriv_mat[i, ind] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0] ** 2
+                if oo == 1:
+                    deriv_mat[i, ind] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
+                if oo == 2:
+                    deriv_mat[i, ind] = 2.0 * cur_node.theta2
+                ind += 1
+        return deriv_mat
+    # TODO: Fix randomforest predict to allow for multi-dimensional array
+    @staticmethod
+    def forest_predict(predictions: np.ndarray, **kwargs):
+        print(predictions.shape)
+        return np.mean(predictions, axis=1)
+
 
 
 cdef class PredictQuantile(Predict):

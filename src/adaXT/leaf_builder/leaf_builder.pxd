@@ -19,7 +19,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
         double[::1] classes
         int n_classes
 
-    cdef double[::1] __get_mean(self, int[::1] indices)
+    cdef double[::1] _get_mean(self, int[::1] indices)
 
     cpdef object build_leaf(self,
                             int leaf_id,
@@ -32,7 +32,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
 
 cdef class LeafBuilderRegression(LeafBuilder):
 
-    cdef double __get_mean(self, int[::1] indices)
+    cdef double _get_mean(self, int[::1] indices)
 
     cpdef object build_leaf(self,
                             int leaf_id,
@@ -43,9 +43,27 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             object parent)
 
 
-cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
-    cdef (double, double) custom_mean(self, int[::1] indices)
-    cdef (double, double, double) theta(self, int[::1] indices)
+cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
+
+    cdef (double, double) _custom_mean(self, int[::1] indices)
+
+    cdef (double, double, double) _theta(self, int[::1] indices)
+
+    cpdef object build_leaf(self,
+                            int leaf_id,
+                            int[::1] indices,
+                            int depth,
+                            double impurity,
+                            double weighted_samples,
+                            object parent)
+
+
+cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
+
+    cdef (double, double, double) _custom_mean(self, int[::1] indices)
+
+    cdef (double, double, double, double) _theta(self, int[::1] indices)
+
     cpdef object build_leaf(self,
                             int leaf_id,
                             int[::1] indices,

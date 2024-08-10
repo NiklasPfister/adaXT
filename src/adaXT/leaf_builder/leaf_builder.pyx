@@ -154,7 +154,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
 
 cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
 
-    cdef (double, double, double) _custom_mean(self, int[:] indices):
+    cdef (double, double, double) _custom_mean(self, int[::1] indices):
         cdef:
             double sumXsq, sumX, sumY
             int i
