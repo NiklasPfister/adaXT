@@ -583,7 +583,7 @@ cdef class Local_quadratic(Criteria):
         -------
         (double, double, double)
             where first element is theta0, second is theta1, third is theta2
-            and fourth is the mean of Y 
+            and fourth is the mean of Y
         """
         cdef:
             double muX, muXsq, muY, theta0, theta1, theta2

@@ -1,7 +1,7 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 from ..decision_tree.nodes import (LeafNode, LocalLinearLeafNode,
-                                   LocalQuadtraticLeafNode)
+                                   LocalQuadraticLeafNode)
 import numpy as np
 cimport numpy as cnp
 
@@ -110,7 +110,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
         -------
         (double, double, double)
             where first element is theta0, second is theta1 and third is the
-            mean of Y 
+            mean of Y
         """
         cdef:
             double muX, muY, theta0, theta1
@@ -186,7 +186,7 @@ cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
         -------
         (double, double, double, double)
             where first element is theta0, second is theta1, third is theta2
-            and fourth is the mean of Y 
+            and fourth is the mean of Y
         """
         cdef:
             double muX, muXsq, muY, theta0, theta1, theta2
