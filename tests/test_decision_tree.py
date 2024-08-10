@@ -327,6 +327,7 @@ def sanity_local_linear(n, m):
             corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
             assert abs(corr) == 1.0
 
+# TODO: Add sanity check for local_quadratic
 
 def test_sanity():
     n = 10000

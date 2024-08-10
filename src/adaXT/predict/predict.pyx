@@ -197,6 +197,7 @@ cdef class PredictRegression(Predict):
 
 
 cdef class PredictLocalLinear(PredictRegression):
+    # TODO: Updated in the same way as LocalQuadratic
     def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, n_obs
@@ -259,11 +260,16 @@ cdef class PredictLocalQuadratic(PredictRegression):
                     deriv_mat[i, ind] = 2.0 * cur_node.theta2
                 ind += 1
         return deriv_mat
-    # TODO: Fix randomforest predict to allow for multi-dimensional array
+
+    # TODO: Check whether its possible to ensure that an extra axis is added
+    # when predicting individual trees rather than untangling it again here
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        print(predictions.shape)
-        return np.mean(predictions, axis=1)
+        if "order" not in kwargs.keys():
+            order = [0, 1, 2]
+        else:
+            order = kwargs['order'] 
+        return np.mean(np.dstack(np.hsplit(predictions, len(order))), axis=2)
 
 
 
