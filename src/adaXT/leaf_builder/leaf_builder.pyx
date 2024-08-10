@@ -25,7 +25,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
         self.classes = np.array(np.unique(y.base[all_idx]), dtype=np.double)
         self.n_classes = self.classes.shape[0]
 
-    cdef double[::1] __get_mean(self, int[::1] indices):
+    cdef double[::1] _get_mean(self, int[::1] indices):
         cdef:
             cnp.ndarray[double, ndim=1] ret
             int i, idx, n_samples
@@ -48,14 +48,14 @@ cdef class LeafBuilderClassification(LeafBuilder):
                             double impurity,
                             double weighted_samples,
                             object parent):
-        cdef double[::1] mean = self.__get_mean(indices)
+        cdef double[::1] mean = self._get_mean(indices)
         return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
                         mean, parent)
 
 
 cdef class LeafBuilderRegression(LeafBuilder):
 
-    cdef double __get_mean(self, int[::1] indices):
+    cdef double _get_mean(self, int[::1] indices):
         cdef:
             int i
             double sum = 0.0
@@ -74,14 +74,14 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             double weighted_samples,
                             object parent):
 
-        cdef double[::1] mean = np.array(self.__get_mean(indices), dtype=np.double, ndmin=1)
+        cdef double[::1] mean = np.array(self._get_mean(indices), dtype=np.double, ndmin=1)
         return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
                         mean, parent)
 
 cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double) __custom_mean(self, int[::1] indices):
+    cdef (double, double) _custom_mean(self, int[::1] indices):
         cdef:
             double sumX, sumY
             int i
@@ -94,7 +94,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double, double) __theta(self, int[::1] indices):
+    cdef (double, double, double) _theta(self, int[::1] indices):
         """
         Estimates regression parameters for a linear regression of the response
         on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
@@ -121,7 +121,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
         length = indices.shape[0]
         denominator = 0.0
         numerator = 0.0
-        muX, muY = self.__custom_mean(indices)
+        muX, muY = self._custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             numerator += (X_diff)*(self.y[indices[i]]-muY)
@@ -144,7 +144,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
             double[::1] mean
             double theta0, theta1
 
-        theta0, theta1, muY = self.__theta(indices)
+        theta0, theta1, muY = self._theta(indices)
         mean = np.array(muY, dtype=np.double, ndmin=1)
 
         return LocalLinearLeafNode(leaf_id, indices, depth, impurity,
@@ -154,7 +154,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
 
 cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
 
-    cdef (double, double, double) __custom_mean(self, int[:] indices):
+    cdef (double, double, double) _custom_mean(self, int[:] indices):
         cdef:
             double sumXsq, sumX, sumY
             int i
@@ -169,7 +169,7 @@ cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
 
         return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double, double, double) __theta(self, int[::1] indices):
+    cdef (double, double, double, double) _theta(self, int[::1] indices):
         """
         Estimates regression parameters for a linear regression of the response
         on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
@@ -200,7 +200,7 @@ cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
         covXsqY = 0.0
         varX = 0.0
         varXsq = 0.0
-        muX, muXsq, muY = self.__custom_mean(indices)
+        muX, muXsq, muY = self._custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             Xsq_diff = self.x[indices[i], 0] ** 2 - muXsq
@@ -231,7 +231,7 @@ cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
             double[::1] mean
             double theta0, theta1, theta2, muY
 
-        theta0, theta1, theta2, muY = self.__theta(indices)
+        theta0, theta1, theta2, muY = self._theta(indices)
         mean = np.array(muY, dtype=np.double, ndmin=1)
 
         return LocalQuadraticLeafNode(leaf_id, indices, depth, impurity,

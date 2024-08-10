@@ -1,1 +1,1 @@
-from .criteria import Gini_index, Linear_regression, Squared_error, Entropy, Local_polynomial, Criteria
+from .criteria import Gini_index, Squared_error, Entropy, Local_linear, Local_quadratic, Criteria

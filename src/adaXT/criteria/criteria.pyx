@@ -470,7 +470,7 @@ cdef class Squared_error(Criteria):
 cdef class Local_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double) __custom_mean(self, int[:] indices):
+    cdef (double, double) _custom_mean(self, int[:] indices):
         cdef:
             double sumX, sumY
             int i
@@ -483,7 +483,7 @@ cdef class Local_linear(Criteria):
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double) __theta(self, int[:] indices):
+    cdef (double, double) _theta(self, int[:] indices):
         """
         Estimates regression parameters for a linear regression of the response
         on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
@@ -542,7 +542,7 @@ cdef class Local_linear(Criteria):
             int i, length
 
         length = indices.shape[0]
-        theta0, theta1 = self.__theta(indices)
+        theta0, theta1 = self._theta(indices)
         cur_sum = 0.0
         for i in range(length):
             step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
@@ -552,7 +552,7 @@ cdef class Local_linear(Criteria):
 cdef class Local_quadratic(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double, double) __custom_mean(self, int[:] indices):
+    cdef (double, double, double) _custom_mean(self, int[:] indices):
         cdef:
             double sumXsq, sumX, sumY
             int i
@@ -567,7 +567,7 @@ cdef class Local_quadratic(Criteria):
 
         return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double, double) __theta(self, int[:] indices):
+    cdef (double, double, double) _theta(self, int[:] indices):
         """
         Estimates regression parameters for a linear regression of the response
         on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
@@ -597,7 +597,7 @@ cdef class Local_quadratic(Criteria):
         covXsqY = 0.0
         varX = 0.0
         varXsq = 0.0
-        muX, muXsq, muY = self.__custom_mean(indices)
+        muX, muXsq, muY = self._custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             Xsq_diff = self.x[indices[i], 0] ** 2 - muXsq
@@ -638,7 +638,7 @@ cdef class Local_quadratic(Criteria):
             int i, length
 
         length = indices.shape[0]
-        theta0, theta1, theta2 = self.__theta(indices)
+        theta0, theta1, theta2 = self._theta(indices)
         cur_sum = 0.0
         for i in range(length):
             step_calc = self.y[indices[i]] - theta0
