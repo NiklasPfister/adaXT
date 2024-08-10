@@ -268,9 +268,8 @@ cdef class PredictLocalQuadratic(PredictRegression):
         if "order" not in kwargs.keys():
             order = [0, 1, 2]
         else:
-            order = kwargs['order'] 
+            order = kwargs['order']
         return np.mean(np.dstack(np.hsplit(predictions, len(order))), axis=2)
-
 
 
 cdef class PredictQuantile(Predict):
