@@ -467,10 +467,10 @@ cdef class Squared_error(Criteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class Linear_regression(Criteria):
+cdef class Local_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double) custom_mean(self, int[:] indices):
+    cdef (double, double) __custom_mean(self, int[:] indices):
         cdef:
             double sumX, sumY
             int i
@@ -483,10 +483,11 @@ cdef class Linear_regression(Criteria):
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double) theta(self, int[:] indices):
+    cdef (double, double) __theta(self, int[:] indices):
         """
-        Calculate theta0 and theta1 by a linear regression
-        of Y on X[:, 0]
+        Estimates regression parameters for a linear regression of the response
+        on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
+        X[:, 0].
         ----------
 
         Parameters
@@ -497,7 +498,7 @@ cdef class Linear_regression(Criteria):
         Returns
         -------
         (double, double)
-            where the first element is theta0 and second element is theta1
+            where first element is theta0 and second is theta1
         """
         cdef:
             double muX, muY, theta0, theta1
@@ -523,13 +524,13 @@ cdef class Linear_regression(Criteria):
     cpdef double impurity(self, int[::1] indices):
         """
         Calculates the impurity of a node by
-        L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
+        L = sum_{i in indices} (Y[i] - theta0 - theta1*X[i, 0])**2
         ----------
 
         Parameters
         ----------
         indices : memoryview of NDArray
-            The indices to calculate
+            indices included in calculation
 
         Returns
         -------
@@ -541,9 +542,107 @@ cdef class Linear_regression(Criteria):
             int i, length
 
         length = indices.shape[0]
-        theta0, theta1 = self.theta(indices)
+        theta0, theta1 = self.__theta(indices)
         cur_sum = 0.0
         for i in range(length):
             step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
-            cur_sum += step_calc*step_calc
+            cur_sum += step_calc ** 2
+        return cur_sum
+
+cdef class Local_quadratic(Criteria):
+
+    # Custom mean function, such that we don't have to loop through twice.
+    cdef (double, double, double) __custom_mean(self, int[:] indices):
+        cdef:
+            double sumXsq, sumX, sumY
+            int i
+            int length = indices.shape[0]
+        sumX = 0.0
+        sumXsq = 0.0
+        sumY = 0.0
+        for i in range(length):
+            sumX += self.x[indices[i], 0]
+            sumXsq += self.x[indices[i], 0] ** 2
+            sumY += self.y[indices[i]]
+
+        return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
+
+    cdef (double, double, double) __theta(self, int[:] indices):
+        """
+        Estimates regression parameters for a linear regression of the response
+        on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
+        X[:, 0] + theta2 * X[:, 0] ** 2.
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            indices included in calculation
+
+        Returns
+        -------
+        (double, double, double)
+            where first element is theta0, second is theta1, third is theta2
+            and fourth is the mean of Y 
+        """
+        cdef:
+            double muX, muXsq, muY, theta0, theta1, theta2
+            int length, i
+            double covXXsq, varX, varXsq, covXY, covXsqY
+            double X_diff, Xsq_diff
+
+        length = indices.shape[0]
+        covXXsq = 0.0
+        covXY = 0.0
+        covXsqY = 0.0
+        varX = 0.0
+        varXsq = 0.0
+        muX, muXsq, muY = self.__custom_mean(indices)
+        for i in range(length):
+            X_diff = self.x[indices[i], 0] - muX
+            Xsq_diff = self.x[indices[i], 0] ** 2 - muXsq
+            Y_diff = self.y[indices[i]] - muY
+            covXXsq += X_diff * Xsq_diff
+            varX += X_diff ** 2
+            varXsq += Xsq_diff ** 2
+            covXY += X_diff * Y_diff
+            covXsqY += Xsq_diff * Y_diff
+        det = varX * varXsq - covXXsq ** 2
+        if det == 0.0:
+            theta1 = 0.0
+            theta2 = 0.0
+        else:
+            theta1 = (varXsq*covXY - covXXsq * covXsqY) / det
+            theta2 = (varX*covXsqY - covXXsq * covXY) / det
+        theta0 = muY - theta1*muX - theta2*muXsq
+        return (theta0, theta1, theta2)
+
+    cpdef double impurity(self, int[::1] indices):
+        """
+        Calculates the impurity of a node by
+        L = sum_{i in indices} (Y[i] - theta0 - theta1*X[i, 0] - theta2*X[i, 0]**2)**2
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            indices included in calculation
+
+        Returns
+        -------
+        double
+            evaluated impurity
+        """
+        cdef:
+            double step_calc, theta0, theta1, theta2, cur_sum
+            int i, length
+
+        length = indices.shape[0]
+        theta0, theta1, theta2 = self.__theta(indices)
+        cur_sum = 0.0
+        for i in range(length):
+            step_calc = self.y[indices[i]] - theta0
+            step_calc -= theta1 * self.x[indices[i], 0]
+            step_calc -= theta2 * self.x[indices[i], 0] ** 2
+            cur_sum += step_calc ** 2
         return cur_sum

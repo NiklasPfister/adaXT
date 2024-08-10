@@ -2,6 +2,7 @@ from .predict import (
     Predict,
     PredictClassification,
     PredictRegression,
-    PredictLinearRegression,
+    PredictLocalLinear,
+    PredictLocalQuadratic,
     PredictQuantile,
 )

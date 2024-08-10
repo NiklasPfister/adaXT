@@ -5,6 +5,7 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 cimport numpy as cnp
 
+
 cdef class Predict():
 
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
@@ -81,6 +82,7 @@ cdef class Predict():
     @staticmethod
     def forest_predict_proba(predictions: np.ndarray, **kwargs):
         raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+
 
 cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
@@ -193,7 +195,8 @@ cdef class PredictRegression(Predict):
     def forest_predict(predictions: np.ndarray, **kwargs):
         return np.mean(predictions, axis=1)
 
-cdef class PredictLinearRegression(PredictRegression):
+
+cdef class PredictLocalLinear(PredictRegression):
     def predict(self, object X, **kwargs):
         cdef:
             int i, cur_split_idx, n_obs
@@ -215,6 +218,33 @@ cdef class PredictLinearRegression(PredictRegression):
                 else:
                     cur_node = cur_node.right_child
             Y[i] = cur_node.theta0 + cur_node.theta1*X[i, 0]
+        return Y
+
+
+cdef class PredictLocalQuadratic(PredictRegression):
+
+    def predict(self, object X, **kwargs):
+        cdef:
+            int i, cur_split_idx, n_obs
+            double cur_threshold
+            object cur_node
+            double[:] Y
+
+        X = Predict.__check_dimensions(self, X)
+        n_obs = X.shape[0]
+        Y = np.empty((n_obs, 3))
+
+        for i in range(n_obs):
+            cur_node = self.root
+            while isinstance(cur_node, DecisionNode):
+                cur_split_idx = cur_node.split_idx
+                cur_threshold = cur_node.threshold
+                if X[i, cur_split_idx] < cur_threshold:
+                    cur_node = cur_node.left_child
+                else:
+                    cur_node = cur_node.right_child
+            Y[i, 0] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0] ** 2
+            Y[i, 1] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
         return Y
 
 

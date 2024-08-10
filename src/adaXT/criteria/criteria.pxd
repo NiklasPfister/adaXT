@@ -32,7 +32,7 @@ cdef class Criteria:
         Parameters
         ----------
         indices: int[:]
-        the indices of a given node
+       the indices of a given node
 
         split_idx: int
         the index of the split, such that left indices are indices[:split_idx] and right indices are indices[split_idx:]
