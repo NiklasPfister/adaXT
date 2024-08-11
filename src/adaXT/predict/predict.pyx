@@ -159,11 +159,7 @@ cdef class PredictClassification(Predict):
 
     @staticmethod
     def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        # Stack the predict_probas
-        stacked_tree_predictions = np.stack(predictions, axis=0)
-
-        # Return the mean along the newly created axis
-        return np.mean(stacked_tree_predictions, axis=0)
+        return np.mean(predictions, axis=-1)
 
 
 cdef class PredictRegression(Predict):
@@ -279,4 +275,4 @@ cdef class PredictQuantile(Predict):
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
         quantile = kwargs['quantile']
-        return np.quantile(predictions, quantile, axis=1)
+        return np.quantile(predictions, quantile, axis=-1)

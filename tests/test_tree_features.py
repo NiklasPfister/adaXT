@@ -1,13 +1,17 @@
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
+from adaXT.criteria import (Gini_index, Squared_error, Entropy, Partial_linear,
+                            Partial_quadratic)
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
-from adaXT.predict import PredictLinearRegression, PredictQuantile
+from adaXT.predict import PredictLocalPolynomial, PredictQuantile
 from adaXT.leaf_builder import (
-    LeafBuilderLinearRegression,
+    LeafBuilderPartialLinear,
+    LeafBuilderPartialQuadratic,
     LeafBuilderRegression,
 )
 
 import numpy as np
+
+from adaXT.predict.predict import PredictLocalPolynomial
 
 
 def uniform_x_y(n, m):
@@ -391,8 +395,8 @@ def test_sample_indices_regression():
     t2.fit(X2, Y2, sample_indices=sample_indices)
     assert_tree_equality(t1, t2)
 
-    t1 = DecisionTree("Regression", criteria=Linear_regression)
-    t2 = DecisionTree("Regression", criteria=Linear_regression)
+    t1 = DecisionTree("Regression", criteria=Partial_linear)
+    t2 = DecisionTree("Regression", criteria=Partial_linear)
 
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_indices=sample_indices)
@@ -421,7 +425,7 @@ def test_sample_weight_classification():
 
     t1 = DecisionTree("Classification", criteria=Entropy)
     t2 = DecisionTree("Classification", criteria=Entropy)
-
+    Partial_linear
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_weight=sample_weights)
 
@@ -448,8 +452,8 @@ def test_sample_weight_regression():
 
     assert_tree_equality(t1, t2)
 
-    t1 = DecisionTree("Regression", criteria=Linear_regression)
-    t2 = DecisionTree("Regression", criteria=Linear_regression)
+    t1 = DecisionTree("Regression", criteria=Partial_linear)
+    t2 = DecisionTree("Regression", criteria=Partial_linear)
 
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_weight=sample_weights)
@@ -495,41 +499,52 @@ def test_quantile_predict_array():
     ), f"Quantile predict failed with {pred} - should be {np_quantile}"
 
 
-def test_linear_predict():
+def test_local_polynomial_predict():
     """
-    As the Linear Regression is fitted on the index 0 of the X training data,
-    we can validate the new Prediction by first creating some "noise" data,
-    and then create some data on the same line.
-    Then with new values that should be on the same line,
-    we can make sure that the predicted Y values,
-    indeed are on the line.
+    We test both the Partial_linear and Partial_quadratic criteria by
+    consideirng a (piece-wise) linear and a quadratic example. In both cases
+    the prediction based on PreictLocalPolynomial should perfectly align.
     """
     np.random.seed(2024)
     X = np.random.uniform(1000, 100000, (1000, 5))  # noise
-    Y = np.random.uniform(1000, 100000, (1000))
+    Y1 = np.random.uniform(1000, 100000, (1000))
+    Y2 = np.random.uniform(100000, 1000000, (1000))
 
     X_Y_corr = np.arange(0, 50, step=1)
     idx = np.random.randint(0, 1000, 50)
 
     # Replace some indices with correlated data
     X[idx, 0] = X_Y_corr
-    Y[idx] = X_Y_corr
+    Y1[idx] = X_Y_corr
+    Y2[idx] = X_Y_corr ** 2
 
-    tree = DecisionTree(
-        "LinearRegression",
-        criteria=Linear_regression,
-        predict=PredictLinearRegression,
-        leaf_builder=LeafBuilderLinearRegression,
+    tree1 = DecisionTree(
+        None,
+        criteria=Partial_linear,
+        predict=PredictLocalPolynomial,
+        leaf_builder=LeafBuilderPartialLinear,
     )
-    tree.fit(X, Y)
+    tree1.fit(X, Y1)
+
+    tree2 = DecisionTree(
+        None,
+        criteria=Partial_quadratic,
+        predict=PredictLocalPolynomial,
+        leaf_builder=LeafBuilderPartialQuadratic,
+    )
+    tree2.fit(X, Y2)
 
     X = np.random.uniform(1, 100, (50, 5))
     corr_data = np.arange(50, 100, step=1)
     X[:, 0] = corr_data
-    prediction = tree.predict(X)
+    residuals1 = tree1.predict(X, order=0)[:, 0] - corr_data
+    residuals2 = tree2.predict(X, order=0)[:, 0] - corr_data ** 2
     assert (
-        np.corrcoef(prediction) == 1.0
-    ), "Linear Prediction didn't predict with perfect correlation"
+         np.sum(residuals1 ** 2)== 0.0
+    ), "Partial_linear criteria and PredictLocalPolynomial does not behave as expected"
+    assert (
+         np.sum(residuals2 ** 2)== 0.0
+    ), "Partial_quadratic criteria and PredictLocalPolynomial does not behave as expected"
 
 
 if __name__ == "__main__":
