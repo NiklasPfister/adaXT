@@ -467,7 +467,7 @@ cdef class Squared_error(Criteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class Local_linear(Criteria):
+cdef class Partial_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) _custom_mean(self, int[:] indices):
@@ -509,7 +509,7 @@ cdef class Local_linear(Criteria):
         length = indices.shape[0]
         denominator = 0.0
         numerator = 0.0
-        muX, muY = self.custom_mean(indices)
+        muX, muY = self._custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             numerator += (X_diff)*(self.y[indices[i]]-muY)
@@ -549,7 +549,7 @@ cdef class Local_linear(Criteria):
             cur_sum += step_calc ** 2
         return cur_sum
 
-cdef class Local_quadratic(Criteria):
+cdef class Partial_quadratic(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double, double) _custom_mean(self, int[:] indices):

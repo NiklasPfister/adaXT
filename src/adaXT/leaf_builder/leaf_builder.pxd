@@ -43,7 +43,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             object parent)
 
 
-cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
+cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
 
     cdef (double, double) _custom_mean(self, int[::1] indices)
 
@@ -58,7 +58,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
                             object parent)
 
 
-cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
+cdef class LeafBuilderPartialQuadratic(LeafBuilderRegression):
 
     cdef (double, double, double) _custom_mean(self, int[::1] indices)
 

@@ -2,15 +2,15 @@
 
 from .predict import Predict
 from .criteria import Criteria
-from .criteria.criteria import Entropy, Squared_error, Local_quadratic
+from .criteria.criteria import Entropy, Squared_error, Partial_quadratic
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
 
 from .predict.predict cimport (PredictClassification, PredictRegression,
-                               PredictLocalQuadratic, PredictQuantile)
+                               PredictLocalPolynomial, PredictQuantile)
 from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderRegression,
-                                         LeafBuilderLocalQuadratic)
+                                         LeafBuilderPartialQuadratic)
 
 import numpy as np
 
@@ -69,15 +69,15 @@ class BaseModel:
                 if predict:
                     self.predict_class = predict
                 else:
-                    self.predict_class = PredictLocalQuadratic
+                    self.predict_class = PredictLocalPolynomial
                 if criteria:
                     self.criteria_class = criteria
                 else:
-                    self.criteria_class = Local_quadratic
+                    self.criteria_class = Partial_quadratic
                 if leaf_builder:
                     self.leaf_builder_class = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderLocalQuadratic
+                    self.leaf_builder_class = LeafBuilderPartialQuadratic
 
         else:
             if (not criteria) or (not predict) or (not leaf_builder):

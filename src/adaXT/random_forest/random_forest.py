@@ -428,7 +428,7 @@ class RandomForest(BaseModel):
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
-        return np.column_stack(predictions)
+        return np.dstack(predictions)
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential

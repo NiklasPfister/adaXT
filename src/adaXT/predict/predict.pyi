@@ -20,8 +20,16 @@ class PredictRegression(Predict):
 
     pass
 
-class PredictLinearRegression(Predict):
+class PredictLocalPolynomial(Predict):
+    """
+    Default used for Gradient
+    """
+
     pass
 
 class PredictQuantile(Predict):
+    """
+    Default used for Quantile
+    """
+
     pass

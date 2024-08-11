@@ -1,7 +1,6 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-from ..decision_tree.nodes import (LeafNode, LocalLinearLeafNode,
-                                   LocalQuadraticLeafNode)
+from ..decision_tree.nodes import LeafNode, LocalPolynomialLeafNode
 import numpy as np
 cimport numpy as cnp
 
@@ -78,7 +77,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
         return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
                         mean, parent)
 
-cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
+cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) _custom_mean(self, int[::1] indices):
@@ -113,7 +112,7 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
             mean of Y
         """
         cdef:
-            double muX, muY, theta0, theta1
+            double muX, muY, theta0, theta1, theta2
             int length, i
             double numerator, denominator
             double X_diff
@@ -145,14 +144,15 @@ cdef class LeafBuilderLocalLinear(LeafBuilderRegression):
             double theta0, theta1
 
         theta0, theta1, muY = self._theta(indices)
+        theta2 = 0.0
         mean = np.array(muY, dtype=np.double, ndmin=1)
 
-        return LocalLinearLeafNode(leaf_id, indices, depth, impurity,
-                                   weighted_samples, mean, parent, theta0,
-                                   theta1)
+        return LocalPolynomialLeafNode(leaf_id, indices, depth, impurity,
+                                       weighted_samples, mean, parent, theta0,
+                                       theta1, theta2)
 
 
-cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
+cdef class LeafBuilderPartialQuadratic(LeafBuilderRegression):
 
     cdef (double, double, double) _custom_mean(self, int[::1] indices):
         cdef:
@@ -234,6 +234,6 @@ cdef class LeafBuilderLocalQuadratic(LeafBuilderRegression):
         theta0, theta1, theta2, muY = self._theta(indices)
         mean = np.array(muY, dtype=np.double, ndmin=1)
 
-        return LocalQuadraticLeafNode(leaf_id, indices, depth, impurity,
-                                      weighted_samples, mean, parent, theta0,
-                                      theta1, theta2)
+        return LocalPolynomialLeafNode(leaf_id, indices, depth, impurity,
+                                       weighted_samples, mean, parent, theta0,
+                                       theta1, theta2)

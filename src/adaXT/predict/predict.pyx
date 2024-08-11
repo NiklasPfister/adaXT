@@ -193,36 +193,10 @@ cdef class PredictRegression(Predict):
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        return np.mean(predictions, axis=1)
+        return np.mean(predictions, axis=-1)
 
 
-cdef class PredictLocalLinear(PredictRegression):
-    # TODO: Updated in the same way as LocalQuadratic
-    def predict(self, object X, **kwargs):
-        cdef:
-            int i, cur_split_idx, n_obs
-            double cur_threshold
-            object cur_node
-            double[:] Y
-
-        X = Predict.__check_dimensions(self, X)
-        n_obs = X.shape[0]
-        Y = np.empty(n_obs)
-
-        for i in range(n_obs):
-            cur_node = self.root
-            while isinstance(cur_node, DecisionNode):
-                cur_split_idx = cur_node.split_idx
-                cur_threshold = cur_node.threshold
-                if X[i, cur_split_idx] < cur_threshold:
-                    cur_node = cur_node.left_child
-                else:
-                    cur_node = cur_node.right_child
-            Y[i] = cur_node.theta0 + cur_node.theta1*X[i, 0]
-        return Y
-
-
-cdef class PredictLocalQuadratic(PredictRegression):
+cdef class PredictLocalPolynomial(PredictRegression):
 
     def predict(self, object X, **kwargs):
         cdef:
@@ -234,8 +208,9 @@ cdef class PredictLocalQuadratic(PredictRegression):
         if "order" not in kwargs.keys():
             order = [0, 1, 2]
         else:
-            order = kwargs['order']
-            # TODO: ADD checks
+            order = np.array(kwargs['order'], ndmin=1, dtype='int')
+            if np.max(order) > 2 or np.min(order) < 0:
+                raise ValueError('order needs to be convertable to an array with values in 0, 1 or 2')
 
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
@@ -260,16 +235,6 @@ cdef class PredictLocalQuadratic(PredictRegression):
                     deriv_mat[i, ind] = 2.0 * cur_node.theta2
                 ind += 1
         return deriv_mat
-
-    # TODO: Check whether its possible to ensure that an extra axis is added
-    # when predicting individual trees rather than untangling it again here
-    @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        if "order" not in kwargs.keys():
-            order = [0, 1, 2]
-        else:
-            order = kwargs['order']
-        return np.mean(np.dstack(np.hsplit(predictions, len(order))), axis=2)
 
 
 cdef class PredictQuantile(Predict):
@@ -310,6 +275,7 @@ cdef class PredictQuantile(Predict):
                 Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
 
+    # TODO: Check whether this does what it should
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
         quantile = kwargs['quantile']

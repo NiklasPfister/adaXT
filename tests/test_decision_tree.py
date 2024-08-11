@@ -1,8 +1,8 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.criteria import Gini_index, Squared_error, Entropy, Local_linear, Local_quadratic
+from adaXT.criteria import (Gini_index, Squared_error, Entropy, Partial_linear,
+                            Partial_quadratic)
 
 import numpy as np
-import scipy
 
 
 def rec_node(node: LeafNode | DecisionNode | None, depth: int) -> None:
@@ -312,22 +312,27 @@ def sanity_entropy(n, m):
         assert Y[i] == pred[i], f"Entropy: Expected {Y[i]} Got {pred[i]}"
 
 
-def sanity_local_linear(n, m):
-    X = np.random.uniform(0, 100, (n, m))
-    Y = np.random.uniform(0, 10, n)
-    tree = DecisionTree("Regression", criteria=Local_linear)
+def sanity_partial_linear(n, m):
+    X = np.c_[np.linspace(-1, 1, n),
+              np.random.uniform(-1, 1, (n, m))]
+    Y = X[:, 0] * (X[:, 0] > 0)
+    tree = DecisionTree("Gradient", criteria=Partial_linear, max_depth=1)
     tree.fit(X, Y)
+    # Since the response is a piece-wise linear function it can be fit
+    # exactly with the Partial_linear criteria, with a single split at 0
+    assert (tree.leaf_nodes[0].impurity + tree.leaf_nodes[1].impurity) == 0
 
-    for node in tree.leaf_nodes:
-        assert isinstance(node, LeafNode)
-        # Local_linear fits linear regression of Y on X[:, 0], so for the fully
-        # grown tree, X[:, 0] should have a correlation of 1 with Y in the leaf
-        # nodes
-        if node.indices.shape[0] > 1:
-            corr = scipy.stats.pearsonr(X[node.indices, 0], Y[node.indices])[0]
-            assert abs(corr) == 1.0
 
-# TODO: Add sanity check for local_quadratic
+def sanity_partial_quadratic(n, m):
+    X = np.c_[np.linspace(-1, 1, n),
+              np.random.uniform(-1, 1, (n, m))]
+    Y = X[:, 0] ** 2 * (X[:, 0] > 0)
+    tree = DecisionTree("Gradient", criteria=Partial_quadratic, max_depth=1)
+    tree.fit(X, Y)
+    # Since the response is a piece-wise quadratic function it can be fit
+    # exactly with the Partial_quadratic criteria, with a single split at 0
+    assert (tree.leaf_nodes[0].impurity + tree.leaf_nodes[1].impurity) == 0
+
 
 def test_sanity():
     n = 10000
@@ -335,7 +340,7 @@ def test_sanity():
     sanity_regression(n, m)
     sanity_gini(n, m)
     sanity_entropy(n, m)
-    sanity_local_linear(n, m)
+    sanity_partial_linear(n, m)
 
 
 if __name__ == "__main__":

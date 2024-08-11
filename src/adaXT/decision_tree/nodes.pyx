@@ -50,24 +50,7 @@ class LeafNode(Node):
         self.value = np.asarray(value)
 
 
-class LocalLinearLeafNode(LeafNode):
-    def __init__(
-            self,
-            id: int,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            weighted_samples: float,
-            value: np.ndarray,
-            parent: object,
-            theta0: float,
-            theta1: float) -> None:
-        super().__init__(id, indices, depth, impurity, weighted_samples, value, parent)
-        self.theta0 = theta0
-        self.theta1 = theta1
-
-
-class LocalQuadraticLeafNode(LeafNode):
+class LocalPolynomialLeafNode(LeafNode):
     def __init__(
             self,
             id: int,
