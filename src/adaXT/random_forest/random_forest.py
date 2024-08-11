@@ -364,9 +364,11 @@ class RandomForest(BaseModel):
 
             for tree in self.trees:
                 if self.__is_honest():
-                    tree.refit_leaf_nodes(X=self.X, Y=self.Y,
-                                          sample_weight=self.sample_weight,
-                                          prediction_indices=prediction_indices)
+                    tree.refit_leaf_nodes(
+                        X=self.X,
+                        Y=self.Y,
+                        sample_weight=self.sample_weight,
+                        prediction_indices=prediction_indices)
         else:
             partial_func = partial(
                 build_single_tree,

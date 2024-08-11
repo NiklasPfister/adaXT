@@ -308,6 +308,7 @@ def __check_leaf_count(forest: RandomForest, expected_weight: float):
         assert tree_sum == expected_weight, "The expected leaf node failed for\
         the given forest"
 
+
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
     n = 10

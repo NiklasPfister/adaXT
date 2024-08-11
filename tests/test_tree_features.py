@@ -540,10 +540,10 @@ def test_local_polynomial_predict():
     residuals1 = tree1.predict(X, order=0)[:, 0] - corr_data
     residuals2 = tree2.predict(X, order=0)[:, 0] - corr_data ** 2
     assert (
-         np.sum(residuals1 ** 2)== 0.0
+        np.sum(residuals1 ** 2) == 0.0
     ), "Partial_linear criteria and PredictLocalPolynomial does not behave as expected"
     assert (
-         np.sum(residuals2 ** 2)== 0.0
+        np.sum(residuals2 ** 2) == 0.0
     ), "Partial_quadratic criteria and PredictLocalPolynomial does not behave as expected"
 
 
