@@ -112,7 +112,7 @@ cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
             mean of Y
         """
         cdef:
-            double muX, muY, theta0, theta1, theta2
+            double muX, muY, theta0, theta1
             int length, i
             double numerator, denominator
             double X_diff
@@ -141,7 +141,7 @@ cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
                             object parent):
         cdef:
             double[::1] mean
-            double theta0, theta1
+            double theta0, theta1, theta2
 
         theta0, theta1, muY = self._theta(indices)
         theta2 = 0.0
