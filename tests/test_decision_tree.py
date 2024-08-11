@@ -341,6 +341,7 @@ def test_sanity():
     sanity_gini(n, m)
     sanity_entropy(n, m)
     sanity_partial_linear(n, m)
+    sanity_partial_quadratic(n, m)
 
 
 if __name__ == "__main__":
