@@ -304,9 +304,8 @@ def test_random_forest_weights():
 def __check_leaf_count(forest: RandomForest, expected_weight: float):
     for tree in forest.trees:
         tree_sum = np.sum([node.weighted_samples for node in tree.leaf_nodes])
-        assert tree_sum == expected_weight, f"The expected leaf node failed for\
+        assert tree_sum == expected_weight, "The expected leaf node failed for\
         the given forest"
-
 
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
@@ -335,12 +334,52 @@ def test_honest_sampling_leaf_samples():
     __check_leaf_count(honest_forest, n_fit)
 
 
+def test_n_jobs():
+    random_state = np.random.RandomState(2024)
+    n = 1000
+    m = 10
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    forest_1 = run_squared_error(
+        X_reg, Y_reg, n_jobs=1, n_estimators=100, seed=2024)
+    forest_5 = run_squared_error(
+        X_reg, Y_reg, n_jobs=5, n_estimators=100, seed=2024)
+    pred_1 = forest_1.predict(X_reg)
+    pred_2 = forest_5.predict(X_reg)
+    assert np.allclose(pred_1, pred_2)
+
+
+def test_n_jobs_predict_forest():
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 100
+    m = 10
+    n_estimators = 5
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    squared_forest = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=1,
+        n_estimators=n_estimators,
+        seed=seed,
+        max_depth=2,
+        sampling=None,
+    )
+    res = squared_forest.predict_forest_weight(X=X_reg, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    for item in trees:
+        item.fit(X_reg, Y_reg)
+    tree_sum = np.mean([tree.predict_leaf_matrix(
+        X=X_reg, scale=False) for tree in trees], axis=0)
+    assert np.array_equal(tree_sum, res)
+
+
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_linear_regression_forest()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
-    test_honest_sampling_leaf_samples()
+    # test_honest_sampling_leaf_samples()
+    test_n_jobs_predict_forest()
 
     print("Done")

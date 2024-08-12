@@ -476,6 +476,25 @@ def test_quantile_predict():
     ), f"Quantile predict failed with {pred} - should be {np_quantile}"
 
 
+def test_quantile_predict_array():
+    X, Y = uniform_x_y(10000, 5)
+    tree = DecisionTree(
+        "Quantile",
+        criteria=Squared_error,
+        predict=PredictQuantile,
+        leaf_builder=LeafBuilderRegression,
+        max_depth=0,
+    )
+    tree.fit(X, Y)
+    pred = tree.predict(
+        X[0], quantile=[0.95, 0.1]
+    )  # As we are never splitting, we can just check a single data point
+    np_quantile = np.quantile(Y, [0.95, 0.1])
+    assert (
+        np.array_equal(pred, [np_quantile])
+    ), f"Quantile predict failed with {pred} - should be {np_quantile}"
+
+
 def test_linear_predict():
     """
     As the Linear Regression is fitted on the index 0 of the X training data,
@@ -514,4 +533,4 @@ def test_linear_predict():
 
 
 if __name__ == "__main__":
-    print("Done.")
+    test_quantile_predict_array()
