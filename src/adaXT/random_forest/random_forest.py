@@ -27,7 +27,7 @@ def get_sample_indices(
     n_rows: int,
     random_state: np.random.RandomState,
     sampling_parameter: int | tuple[int, int],
-    sampling: str,
+    sampling: str | None,
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
