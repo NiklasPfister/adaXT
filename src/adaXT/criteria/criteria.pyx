@@ -7,7 +7,6 @@ import numpy as np
 from .crit_helpers cimport weighted_mean
 
 cdef class Criteria:
-
     def __cinit__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.x = x
         self.y = y
@@ -67,14 +66,6 @@ cdef class Criteria:
         return (crit, mean_thresh)
 
 cdef class Gini_index(Criteria):
-    cdef:
-        double[::1] class_labels
-        double* weight_in_class_left
-        double* weight_in_class_right
-        double weight_left
-        double weight_right
-        int num_classes
-        bint first_call
 
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.first_call = True
@@ -220,15 +211,6 @@ cdef class Gini_index(Criteria):
 
 
 cdef class Entropy(Criteria):
-    cdef:
-        double[::1] class_labels
-        double* weight_in_class_left
-        double* weight_in_class_right
-        double weight_left
-        double weight_right
-        int num_classes
-        bint first_call
-
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.first_call = True
 
@@ -380,10 +362,6 @@ cdef class Entropy(Criteria):
 
 
 cdef class Squared_error(Criteria):
-    cdef:
-        double left_sum
-        double right_sum
-        double weight_left, weight_right
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
