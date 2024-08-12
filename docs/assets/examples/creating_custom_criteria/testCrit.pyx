@@ -1,6 +1,6 @@
 from adaXT.decision_tree.criteria cimport Criteria
 
-cdef class Linear_regression(Criteria):
+cdef class Partial_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) custom_mean(self, int[:] indices):
@@ -18,8 +18,8 @@ cdef class Linear_regression(Criteria):
 
     cdef (double, double) theta(self, int[:] indices):
         """
-        Calculate theta0 and theta1 used for a Linear Regression
-        on X[:, 0] and Y
+        Estimates regression parameters for a linear regression of the response on
+        the first coordinate, i.e., Y is approximated by theta0 + theta1 * X[:, 0].
         ----------
 
         Parameters
@@ -30,7 +30,7 @@ cdef class Linear_regression(Criteria):
         Returns
         -------
         (double, double)
-            where the first element is theta0 and second element is theta1
+            where first element is theta0 and second is theta1
         """
         cdef:
             double muX, muY, theta0, theta1

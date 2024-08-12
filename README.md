@@ -13,6 +13,27 @@ help, or leave general comments.
 Website:
 [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io/adaXT)
 
+### Overview
+
+adaXT implements several different tree types that can be used out-of-the-box,
+both as decision trees and random forests. Currently, the following tree types
+are implemented:
+
+- **Classification:** Prediction tasks in which the response is categorical.
+- **Regression:** Prediction tasks in which the response is continuous.
+- **Quantile:** Uncertainty quantification tasks in which the response is
+  continuous and the goal is to estimate one or more quantiles of the
+  conditional distribution of the response given the predictors.
+- **Gradient:** Tasks in which one aims to estimate (directional) derivatives of
+  the response given the predictors. A related tree type is used in the
+  [Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
+  method.
+
+Beyond these pre-defined tree types, adaXT offers a simple interface to extend
+or modify most components of the tree models. For example, it is easy to create
+a [custom criteria](/docs/user_guide/creatingCriteria.md) function that is used
+to create splits.
+
 ### Getting started
 
 adaXT is available on [pypi](https://pypi.org/project/adaXT) and can be
@@ -22,8 +43,8 @@ installed via pip
 pip install adaXT
 ```
 
-Several pre-defined tree types including for regression, classification and
-quantile regression, are available and can be easily used as follows:
+Working with any of the above tree types is easy with adaXT, as illustrated in
+the following example using `Regression` and `Quantile` random forests:
 
 ```python
 from adaXT.random_forest import RandomForest
@@ -59,7 +80,7 @@ The main advantage of adaXT over existing tree-based ML packages is its
 modularity and extendability, which is discussed in detail in the
 [documentation](https://NiklasPfister.github.io/adaXT).
 
-### Goals
+### Project goals
 
 This project aims to provide a flexible and unified code-base for various
 tree-based algorithms that strikes a balance between speed and ease with which

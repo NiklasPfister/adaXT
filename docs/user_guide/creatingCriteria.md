@@ -16,7 +16,7 @@ We start by explaining how to create the .pyx file.
 
 In your working directory create a .pyx file (e.g., `my_custom_criteria.pyx`) in
 which you first import the Criteria "super" class and then define the new custom
-Criteria class which inherits from the imported Criteria class. An example of
+criteria class which inherits from the imported Criteria class. An example of
 the skeleton of such a file is given as below.
 
 ```cython
@@ -54,23 +54,15 @@ Further computational speed-ups can be achieved by implementing
 are not explicitly defined the code defaults to using the `impurity` method.
 
 Once you have finished defining your critera class and saved the .pyx file, you
-can compile the Cython code and use it as part of adaXT. We discuss how to do
-this next.
-
-function build your custom Cython file. This can be done either by following
-[building cython code](https://cython.readthedocs.io/en/latest/src/quickstart/build.html)
-or by following the steps below.
-
-Now that you have implemented your custom criteria function, we explain how to
-use it in a simple setting.
+can compile the Cython code and use it as part of adaXT.
 
 ## Compiling and using the custom criteria
 
-Details on how to compile and use Cython code is discussed
-[here](https://cython.readthedocs.io/en/latest/src/quickstart/build.html). Here
-we discuss two options:
+We discuss two specific approaches for using your custom criteria. More details
+on how to compile and use Cython code can be found
+[here](https://cython.readthedocs.io/en/latest/src/quickstart/build.html).
 
-- Building a Cython module: This allows you to only compile the new Criteria
+- Building a Cython module: This allows you to only compile the new criteria
   class once and then import it as a regular Python module.
 - Use pyximport to import the .pyx file: This avoids needing to build the Cython
   code manually and instead compiles the code each time you run your Python
@@ -78,7 +70,7 @@ we discuss two options:
 
 ### Building a Cython module
 
-#### TODO
+<!-- TODO: Add explanation -->
 
 ### Using pyximport to import the .pyx file
 
@@ -112,13 +104,13 @@ tree = DecisionTree("Regression", criteria=my_custom_critera.My_custom_criteria,
 tree.fit(X, Y)
 ```
 
-We now go over a detailed example in which we construct the linear regression
+We now go over a detailed example in which we construct the `Partial_linear`
 criteria.
 
-## A detailed example: Linear regression
+## A detailed example: `Partial_linear`
 
-The general idea of the linear regression criteria is to fit a linear function
-on the first feature with the $Y$ value as the response, that is,
+The general idea of the `Partial_linear` criteria is to fit a linear function on
+the first feature with the $Y$ value as the response, that is,
 
 $$
 L = \sum_{i \in I} (Y[i] - \theta_0 - \theta_1 X[i, 0])^2 \\
@@ -136,21 +128,22 @@ where $I$ denotes the indices of the samples within a given node, $X$ is the
 feature matrix, $Y$ is the response vector, $\mu_X$ is mean vector of the
 columns of $X$ and $\mu_Y$ is the mean of $Y$.
 
-When creating a new criteria function we import and define the class as
-described above. This leads to
+When creating a new criteria class we import and define the class as described
+above. We open a new file in our working directory and call it `testCrit.pyx`
+and start with the following lines:
 
 ```python
 from adaXT.criteria cimport Criteria
 
-cdef class Linear_regression(Criteria):
+cdef class Partial_linear(Criteria):
 ```
 
 ### Calculating the mean
 
 Now although we have provided a mean function within the
-adaXT.decision_tree.crit_helpers, in this specific example we need to calculate
-multiple means, and there is no reason to do two passes over the same indices
-$I$, so we create a custom mean method in Cython.
+`adaXT.decision_tree.crit_helpers`, in this specific example we need to
+calculate multiple means, and there is no reason to do two passes over the same
+indices $I$, so we create a custom mean method in Cython.
 
 ```cython
 # Custom mean function, such that we don't have to loop through twice.
@@ -175,10 +168,10 @@ Cython magic. If you wish to learn more about the Cython language be sure to
 check out the [Cython documentation](https://cython.readthedocs.io/en/latest/).
 
 Furthermore, note that you can freely create any new method within the custom
-Criteria class criteria even if it is not defined in the standard parent
-Criteria class. Therefore you are not limited by the parent class and can freely
-extend it as long as you do not overwrite the `evaluate_split` (unless that is
-your intention).
+criteria class even if it is not defined in the standard parent criteria class.
+Therefore you are not limited by the parent class and can freely extend it as
+long as you do not overwrite the `evaluate_split` (unless that is your
+intention).
 
 ### Calculating theta
 
@@ -188,8 +181,8 @@ calculating the theta values, such that our code is more manageable.
 ```cython linenums="1"
 cdef (double, double) theta(self, int[:] indices):
     """
-    Calculate theta0 and theta1 used for a Linear Regression
-    on X[:, 0] and Y
+    Estimates regression parameters for a linear regression of the response on
+    the first coordinate, i.e., Y is approximated by theta0 + theta1 * X[:, 0].
     ----------
 
     Parameters
@@ -200,7 +193,7 @@ cdef (double, double) theta(self, int[:] indices):
     Returns
     -------
     (double, double)
-        where the first element is theta0 and second element is theta1
+        where first element is theta0 and second is theta1
     """
     cdef:
         double muX, muY, theta0, theta1
@@ -227,7 +220,7 @@ cdef (double, double) theta(self, int[:] indices):
 Again the majority of the Cython is not mandatory but speeds up the code. On
 line 26 we access our previously defined custom mean function, which returns the
 mean of the $X$ indices and the mean of the $Y$ indices as described above. Then
-at line 27 we loop over all the indices a second time and calculate
+on line 27 we loop over all the indices a second time and calculate
 $\sum_{i \in I} (X[i, 0] -
 \mu_X) (Y[i] - \mu_Y)$ and
 $\sum_{i \in I} (X[i, 0] - \mu_X)^2$ which are the numerator and denominator,
@@ -259,43 +252,47 @@ cpdef double impurity(self, int[:] indices):
 ```
 
 Making sure the impurity method has the required signature, we simply calculate
-L as described and return its value. One important thing to note is that
+L as described and return its value. One important point to note is that
 `cur_sum` is defined on line 3 to have type double, because the impurity
 function is defined to have a double as return value. When creating the impurity
 method you must ensure this return type.
 
 ### Finishing up
 
-And that is it. You have now created your first Criteria function, and can
-freely use it within your own Python code. If you use the method described above
-to compile the Cython file every time the Python file is run leads to code that
-looks like this:
+And that is it. You have now created your first custom criteria class, and can
+freely use it within your own Python code. If you use the method that compiles
+the Cython file every time the Python file is run leads to code that looks like
+this:
 
 ```python
+import numpy as np
+import matplotlib.pyplot as plt
 from adaXT.decision_tree import DecisionTree
 from adaXT.decision_tree.tree_utils import plot_tree
-import matplotlib.pyplot as plt
-import pyximport; pyximport.install()
-import testCrit
-import numpy as np
 
+import pyximport
+pyximport.install()
+import testCrit
+
+# Generate training data
 n = 100
 m = 4
-
-
 X = np.random.uniform(0, 100, (n, m))
 Y = np.random.uniform(0, 10, n)
-tree = DecisionTree("Regression", testCrit.Linear_regression, max_depth=3)
+
+# Initialize and fit tree
+tree = DecisionTree("Regression", testCrit.Partial_linear, max_depth=3)
 tree.fit(X, Y)
 
+# Plot the tree
 plot_tree(tree)
 plt.show()
 ```
 
-This just creates a regression tree with the newly created custom
-Linear_regression Criteria function, specifies the `max_depth` to be 3 and then
-plots the tree using both our
+This creates a regression tree with the newly created custom
+`Partial_linear` criteria class, specifies the `max_depth` to be 3 and then
+plots the tree using both the  
 [plot_tree](../api_docs/tree_utils.md#adaXT.decision_tree.tree_utils.plot_tree)
-and the [matplotlib](https://matplotlib.org/). The full source code used within
+based on [matplotlib](https://matplotlib.org/). The full source code used within
 this article can be found
-[here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/linear_regression).
+[here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/creating_custom_criteria/).
