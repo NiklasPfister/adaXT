@@ -127,6 +127,20 @@ class DecisionTree(BaseModel):
 
         return X, Y
 
+    def __check_sample_weight(self, sample_weight: np.ndarray, n_samples):
+
+        if sample_weight is None:
+            return np.ones(n_samples, dtype=np.double)
+        sample_weight = np.array(sample_weight, dtype=np.double)
+        if sample_weight.shape[0] != n_samples:
+            raise ValueError("sample_weight should have as many elements as X and Y")
+        if sample_weight.ndim > 1:
+            raise ValueError("sample_weight should have dimension (n_samples,)")
+        return sample_weight
+
+    # TODO: Typing missing, also Question: Do we want np.darray here or
+    # array-like In __check_inputs above we allow for objects but we don't
+    # allow for them in the predict functions
     def fit(
             self,
             X,
@@ -134,11 +148,15 @@ class DecisionTree(BaseModel):
             sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None) -> None:
 
+        # Check inputs
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
-            row, _ = X.shape
-            # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
-            sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+        row, col = X.shape
+        # TODO: Check whether to move the following line fully inside the builder
+        self.int_max_features = self.__parse_max_features(self.max_features, col)
+        # If sample_weight is valid it is simply passed through
+        # check_sample_weight, if it is None all entries are set to 1
+        sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
 
         builder = DepthTreeBuilder(
             X=X,
@@ -334,11 +352,28 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
-    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                         np.ndarray, sample_indices: np.ndarray, **kwargs):
+    def refit_leaf_nodes(
+            self,
+            X: np.ndarray,
+            Y: np.ndarray,
+            sample_weight: np.ndarray | None = None,
+            sample_indices: np.ndarray | None = None,
+            **kwargs):
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
+        # Check inputs
+        if not self.skip_check_input:
+            X, Y = self.__check_input(X, Y)
+        row, _ = X.shape
+        # TODO: Should self.n_row be updated here? We probably need a bit of a
+        # rewrite/update of the predict_leaf_matrix and predict_forest_weights
+        # functions
+
+        # If sample_weight is valid it is simply passed through
+        # check_sample_weight, if it is None all entries are set to 1
+        sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+
         # Remove current leaf nodes
         indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
