@@ -1,4 +1,4 @@
-name: Build
+name: Upload TestPyPi
 
 on:
   workflow_dispatch:
@@ -23,7 +23,6 @@ jobs:
         with:
           package-dir: .
           output-dir: wheelhouse
-          config-file: "{package}/pyproject.toml"
 
       - uses: actions/upload-artifact@v4
         with:
