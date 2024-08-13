@@ -47,3 +47,109 @@ cdef class Criteria:
         followed by the mean threshold between the
         split index and the closest neighbour outside.
     """
+
+cdef class Gini_index(Criteria):
+    cdef:
+        double[::1] class_labels
+        double* weight_in_class_left
+        double* weight_in_class_right
+        double weight_left
+        double weight_right
+        int num_classes
+        bint first_call
+
+    cdef void reset_weight_list(self, double* class_occurences)
+
+    cpdef double impurity(self, int[::1] indices)
+
+    cdef double _gini(self, int[::1] indices, double* class_occurences)
+    """
+    Function that calculates the gini index of a dataset
+    ----------
+
+    Parameters
+    ----------
+    indices : memoryview of NDArray
+        The indices to calculate the gini index for
+
+    class_occurences : double pointer
+        A pointer to an double array for the number of elements seen of each class
+
+    Returns
+    -----------
+    double
+        The value of the gini index
+    """
+
+    cdef double update_proxy(self, int[::1] indices, int new_split)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
+
+
+cdef class Entropy(Criteria):
+    cdef:
+        double[::1] class_labels
+        double* weight_in_class_left
+        double* weight_in_class_right
+        double weight_left
+        double weight_right
+        int num_classes
+        bint first_call
+
+    cpdef double impurity(self, int[::1] indices)
+
+    cdef void reset_weight_list(self, double* class_occurences)
+
+    cdef double _entropy(self, int[:] indices, double* class_occurences)
+    """
+    Function that calculates the entropy index of a dataset
+    ----------
+
+    Parameters
+    ----------
+    indices : memoryview of NDArray
+        The indices to calculate
+
+    class_occurences : double pointer
+        A pointer to an double array for the number of elements seen of each class
+
+    Returns
+    -----------
+    double
+        The value of the entropy index
+    """
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
+
+    cdef double update_proxy(self, int[::1] indices, int new_split)
+
+cdef class Squared_error(Criteria):
+    cdef:
+        double left_sum
+        double right_sum
+        double weight_left, weight_right
+
+    cdef double update_proxy(self, int[::1] indices, int new_split)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
+
+    cpdef double impurity(self, int[::1] indices)
+
+    cdef double _squared_error(self, int[::1] indices)
+    """
+    Function used to calculate the squared error of y[indices]
+    ----------
+
+    Parameters
+    ----------
+    indices : memoryview of NDArray
+        The indices to calculate
+
+    left_or_right : int
+        An int indicating whether we are calculating on the left or right dataset
+
+    Returns
+    -------
+    double
+        The variance of the response y
+    """

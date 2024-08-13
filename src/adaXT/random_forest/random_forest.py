@@ -27,7 +27,7 @@ def get_sample_indices(
     n_rows: int,
     random_state: np.random.RandomState,
     sampling_parameter: int | tuple[int, int],
-    sampling: str,
+    sampling: str | None,
 ) -> tuple[np.ndarray | None, np.ndarray | None]:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
@@ -325,8 +325,11 @@ class RandomForest(BaseModel):
                 raise ValueError(
                     "Provided sampling parameter is not an integer a float of None"
                 )
-        else:
+        elif self.sampling is None:
             return None
+        else:
+            raise ValueError(
+                f"Provided sampling ({self.sampling}) does not exist")
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -364,9 +367,11 @@ class RandomForest(BaseModel):
 
             for tree in self.trees:
                 if self.__is_honest():
-                    tree.refit_leaf_nodes(X=self.X, Y=self.Y,
-                                          sample_weight=self.sample_weight,
-                                          prediction_indices=prediction_indices)
+                    tree.refit_leaf_nodes(
+                        X=self.X,
+                        Y=self.Y,
+                        sample_weight=self.sample_weight,
+                        prediction_indices=prediction_indices)
         else:
             partial_func = partial(
                 build_single_tree,
@@ -519,8 +524,25 @@ class RandomForest(BaseModel):
 
     def predict(self, X: np.ndarray, **kwargs):
         """
-        Predicts a y-value for given X values using the trees of the forest. In the case of a classification tree with equal majority vote,
-        the lowest class that has maximum votes is returned.
+        Predicts response values at X using fitted random forest.  The behavior
+        of this function is determined by the Prediction class used in the
+        decision tree. For currently existing tree types the corresponding
+        behavior is as follows:
+
+        Classification:
+        ----------
+        Returns the class based on majority vote among the trees. In the case
+        of tie, the lowest class with the maximum number of votes is returned.
+
+        Regression:
+        ----------
+        Returns the average response among all trees.
+
+        Quantile:
+        ----------
+        Returns the conditional quantile of the response, where the quantile is
+        specified by passing a list of quantiles via the `quantile` parameter.
+
 
         Parameters
         ----------
