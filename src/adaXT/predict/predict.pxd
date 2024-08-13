@@ -6,10 +6,9 @@ cdef class Predict():
         double[::1] Y
         int n_features
         object root
-
     cdef double[:, ::1] __check_dimensions(self, object X)
 
-    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale=*)
+    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False)
 
     cpdef list predict_proba(self, object X)
 
@@ -28,8 +27,7 @@ cdef class PredictRegression(Predict):
 
 
 cdef class PredictLocalPolynomial(PredictRegression):
-    cdef:
-        double[:, ::1] deriv_mat
+    pass
 
 
 cdef class PredictQuantile(Predict):

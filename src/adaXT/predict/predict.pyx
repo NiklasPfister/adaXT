@@ -208,7 +208,6 @@ cdef class PredictLocalPolynomial(PredictRegression):
             if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
                 raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
 
-
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         deriv_mat = np.empty((n_obs, len(order)))
