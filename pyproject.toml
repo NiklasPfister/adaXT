@@ -8,5 +8,3 @@ max-line-length = 127
 max-line-length = 127
 per-file-ignores = ['__init__.py:F401']
 
-[tool.cibuildwheel]
-skip = ["cp3{6,7,8,9}", 'pp*']
