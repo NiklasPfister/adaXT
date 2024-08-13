@@ -163,12 +163,12 @@ class DecisionTree(BaseModel):
             raise AttributeError("The tree has not been fitted before trying to call predict_proba")
         return np.asarray(self.predictor.predict_proba(X))
 
-    def __get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
+    def __get_leaf(self, scale: bool = False) -> dict:
         cdef:
             int i, j
             int[::1] indices
             int n_node
-            int n_rows
+            int n_rows_predict
 
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
@@ -177,37 +177,30 @@ class DecisionTree(BaseModel):
         if (not leaf_nodes):  # make sure that there are calculated observations
             raise ValueError("The tree has no leaf nodes")
 
-        n_rows = self.n_rows
-        matrix = np.zeros((n_rows, n_rows))
+        ht = {}
         for node in leaf_nodes:
-            indices = node.indices
-            for i in indices:
-                for j in indices:
-                    if scale:
-                        n_node = len(node.indices)
-                        matrix[i, j] += 1/n_node
-                    else:
-                        matrix[i, j] += 1
-        return matrix
+            ht[node.id] = node.indices
+        return ht
 
-    def __tree_based_weights(hash1, hash2, size_X0, size_X1, scaling):
-        matrix = np.zeros(size_X0, size_X1)
+    def __tree_based_weights(self, hash1, hash2, size_X0, size_X1, scaling):
+        matrix = np.zeros((size_X0, size_X1))
         hash1_keys = hash1.keys()
         hash2_keys = hash2.keys()
         for xi in hash1_keys:
             if xi in hash2_keys:
-                indicies_1 = hash1[xi]
-                indicies_2 = hash2[xi]
+                indices_1 = hash1[xi]
+                indices_2 = hash2[xi]
                 if scaling == 0: 
-                    val = 1/len(indicies_1)
+                    val = 1.0/len(indices_1)
+                    print(val)
                 elif scaling == 1:
-                    val = 1/(len(indicies_1) + len(indicies_2))
+                    val = 1.0/(len(indices_1) + len(indices_2))
                 else:
-                    val = 1
+                    val = 1.0
                 matrix[np.ix_(indices_1, indices_2)] = val
         return matrix
 
-    def similarity(X0, X1, scaling):
+    def similarity(self, X0, X1, scaling):
         hash1 = self.predict_leaf(X0)
         hash2 = self.predict_leaf(X1)
         if scaling:
@@ -218,11 +211,16 @@ class DecisionTree(BaseModel):
                                          scaling)
 
     def predict_tree_based_weights(self, X: np.ndarray|None):
+        #TODO: Should this function take in scaling too?
+        if X is None:
+            size_2 = self.n_rows_predict
+            new_hash = self.__get_leaf()
+        else:
+            size_2 = X.shape[0]
+            new_hash = self.predict_leaf(X)
         default_hash_table = self.__get_leaf()
-        new_hash = self.predict_leaf(X)
-        #TODO: Make sure n_rows is updated refit leaf_nodes
         return self.__tree_based_weights(default_hash_table, new_hash,
-                                         self.n_rows, X.shape[0], scaling=0)
+                                         self.n_rows_predict, size_2, scaling=0)
 
     def predict_leaf(self, X: np.ndarray|None):
         if X is None:
@@ -383,9 +381,7 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
         row, _ = X.shape
-        # TODO: Should self.n_row be updated here? We probably need a bit of a
-        # rewrite/update of the predict_leaf_matrix and predict_forest_weights
-        # functions
+        self.n_rows_predict = row
 
         # If sample_weight is valid it is simply passed through
         # check_sample_weight, if it is None all entries are set to 1
@@ -667,7 +663,8 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
-        tree.n_rows = X.shape[0]
+        tree.n_rows_fit = X.shape[0]
+        tree.n_rows_predict = X.shape[0]
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = X.shape[1]

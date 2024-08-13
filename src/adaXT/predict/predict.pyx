@@ -36,8 +36,7 @@ cdef class Predict():
     cpdef list predict_proba(self, object X):
         raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
-    #TODO: predict_tree.
-    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
+    cpdef dict predict_leaf(self, object X):
         cdef:
             int i
             int row
@@ -64,16 +63,7 @@ cdef class Predict():
                 ht[cur_node.id] = [i]
             else:
                 ht[cur_node.id] += [i]
-        matrix = np.zeros((row, row))
-        for key in ht.keys():
-            indices = ht[key]
-            val = 1
-            count = len(indices)
-            if scale:
-                val = 1/count
-            matrix[np.ix_(indices, indices)] = val
-
-        return matrix
+        return ht
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
