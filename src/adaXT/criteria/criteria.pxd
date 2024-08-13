@@ -196,9 +196,9 @@ cdef class Partial_linear(Criteria):
 
 cdef class Partial_quadratic(Criteria):
 
-    cdef (double, double, double) __custom_mean(self, int[:] indices):
+    cdef (double, double, double) __custom_mean(self, int[:] indices)
 
-    cdef (double, double, double) __theta(self, int[:] indices):
+    cdef (double, double, double) __theta(self, int[:] indices)
     """
     Estimates regression parameters for a linear regression of the response
     on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
@@ -217,7 +217,7 @@ cdef class Partial_quadratic(Criteria):
         and fourth is the mean of Y
     """
 
-    cpdef double impurity(self, int[::1] indices):
+    cpdef double impurity(self, int[::1] indices)
     """
     Calculates the impurity of a node by
     L = sum_{i in indices} (Y[i] - theta0 - theta1*X[i, 0] - theta2*X[i, 0]**2)**2
