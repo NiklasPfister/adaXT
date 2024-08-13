@@ -194,7 +194,7 @@ cdef class Partial_linear(Criteria):
     """
 
 
- cdef class Partial_quadratic(Criteria):
+cdef class Partial_quadratic(Criteria):
 
     cdef (double, double, double) __custom_mean(self, int[:] indices):
 
