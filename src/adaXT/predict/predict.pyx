@@ -196,7 +196,7 @@ cdef class PredictLocalPolynomial(PredictRegression):
 
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, n_obs, ind
+            int i, cur_split_idx, n_obs, ind, oo
             double cur_threshold
             object cur_node
             double[:, ::1] deriv_mat
@@ -205,8 +205,9 @@ cdef class PredictLocalPolynomial(PredictRegression):
             order = [0, 1, 2]
         else:
             order = np.array(kwargs['order'], ndmin=1, dtype='int')
-            if np.max(order) > 2 or np.min(order) < 0:
-                raise ValueError('order needs to be convertable to an array with values in 0, 1 or 2')
+            if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
+                raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
+
 
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
@@ -224,10 +225,10 @@ cdef class PredictLocalPolynomial(PredictRegression):
             ind = 0
             for oo in order:
                 if oo == 0:
-                    deriv_mat[i, ind] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0] ** 2
-                if oo == 1:
+                    deriv_mat[i, ind] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0]*X[i, 0]
+                elif oo == 1:
                     deriv_mat[i, ind] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
-                if oo == 2:
+                elif oo == 2:
                     deriv_mat[i, ind] = 2.0 * cur_node.theta2
                 ind += 1
         return deriv_mat
