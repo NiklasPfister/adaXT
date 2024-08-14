@@ -31,10 +31,8 @@ There are several default tree types implemented in adaXT. Currently:
 - `Quantile`: Uncertainty quantification tasks in which the response is
   continuous and the goal is to estimate one or more quantiles of the
   conditional distribution of the response given the predictors.
-- `LinearRegression`: Prediction tasks in which the response is continuous and
-  in contrast to `Regression` it fits a linear function in the first predictor
-  component. This tree type can be used for derivative estimation and is used in
-  the
+- `Gradient`: Tasks in which one aims to estimate (directional) derivatives of
+  the response given the predictors. A related tree type is used in the
   [Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
   method.
 
@@ -156,28 +154,30 @@ print(tree.predict(Xnew, quantile=[0.1, 0.5, 0.9]))
 As seen from this example, the quantiles do not need to specified prior to
 prediction and it is possible to predict several quantiles simultaneously.
 
-### LinearRegression trees
+### Gradient trees
 
-When using the `LinearRegression` tree type, the following default components
-are used:
+When using the `Gradient` tree type, the following default components are used:
 
 - Criteria class:
-  [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+  [Partial_quadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.Partial_quadratic)
 - Predict class:
-  [PredictLinearRegression](../api_docs/#adaXT.predict.predict.PredictLinearRegression)
+  [PredictLocalPolynomial](../api_docs/#adaXT.predict.predict.PredictLocalPolynomial)
 - LeafBuilder class:
-  [LeafBuilderLinearRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderLinearRegression)
+  [LeafBuilderLocalPolynomial](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderLocalPolynomial)
 
-LinearRegression trees are a non-standard type of tree that can for example be
-used as part of a procedure to estimate derivatives as done in the
-[Xtrapolation]() procedure. They can however also be used to predict continuous
-responses and provide an illustrative example how easy it is to create custom
-tree types in adaXT (see the [user guide](/docs/user_guide/creatingCriteria.md)
-on how to construct a custom criteria).
+Gradient trees are a non-standard type of trees that allows estimation of
+derivates (in the first coordinate) of the conditional expectation function. The
+provided implementation is a slight modification of the procedure used in the
+[Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
+procedure. Instead of using the raw response values, we generally recommend to
+first use your favorite regression procedure (e.g., a regular random forest or a
+neural network) and use the resulting fitted values instead. This has the
+advantage that it removes the noise and uses the Gradient tree as an additional
+step to estimate the gradients.
 
-LinearRegression trees are similar to regression trees but instead of fitting a
-constant in each leaf they fit a linear function in the first predictor variable
-$X[:, 0]$. This allows them to fit linear functions in the first coordinate
+Gradient trees are similar to regression trees but instead of fitting a constant
+in each leaf they fit a quadratic function in the first predictor variable
+$X[:, 0]$. This allows them to fit quadratic functions in the first coordinate
 without splitting, as illustrated in the following example:
 
 ```python
@@ -187,18 +187,18 @@ from adaXT.decision_tree import DecisionTree
 
 n = 100
 X = np.random.normal(0, 1, (n, 1))
-Y = X[:, 0] + np.random.normal(0, 0.5, n)
+Y = X[:, 0] ** 2 + np.random.normal(0, 0.5, n)
 
 tree_reg = DecisionTree("Regression", min_samples_leaf=20)
 tree_reg.fit(X, Y)
 Yhat_reg = tree_reg.predict(X)
 
-tree_linreg = DecisionTree("LinearRegression", min_samples_leaf=20)
+tree_linreg = DecisionTree("Gradient", min_samples_leaf=20)
 tree_linreg.fit(X, Y)
 Yhat_linreg = tree_linreg.predict(X)
 
 plt.scatter(X, Y, label='raw data')
-plt.scatter(X, Yhat_reg, label='LinearRegression tree')
+plt.scatter(X, Yhat_reg, label='Gradient tree')
 plt.scatter(X, Yhat_linreg, label='Regression tree')
 plt.legend()
 plt.show()
@@ -219,4 +219,6 @@ other sections of the user guide.
 - [Tree-based weights](/docs/user_guide/tree_based_weights.md): A fitted
   decision tree provides a similarity notion on the predictor space that has
   some useful properties. Check out this section to see how this can be used.
-- [Visualizations and debugging](/docs/user_guide/vis_and_debug.md): There are several function available that can help with analyzing a fitted decision tree.
+- [Visualizations and debugging](/docs/user_guide/vis_and_debug.md): There are
+  several function available that can help with analyzing a fitted decision
+  tree.
