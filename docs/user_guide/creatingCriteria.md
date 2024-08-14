@@ -68,14 +68,31 @@ on how to compile and use Cython code can be found
   code manually and instead compiles the code each time you run your Python
   code.
 
-### Building a Cython module
+### Option 1: Building a Cython module
 
-<!-- TODO: Add explanation -->
+The first option of using your custom criteria is to create a `setup.py` file in
+which you build a Cython module that you can then import in your Python code.
+For this approach create a new subfolder (e.g., 'custom_criteria/') in your
+working directory in which you copy your .pyx file. Then in your working
+directory create a file called `setup.py` containing the following code:
 
-### Using pyximport to import the .pyx file
+```python
+from setuptools import setup
+from Cython.Build import cythonize
 
-Basically you can now create your **.py** file in which you fit a decision tree
-using the new custom criteria within the same folder where you created the
+setup(
+    name='Custom Criteria',
+    ext_modules=cythonize("my_custom_criteria.pyx"),
+)
+```
+
+This 
+
+### Option 2: Using pyximport to import the .pyx file
+
+Alternatively, you can let Cython compile the code each time you run your Python
+script. For this approach create your **.py** file in which you fit a decision
+tree using the new custom criteria within the same folder where you created the
 **.pyx**. For this to work there are a few small things left to do. In order to
 not manually recompile the Cython file every time you make changes, you can
 automate the compilation within the Python file by telling Cython to comile the
@@ -289,10 +306,10 @@ plot_tree(tree)
 plt.show()
 ```
 
-This creates a regression tree with the newly created custom
-`Partial_linear` criteria class, specifies the `max_depth` to be 3 and then
-plots the tree using both the  
-[plot_tree](../api_docs/tree_utils.md#adaXT.decision_tree.tree_utils.plot_tree)
-based on [matplotlib](https://matplotlib.org/). The full source code used within
-this article can be found
+This creates a regression tree with the newly created custom `Partial_linear`
+criteria class, specifies the `max_depth` to be 3 and then plots the tree using
+both the  
+[plot_tree](../api_docs/tree_utils.md#adaXT.decision_tree.tree_utils.plot_tree) based
+on [matplotlib](https://matplotlib.org/). The full source code used within this
+article can be found
 [here](https://github.com/NiklasPfister/adaXT/tree/Documentation/docs/assets/examples/creating_custom_criteria/).

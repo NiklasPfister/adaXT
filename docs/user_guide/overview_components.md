@@ -1,6 +1,6 @@
 # Overview of components in adaXT
 
-## TODO
+<!-- TODO: Write this section -->
 
 ## General structure
 

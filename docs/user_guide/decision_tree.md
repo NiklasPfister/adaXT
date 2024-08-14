@@ -193,13 +193,13 @@ tree_reg = DecisionTree("Regression", min_samples_leaf=20)
 tree_reg.fit(X, Y)
 Yhat_reg = tree_reg.predict(X)
 
-tree_linreg = DecisionTree("Gradient", min_samples_leaf=20)
-tree_linreg.fit(X, Y)
-Yhat_linreg = tree_linreg.predict(X)
+tree_grad = DecisionTree("Gradient", min_samples_leaf=20)
+tree_grad.fit(X, Y)
+Yhat_grad = tree_grad.predict(X)
 
 plt.scatter(X, Y, label='raw data')
 plt.scatter(X, Yhat_reg, label='Gradient tree')
-plt.scatter(X, Yhat_linreg, label='Regression tree')
+plt.scatter(X, Yhat_grad, label='Regression tree')
 plt.legend()
 plt.show()
 ```
