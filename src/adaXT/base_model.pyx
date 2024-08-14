@@ -2,12 +2,15 @@
 
 from .predict import Predict
 from .criteria import Criteria
-from .criteria.criteria import Entropy, Squared_error, Linear_regression
+from .criteria.criteria import Entropy, Squared_error, Partial_quadratic
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
 
-from .predict.predict cimport PredictClassification, PredictRegression, PredictLinearRegression, PredictQuantile
-from .leaf_builder.leaf_builder cimport LeafBuilderClassification, LeafBuilderRegression, LeafBuilderLinearRegression
+from .predict.predict cimport (PredictClassification, PredictRegression,
+                               PredictLocalPolynomial, PredictQuantile)
+from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
+                                         LeafBuilderRegression,
+                                         LeafBuilderPartialQuadratic)
 
 import numpy as np
 
@@ -21,7 +24,7 @@ class BaseModel:
         leaf_builder: type[LeafBuilder] | None,
         predict: type[Predict] | None,
     ):
-        tree_types = ["Classification", "Regression", "LinearRegression", "Quantile"]
+        tree_types = ["Classification", "Regression", "Gradient", "Quantile"]
         if tree_type in tree_types:
             if tree_type == "Classification":
                 if predict:
@@ -62,19 +65,19 @@ class BaseModel:
                     self.leaf_builder_class = leaf_builder
                 else:
                     self.leaf_builder_class = LeafBuilderRegression
-            elif tree_type == "LinearRegression":
+            elif tree_type == "Gradient":
                 if predict:
                     self.predict_class = predict
                 else:
-                    self.predict_class = PredictLinearRegression
+                    self.predict_class = PredictLocalPolynomial
                 if criteria:
                     self.criteria_class = criteria
                 else:
-                    self.criteria_class = Linear_regression
+                    self.criteria_class = Partial_quadratic
                 if leaf_builder:
                     self.leaf_builder_class = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderLinearRegression
+                    self.leaf_builder_class = LeafBuilderPartialQuadratic
 
         else:
             if (not criteria) or (not predict) or (not leaf_builder):

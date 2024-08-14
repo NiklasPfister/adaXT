@@ -43,9 +43,27 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             object parent)
 
 
-cdef class LeafBuilderLinearRegression(LeafBuilderRegression):
-    cdef (double, double) custom_mean(self, int[::1] indices)
-    cdef (double, double, double) theta(self, int[::1] indices)
+cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
+
+    cdef (double, double) __custom_mean(self, int[::1] indices)
+
+    cdef (double, double, double) __theta(self, int[::1] indices)
+
+    cpdef object build_leaf(self,
+                            int leaf_id,
+                            int[::1] indices,
+                            int depth,
+                            double impurity,
+                            double weighted_samples,
+                            object parent)
+
+
+cdef class LeafBuilderPartialQuadratic(LeafBuilderRegression):
+
+    cdef (double, double, double) __custom_mean(self, int[::1] indices)
+
+    cdef (double, double, double, double) __theta(self, int[::1] indices)
+
     cpdef object build_leaf(self,
                             int leaf_id,
                             int[::1] indices,

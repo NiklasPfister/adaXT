@@ -433,7 +433,7 @@ class RandomForest(BaseModel):
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
-        return np.column_stack(predictions)
+        return np.stack(predictions, axis=-1)
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
@@ -441,7 +441,7 @@ class RandomForest(BaseModel):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(tree.predict(X))
+                predictions.append(tree.predict_proba(X))
         else:
             predict_value = shared_numpy_array(X)
             partial_func = partial(
@@ -454,7 +454,7 @@ class RandomForest(BaseModel):
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
-        return predictions
+        return np.stack(predictions, axis=-1)
 
     def __check_dimensions(self, X: np.ndarray):
         # If there is only a single point

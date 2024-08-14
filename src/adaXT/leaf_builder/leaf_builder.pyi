@@ -7,5 +7,8 @@ class LeafBuilderClassification(LeafBuilder):
 class LeafBuilderRegression(LeafBuilder):
     pass
 
-class LeafBuilderLinearRegression(LeafBuilderRegression):
+class LeafBuilderPartialLinear(LeafBuilderRegression):
+    pass
+
+class LeafBuilderPartialQuadratic(LeafBuilderRegression):
     pass
