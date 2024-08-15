@@ -13,7 +13,7 @@ Alternatively, it can also be installed directly from the github repository:
 pip install git+https://github.com/NiklasPfister/adaXT.git#egg=adaXT
 ```
 
-Some features may have not yet been merged onto the main branch. If you are
+Some new features might not yet be merged onto the main branch. If you are
 feeling experimental and want to try out the current development version you can
 install it with the following command:
 
@@ -23,8 +23,8 @@ pip install git+https://github.com/NiklasPfister/adaXT.git@Development#egg=adaXT
 
 ## Modifying the project and building it locally
 
-Simple extensions such as adding a custom criteria or predict class can easily
-achieved without any modifications to the base package, as described
+Simple extensions such as adding a custom criteria or predict class can be
+easily done without any modifications to the base package, as described
 [here](/docs/user_guide/creatingCriteria.md) and
 [here](/docs/user_guide/creatingCriteria.md). However, more involved changes may
 require changing some of the inner workings of the package. As it is one of the
@@ -44,7 +44,12 @@ download the project and then build it locally.
    ```bash
    pip install .
    ```
-   Note that if you made added new files/directories you first have to modify
-   the `setup.py` file accordingly.
+   This will require the
+   [setuptools](https://setuptools.pypa.io/en/latest/index.html) package to be
+   installed. Note that if you added new files/directories you first have to
+   modify the `setup.py` file accordingly.
 4. **Use package**: Once the package is installed you can use it in the same way
    in which you used the original package.
+
+   You can also consider creating a pull request, if you think your improvement
+   or extension could be of interest to others.

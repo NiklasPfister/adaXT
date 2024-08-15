@@ -14,7 +14,9 @@ X = np.random.uniform(0, 100, (n, m))
 Y = np.random.uniform(0, 10, n)
 
 # Initialize and fit tree
-tree = DecisionTree("Regression", testCrit.Partial_linear, max_depth=3)
+tree = DecisionTree("Regression",
+                    criteria=testCrit.Partial_linear,
+                    max_depth=3)
 tree.fit(X, Y)
 
 # Plot the tree

@@ -1,9 +1,9 @@
-from adaXT.decision_tree.criteria cimport Criteria
+from adaXT.criteria cimport Criteria
 
 cdef class Partial_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double) custom_mean(self, int[:] indices):
+    cdef (double, double) custom_mean(self, int[::1] indices):
         cdef:
             double sumX, sumY
             int i
@@ -16,7 +16,7 @@ cdef class Partial_linear(Criteria):
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double) theta(self, int[:] indices):
+    cdef (double, double) theta(self, int[::1] indices):
         """
         Estimates regression parameters for a linear regression of the response on
         the first coordinate, i.e., Y is approximated by theta0 + theta1 * X[:, 0].
@@ -53,7 +53,7 @@ cdef class Partial_linear(Criteria):
         theta0 = muY - theta1*muX
         return (theta0, theta1)
 
-    cpdef double impurity(self, int[:] indices):
+    cpdef double impurity(self, int[::1] indices):
         cdef:
             double step_calc, theta0, theta1, cur_sum
             int i, length

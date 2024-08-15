@@ -72,9 +72,11 @@ on how to compile and use Cython code can be found
 
 The first option of using your custom criteria is to create a `setup.py` file in
 which you build a Cython module that you can then import in your Python code.
-For this approach create a new subfolder (e.g., 'custom_criteria/') in your
-working directory in which you copy your .pyx file. Then in your working
-directory create a file called `setup.py` containing the following code:
+For this approach create a new subfolder (e.g., `custom_criteria/`) in your
+working directory in which you copy your .pyx file (e.g.,
+`my_custom_criteria.pyx`) together with an empty file called `__init__.py`. Then
+in your working directory create a file called `setup.py` containing the
+following code:
 
 ```python
 from setuptools import setup
@@ -86,7 +88,19 @@ setup(
 )
 ```
 
-This 
+The Cython code can now be compiled with the command
+
+```bash
+python setup.py build_ext --inplace
+```
+
+Note that this command needs to be run in an environment in which adaXT and
+setuptools is installed. After the code is built the custom criteria can be
+imported as a regular Python module as follows:
+
+```python
+from custom_criteria import my_custom_criteria
+```
 
 ### Option 2: Using pyximport to import the .pyx file
 
