@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Node:
     indices: np.ndarray
     depth: int
@@ -23,12 +24,14 @@ class Node:
         """
         pass
 
+
 class DecisionNode(Node):
     threshold: float
     split_indx: int
-    left_child: Node|None
-    right_child: Node|None
-    parent: DecisionNode|None
+    left_child: Node | None
+    right_child: Node | None
+    parent: DecisionNode | None
+    split_idx: int
     visited: int
 
     def __init__(
@@ -63,11 +66,13 @@ class DecisionNode(Node):
         """
         pass
 
+
 class LeafNode(Node):
     value: list[float]
-    parent: DecisionNode|None
+    parent: DecisionNode | None
     id: int
     weighted_samples: float
+
     def __init__(
             self,
             id: int,
