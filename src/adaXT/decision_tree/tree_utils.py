@@ -1,5 +1,4 @@
 from . import DecisionTree, LeafNode, DecisionNode
-import textwrap
 # Plot an entire tree
 
 
@@ -42,36 +41,37 @@ class DecisionTreePlotter():
         self.width_distance = 10
 
     def plot_leaf_node(self, node: LeafNode, position: tuple):
+        text = f"""
+                Leaf Node\n
+                Impurity: {node.impurity:.3f}\n
+                weighted_samples: {node.weighted_samples}\n
+                value: {['%.2f' % x for x in node.value]}
+                """
         self.ax.text(
             position[0],
             position[1],
-            textwrap.dedent(
-                f"""
-            Leaf Node\n
-            Impurity: {node.impurity:.3f}\n
-            weighted_samples: {node.weighted_samples}\n
-            value: {['%.2f' % x for x in node.value]}
-            """
-            ),
+            "\n".join(line.strip() for line in text.splitlines()),
             ha="center",
             va="center",
             bbox=dict(facecolor="white", edgecolor="black"),
+            wrap=True,
         )
+        print(node.value)
 
     def plot_decision_node(self, node: DecisionNode, position: tuple):
-        self.ax.text(
-            position[0],
-            position[1],
-            textwrap.dedent(
-                f"""\
+        text = f"""
                 Decision Node\n\
                 x{node.split_idx} <= {node.threshold:.3f}\n\
                 Impurity: {node.impurity:.3f}\n\
                 """
-            ),
+        self.ax.text(
+            position[0],
+            position[1],
+            "\n".join(line.strip() for line in text.splitlines()),
             ha="center",
             va="center",
             bbox=dict(facecolor="white", edgecolor="black"),
+            wrap=True,
         )
 
     def calculate_node_positions(
