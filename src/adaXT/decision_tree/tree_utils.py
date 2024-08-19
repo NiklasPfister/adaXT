@@ -42,9 +42,9 @@ class DecisionTreePlotter():
 
     def plot_leaf_node(self, node: LeafNode, position: tuple):
         text = f"""
-                Leaf Node\n
-                Impurity: {node.impurity:.3f}\n
-                weighted_samples: {node.weighted_samples}\n
+                Leaf Node
+                Impurity: {node.impurity:.3f}
+                weighted_samples: {node.weighted_samples}
                 value: {['%.2f' % x for x in node.value]}
                 """
         self.ax.text(
@@ -60,9 +60,9 @@ class DecisionTreePlotter():
 
     def plot_decision_node(self, node: DecisionNode, position: tuple):
         text = f"""
-                Decision Node\n\
-                x{node.split_idx} <= {node.threshold:.3f}\n\
-                Impurity: {node.impurity:.3f}\n\
+                Decision Node
+                x{node.split_idx} <= {node.threshold:.3f}
+                Impurity: {node.impurity:.3f}
                 """
         self.ax.text(
             position[0],
