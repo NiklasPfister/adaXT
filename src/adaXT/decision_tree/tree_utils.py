@@ -1,5 +1,4 @@
-from typing import Type
-from . import DecisionTree, LeafNode, DecisionNode, Node
+from . import DecisionTree, LeafNode, DecisionNode
 import textwrap
 # Plot an entire tree
 
@@ -47,10 +46,10 @@ class DecisionTreePlotter():
             position[0],
             position[1],
             textwrap.dedent(
-                f"""\
-            Leaf Node\n\
-            Impurity: {node.impurity:.3f}\n\
-            weighted_samples: {node.weighted_samples}\n\
+                f"""
+            Leaf Node\n
+            Impurity: {node.impurity:.3f}\n
+            weighted_samples: {node.weighted_samples}\n
             value: {['%.2f' % x for x in node.value]}
             """
             ),
@@ -100,7 +99,7 @@ class DecisionTreePlotter():
         node_positions = {**left_positions, **right_positions, node: position}
         return node_positions
 
-    def plot_node(self, node: Type[Node]):
+    def plot_node(self, node):
         """
         Helper function used to plot each node of a DecisionTree
 
@@ -116,7 +115,7 @@ class DecisionTreePlotter():
         if node is None:
             return
 
-        position = node_positions[node]
+        position = self.node_positions[node]
 
         # Draw the node box
         if isinstance(node, LeafNode):
@@ -136,14 +135,14 @@ class DecisionTreePlotter():
                     [position[1], self.node_positions[node.left_child][1]],
                     color="black",
                 )
-                plot_node(node.left_child)
+                self.plot_node(node.left_child)
             if node.right_child is not None:
                 self.ax.plot(
                     [position[0], self.node_positions[node.right_child][0]],
                     [position[1], self.node_positions[node.right_child][1]],
                     color="black",
                 )
-                plot_node(node.right_child)
+                self.plot_node(node.right_child)
 
     def plot(self, tree: DecisionTree, ax=None) -> None:
         import matplotlib.pyplot as plt
