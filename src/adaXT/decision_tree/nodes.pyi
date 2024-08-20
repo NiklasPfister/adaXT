@@ -34,6 +34,7 @@ class DecisionNode(Node):
     left_child: Node | None
     right_child: Node | None
     parent: DecisionNode | None
+    split_idx: int
     visited: int
 
     def __init__(
