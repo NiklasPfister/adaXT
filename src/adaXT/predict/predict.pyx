@@ -3,8 +3,13 @@ import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
+from statistics import mode
 cimport numpy as cnp
 
+
+
+def default_predict(tree, X, **kwargs):
+    return tree.predict(X, **kwargs)
 
 cdef class Predict():
 
@@ -76,12 +81,12 @@ cdef class Predict():
         return matrix
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
-
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+        predict_list = [X_new for _ in range(len(trees))]
+        predictions = parallel.async_starmap(default_predict,
+                           map_input=zip(trees, predict_list),
+                           **kwargs)
+        return np.mean(predictions, axis=0)
 
 
 cdef class PredictClassification(Predict):
@@ -149,17 +154,12 @@ cdef class PredictClassification(Predict):
         return ret_val
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        def __most_frequent_element(arr):
-            values, counts = np.unique(arr, return_counts=True)
-            return values[np.argmax(counts)]
-        return np.apply_along_axis(
-            __most_frequent_element, 1, predictions
-        )
-
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        return np.mean(predictions, axis=-1)
+    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+        predict_list = [X_new for _ in range(len(trees))]
+        predictions = parallel.async_starmap(default_predict,
+                           map_input=zip(trees, predict_list),
+                           **kwargs)
+        return np.apply_along_axis(mode, 0, predictions)
 
 
 cdef class PredictRegression(Predict):
@@ -186,10 +186,6 @@ cdef class PredictRegression(Predict):
                     cur_node = cur_node.right_child
             Y[i] = cur_node.value[0]
         return Y
-
-    @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        return np.mean(predictions, axis=-1)
 
 
 cdef class PredictLocalPolynomial(PredictRegression):
@@ -271,7 +267,6 @@ cdef class PredictQuantile(Predict):
                 Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
 
-    # TODO: Check whether this does what it should
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
         quantile = kwargs['quantile']

@@ -1,5 +1,5 @@
 import ctypes
-import multiprocessing
+from multiprocessing.managers import BaseManager
 import sys
 from functools import partial
 from multiprocessing import RawArray
@@ -8,7 +8,7 @@ from typing import Iterable, Literal
 import numpy as np
 from numpy import float64 as DOUBLE
 
-from adaXT.random_forest.parallel_class import ParallelModel
+from adaXT.parallel_class import ParallelModel
 
 
 from ..criteria import Criteria
@@ -87,8 +87,6 @@ def build_single_tree(
     skip_check_input: bool = True,
     sample_weight: np.ndarray | None = None,
 ):
-    print("CALLED BUILD")
-    print(fitting_indices, prediction_indices)
     # subset the feature indices
     tree = DecisionTree(
         tree_type=tree_type,
@@ -241,14 +239,20 @@ class RandomForest(BaseModel, ParallelModel):
         splitter : Splitter | None, optional
             Splitter class if None uses premade Splitter class
         """
+        # Must initialize Manager before ParallelModel
+        BaseManager.register("RandomState", np.random.RandomState)
+        self.manager = BaseManager()
+        self.manager.start()
+
+        self.parallel = ParallelModel(n_jobs=n_jobs, random_state=random_state)
+
         self.check_tree_type(
             forest_type,
             criteria,
             splitter,
             leaf_builder,
             predict)
-        self.ctx = multiprocessing.get_context("spawn")
-        ParallelModel.__init__(self, n_jobs=n_jobs, random_state=random_state)
+
         self.X, self.Y = None, None
         self.max_features = max_features
         self.forest_type = forest_type
@@ -261,6 +265,13 @@ class RandomForest(BaseModel, ParallelModel):
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
         self.forest_fitted = False
+        self.random_state = self.__get_random_state(random_state)
+
+    def __get_random_state(self, random_state):
+        if isinstance(random_state, int) or (random_state is None):
+            return self.manager.RandomState(random_state)
+        else:
+            raise ValueError("Random state either has to be Integral or None")
 
     def __get_sampling_parameter(self, sampling_parameter):
         if self.sampling == "bootstrap":
@@ -336,7 +347,7 @@ class RandomForest(BaseModel, ParallelModel):
     # running in parallel and sequential
 
     def __build_trees(self):
-        fitting_prediction_indices = self.async_apply(
+        fitting_prediction_indices = self.parallel.async_apply(
             get_sample_indices,
             n_iterations=self.n_estimators,
             n_rows=self.n_rows,
@@ -344,7 +355,7 @@ class RandomForest(BaseModel, ParallelModel):
             sampling_parameter=self.sampling_parameter,
             sampling=self.sampling,
         )
-        self.trees = self.async_starmap(
+        self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
             X=self.X,
@@ -365,90 +376,19 @@ class RandomForest(BaseModel, ParallelModel):
             sample_weight=self.sample_weight,
         )
 
-    def __build_trees(self):
-        if self.n_jobs == 1:
-            # Get all fitting indices
-            fitting_indices, prediction_indices = zip(*[get_sample_indices(
-                n_rows=self.n_rows, random_state=self.random_state,
-                sampling_parameter=self.sampling_parameter,
-                sampling=self.sampling) for _ in range(self.n_estimators)])
-
-            # Build all trees using fitting indices
-            self.trees = list(map(lambda sample_indx: build_single_tree(
-                sample_indices=sample_indx,
-                X=self.X,
-                Y=self.Y,
-                criteria=self.criteria_class,
-                predict=self.predict_class,
-                leaf_builder=self.leaf_builder_class,
-                splitter=self.splitter,
-                tree_type=self.forest_type,
-                max_depth=self.max_depth,
-                impurity_tol=self.impurity_tol,
-                min_samples_split=self.min_samples_split,
-                min_samples_leaf=self.min_samples_leaf,
-                min_improvement=self.min_improvement,
-                max_features=self.max_features,
-                skip_check_input=True,
-                sample_weight=self.sample_weight,
-            ), fitting_indices))
-
-            for tree in self.trees:
-                if self.__is_honest():
-                    tree.refit_leaf_nodes(
-                        X=self.X,
-                        Y=self.Y,
-                        sample_weight=self.sample_weight,
-                        prediction_indices=prediction_indices)
-        else:
-            partial_func = partial(
-                build_single_tree,
-                X=self.X,
-                Y=self.Y,
-                criteria=self.criteria_class,
-                predict=self.predict_class,
-                leaf_builder=self.leaf_builder_class,
-                splitter=self.splitter,
-                tree_type=self.forest_type,
-                max_depth=self.max_depth,
-                impurity_tol=self.impurity_tol,
-                min_samples_split=self.min_samples_split,
-                min_samples_leaf=self.min_samples_leaf,
-                min_improvement=self.min_improvement,
-                max_features=self.max_features,
-                skip_check_input=True,
-                sample_weight=self.sample_weight,
-            )
-            partial_sample = partial(
-                get_sample_indices,
-                random_state=self.random_state,
-                n_rows=self.n_rows,
-                sampling=self.sampling,
-                sampling_parameter=self.sampling_parameter,
-            )
-            partial_honest = partial(
-                honest_refit,
-                X=self.X,
-                Y=self.Y,
-                sample_weight=self.sample_weight,
-            )
-            with self.ctx.Pool(self.n_jobs) as p:
-                fitting_indices, prediction_indices = zip(*[
-                    p.apply(partial_sample) for _ in range(self.n_estimators)
-                ])
-                promise = p.map_async(partial_func, fitting_indices)
-                trees = promise.get()
-                if self.__is_honest():
-                    promise = p.starmap_async(
-                        partial_honest, zip(trees, prediction_indices)
-                    )
-                    trees = promise.get()
-                self.trees = trees
+    def __predict_trees_new(self, X: np.ndarray, **kwargs):
+        predict_value = shared_numpy_array(X)
+        return self.predict_class.forest_predict(X_old=self.X, Y_old=self.Y,
+                                                 X_new=predict_value,
+                                                 trees=self.trees,
+                                                 parallel=self.parallel,
+                                                 **kwargs)
 
     # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
     def __predict_trees(self, X: np.ndarray, **kwargs):
         predictions = []
+
         if self.n_jobs == 1:
             for tree in self.trees:
                 predictions.append(tree.predict(X, **kwargs))
@@ -543,7 +483,7 @@ class RandomForest(BaseModel, ParallelModel):
         self.sampling_parameter = self.__get_sampling_parameter(
             self.sampling_parameter)
         # Fit trees
-        self.__build_trees_new()
+        self.__build_trees()
 
         # Register that the forest was succesfully fitted
         self.forest_fitted = True
@@ -587,11 +527,9 @@ class RandomForest(BaseModel, ParallelModel):
                 "The forest has not been fitted before trying to call predict"
             )
 
-        # Predict using all the trees, each column is the predictions from one
-        # tree
-        tree_predictions = self.__predict_trees(X, **kwargs)
-
-        return self.predict_class.forest_predict(tree_predictions, **kwargs)
+        self.__check_dimensions(X)
+        prediction = self.__predict_trees_new(X, **kwargs)
+        return prediction
 
     def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
