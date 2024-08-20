@@ -1,9 +1,14 @@
 from . import DecisionTree, LeafNode, DecisionNode
-import textwrap
 # Plot an entire tree
 
 
-def plot_tree(tree: DecisionTree):
+def plot_tree(
+    tree: DecisionTree,
+    impurity=True,
+    node_ids=False,
+    precision=3,
+    ax=None,
+) -> None:
     """
     Generates the tree in a subplot of plt. To show the plot,
     the user needs to call matplotlib.pyplot.show().
@@ -12,126 +17,142 @@ def plot_tree(tree: DecisionTree):
     ----------
     tree : DecisionTree
         the tree to plot
-
-    Returns
-    -------
-    matplotlib.figure.Figure
-        the figure of the subplot
-    matplotlib.axes.Axes
-        the axes of the subplot
     """
-    import matplotlib.pyplot as plt
-
-    fig, ax = plt.subplots(figsize=(8, 6))
-    node_positions = calculate_node_positions(tree.root, x=0, y=0)
-    plot_node(ax, tree.root, node_positions)
-    ax.axis("off")
-    return fig, ax
-
-
-# Plot a node
+    plotter = DecisionTreePlotter(
+        impurity=impurity,
+        node_ids=node_ids,
+        precision=precision,
+    )
+    plotter.plot(tree=tree, ax=ax)
 
 
-def plot_node(ax, node: LeafNode | DecisionNode, node_positions: tuple):
-    """
-    Helper function used to plot each node of a DecisionTree
+class DecisionTreePlotter():
 
+    def __init__(
+        self,
+        impurity=True,
+        node_ids=False,
+        precision=3,
+    ) -> None:
+        self.impurity = impurity
+        self.node_ids = node_ids
+        self.precision = precision
+        self.depth_distance = 10
+        self.width_distance = 10
 
-    Parameters
-    ----------
-    ax : matplotlib.axes.Axes
-        axes to plot on
-    node : Node
-        node type of a tree
-    node_positions : tuple
-        (left_child position, right_child position, nodes own position)
-    """
-    if node is None:
-        return
-
-    position = node_positions[node]
-
-    # Draw the node box
-    if isinstance(node, LeafNode):
-        ax.text(
-            position[0],
-            position[1],
-            textwrap.dedent(
-                f"""\
-            Leaf Node\n\
-            Impurity: {node.impurity:.3f}\n\
-            weighted_samples: {node.weighted_samples}\n\
-            value: {['%.2f' % x for x in node.value]}
-            """
-            ),
-            ha="center",
-            va="center",
-            bbox=dict(facecolor="white", edgecolor="black"),
-        )
-    else:
-        ax.text(
-            position[0],
-            position[1],
-            textwrap.dedent(
-                f"""\
-                Decision Node\n\
-                x{node.split_idx} <= {node.threshold:.3f}\n\
-                Impurity: {node.impurity:.3f}\n\
-                samples: {node.n_samples}
+    def plot_leaf_node(self, node: LeafNode, position: tuple):
+        text = f"""
+                Leaf Node
+                Impurity: {node.impurity:.3f}
+                weighted_samples: {node.weighted_samples}
+                value: {['%.2f' % x for x in node.value]}
                 """
-            ),
+        self.ax.text(
+            position[0],
+            position[1],
+            "\n".join(line.strip() for line in text.splitlines()),
             ha="center",
             va="center",
             bbox=dict(facecolor="white", edgecolor="black"),
+            wrap=True,
+        )
+        print(node.value)
+
+    def plot_decision_node(self, node: DecisionNode, position: tuple):
+        text = f"""
+                Decision Node
+                x{node.split_idx} <= {node.threshold:.3f}
+                Impurity: {node.impurity:.3f}
+                """
+        self.ax.text(
+            position[0],
+            position[1],
+            "\n".join(line.strip() for line in text.splitlines()),
+            ha="center",
+            va="center",
+            bbox=dict(facecolor="white", edgecolor="black"),
+            wrap=True,
         )
 
-    # Draw edges and child nodes recursively
-    if isinstance(node, DecisionNode):
-        if node.left_child is not None:
-            ax.plot(
-                [position[0], node_positions[node.left_child][0]],
-                [position[1], node_positions[node.left_child][1]],
-                color="black",
+    def calculate_node_positions(
+            self,
+            node: DecisionNode | LeafNode | None,
+            x: float,
+            y: float):
+        if node is None:
+            return {}
+
+        dx = 1
+        dy = 1
+        if isinstance(node, DecisionNode):
+            left_positions = self.calculate_node_positions(
+                node.left_child, 2 * x - dx, y - dy)
+            right_positions = self.calculate_node_positions(
+                node.right_child, 2 * x + dx, y - dy)
+        else:
+            left_positions = self.calculate_node_positions(
+                None, 2 * x - dx, y - dy)
+            right_positions = self.calculate_node_positions(
+                None, 2 * x + dx, y - dy)
+
+        position = (x, y)
+        node_positions = {**left_positions, **right_positions, node: position}
+        return node_positions
+
+    def plot_node(self, node):
+        """
+        Helper function used to plot each node of a DecisionTree
+
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            axes to plot on
+        node : Node
+            node type of a tree
+        node_positions : tuple
+            (left_child position, right_child position, nodes own position)
+        """
+        if node is None:
+            return
+
+        position = self.node_positions[node]
+
+        # Draw the node box
+        if isinstance(node, LeafNode):
+            self.plot_leaf_node(
+                node, position
             )
-            plot_node(ax, node.left_child, node_positions)
-        if node.right_child is not None:
-            ax.plot(
-                [position[0], node_positions[node.right_child][0]],
-                [position[1], node_positions[node.right_child][1]],
-                color="black",
+        else:
+            self.plot_decision_node(
+                node, position
             )
-            plot_node(ax, node.right_child, node_positions)
 
+        # Draw edges and child nodes recursively
+        if isinstance(node, DecisionNode):
+            if node.left_child is not None:
+                self.ax.plot(
+                    [position[0], self.node_positions[node.left_child][0]],
+                    [position[1], self.node_positions[node.left_child][1]],
+                    color="black",
+                )
+                self.plot_node(node.left_child)
+            if node.right_child is not None:
+                self.ax.plot(
+                    [position[0], self.node_positions[node.right_child][0]],
+                    [position[1], self.node_positions[node.right_child][1]],
+                    color="black",
+                )
+                self.plot_node(node.right_child)
 
-# Calculate where to add nodes when plotting a tree
-
-
-def calculate_node_positions(
-        node: LeafNode | DecisionNode,
-        x: float,
-        y: float):
-    if node is None:
-        return {}
-
-    dx = 1
-    dy = 1
-    if isinstance(node, DecisionNode):
-        left_positions = calculate_node_positions(
-            node.left_child, 2 * x - dx, y - dy)
-        right_positions = calculate_node_positions(
-            node.right_child, 2 * x + dx, y - dy)
-    else:
-        left_positions = calculate_node_positions(None, 2 * x - dx, y - dy)
-        right_positions = calculate_node_positions(None, 2 * x + dx, y - dy)
-
-    position = (x, y)
-
-    node_positions = {**left_positions, **right_positions, node: position}
-
-    return node_positions
-
-
-# Function to print the information of a tree
+    def plot(self, tree: DecisionTree, ax=None) -> None:
+        import matplotlib.pyplot as plt
+        if ax is None:
+            ax = plt.gca()
+        ax.clear()
+        ax.set_axis_off()
+        self.ax = ax
+        self.node_positions = self.calculate_node_positions(tree.root, 0, 0)
+        self.plot_node(tree.root)
 
 
 def print_tree(tree: DecisionTree):
