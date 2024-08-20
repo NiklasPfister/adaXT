@@ -111,7 +111,7 @@ components:
 
 By specifying these three components a range of different tree algorithms can be
 created, e.g., regression trees, classification trees, quantile regression trees
-and survival trees. Additionally to this modular structure, all other operations
+and gradient trees. Additionally to this modular structure, all other operations
 are kept as vanilla as possible allowing users to easily change parts of the
 code (e.g., the splitting procedure).
 

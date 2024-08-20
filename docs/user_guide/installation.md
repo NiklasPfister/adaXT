@@ -36,18 +36,18 @@ If you want to modify the package itself, you can follow the following steps to
 download the project and then build it locally.
 
 1. **Download source code**: Either you directly download the repository github
-   or you create
-   [creating a fork on github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
+   or you
+   [create a fork on github](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo).
 2. **Modify code**: Modify or extend the code as you please.
-3. **Build and install package**: From the root directory of the code you can
-   then build and install the package
+3. **Build and install package**: From the project root directory you can then
+   build and install the package with the command:
    ```bash
    pip install .
    ```
    This will require the
    [setuptools](https://setuptools.pypa.io/en/latest/index.html) package to be
-   installed. Note that if you added new files/directories you first have to
-   modify the `setup.py` file accordingly.
+   installed. Note that if you added new files or directories you will also need
+   to modify the `setup.py` file accordingly.
 4. **Use package**: Once the package is installed you can use it in the same way
    in which you used the original package.
 
