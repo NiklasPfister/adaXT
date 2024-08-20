@@ -86,7 +86,7 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    def predict(self, object X, **kwargs):
+    cdef __predict(self, object X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
@@ -112,6 +112,18 @@ cdef class PredictClassification(Predict):
             if self.classes is not None:
                 Y[i] = self.classes[idx]
         return Y
+
+    cdef __predict_proba(self, object X):
+
+
+
+    def predict(self, object X, **kwargs):
+        #TODO: Make sure this is correct.
+        predict_proba = kwargs["predict_proba"]
+        if predict_proba:
+            self.__predict_proba(X)
+        else:
+            self.__predict(X)
 
     cpdef list predict_proba(self, object X):
         cdef:
