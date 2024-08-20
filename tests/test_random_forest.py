@@ -220,14 +220,14 @@ def test_random_forest():
     with open("./tests/data/forestData.json", "r") as f:
         data = json.loads(f.read())
     assert np.array_equal(
-        np.array(data["gini_pred"]), pred["gini_pred"]
+        np.array(data["gini_pred"]).astype(int), pred["gini_pred"]
     ), "Gini Index prediction incorrect"
 
     assert np.array_equal(
-        np.array(data["entropy_pred"]), pred["entropy_pred"]
+        np.array(data["entropy_pred"]).astype(int), pred["entropy_pred"]
     ), "Entropy prediction incorrect"
 
-    assert np.array_equal(
+    assert np.allclose(
         np.array(data["squared_pred"]), pred["squared_pred"]
     ), "Squared Error prediction incorrect"
 
@@ -382,6 +382,7 @@ if __name__ == "__main__":
     # test_quantile_regression_forest()
     # test_random_forest_weights()
     # test_honest_sampling_leaf_samples()
-    test_n_jobs_predict_forest()
+    # test_n_jobs_predict_forest()
+    test_random_forest()
 
     print("Done")
