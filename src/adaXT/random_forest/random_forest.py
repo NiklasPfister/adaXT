@@ -56,17 +56,6 @@ def get_sample_indices(
         return (None, None)
 
 
-def honest_refit(
-    tree: DecisionTree,
-    prediction_indices: np.ndarray,
-    X: np.ndarray,
-    Y: np.ndarray,
-    sample_weight: np.ndarray,
-):
-    tree.refit_leaf_nodes(X, Y, sample_weight, prediction_indices)
-    return tree
-
-
 def build_single_tree(
     fitting_indices: np.ndarray | None,
     prediction_indices: np.ndarray | None,
@@ -110,9 +99,10 @@ def build_single_tree(
 
     return tree
 
-
 # Function used to add a column with zeros for all the classes that are in
 # the forest but not in a given tree
+
+
 def fill_with_zeros_for_missing_classes_in_tree(
     tree_classes, predict_proba, num_rows_predict, classes
 ):
@@ -167,7 +157,7 @@ def shared_numpy_array(array):
     return shared_array_np
 
 
-class RandomForest(BaseModel, ParallelModel):
+class RandomForest(BaseModel):
     """
     The Random Forest
     """
@@ -244,7 +234,7 @@ class RandomForest(BaseModel, ParallelModel):
         self.manager = BaseManager()
         self.manager.start()
 
-        self.parallel = ParallelModel(n_jobs=n_jobs, random_state=random_state)
+        self.parallel = ParallelModel(n_jobs=n_jobs)
 
         self.check_tree_type(
             forest_type,
@@ -376,7 +366,7 @@ class RandomForest(BaseModel, ParallelModel):
             sample_weight=self.sample_weight,
         )
 
-    def __predict_trees_new(self, X: np.ndarray, **kwargs):
+    def __predict_trees(self, X: np.ndarray, **kwargs):
         predict_value = shared_numpy_array(X)
         return self.predict_class.forest_predict(X_old=self.X, Y_old=self.Y,
                                                  X_new=predict_value,
@@ -384,27 +374,9 @@ class RandomForest(BaseModel, ParallelModel):
                                                  parallel=self.parallel,
                                                  **kwargs)
 
-    # Function to call predict on all the trees of the forest, differentiates
-    # between running in parallel and sequential
-    def __predict_trees(self, X: np.ndarray, **kwargs):
-        predictions = []
-
-        if self.n_jobs == 1:
-            for tree in self.trees:
-                predictions.append(tree.predict(X, **kwargs))
-        else:
-            predict_value = shared_numpy_array(X)
-            partial_func = partial(
-                predict_single_tree, predict_values=predict_value, **kwargs
-            )
-            with self.ctx.Pool(self.n_jobs) as p:
-                promise = p.map_async(partial_func, self.trees)
-                predictions = promise.get()
-
-        return np.stack(predictions, axis=-1)
-
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
+
     def __predict_proba_trees(self, X: np.ndarray, **kwargs):
         predictions = []
         if self.n_jobs == 1:
@@ -528,7 +500,7 @@ class RandomForest(BaseModel, ParallelModel):
             )
 
         self.__check_dimensions(X)
-        prediction = self.__predict_trees_new(X, **kwargs)
+        prediction = self.__predict_trees(X, **kwargs)
         return prediction
 
     def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:

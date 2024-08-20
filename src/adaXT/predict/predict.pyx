@@ -6,10 +6,29 @@ from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
 
-
-
 def default_predict(tree, X, **kwargs):
     return tree.predict(X, **kwargs)
+
+def quantile_predict(tree, X, quantile):
+    n_obs = X.shape[0]
+    # Check if quantile is an array
+    if isinstance(quantile, Sequence):
+        indices = np.empty((n_obs, len(quantile)))
+    else:
+        indices = np.empty(n_obs)
+
+    for i in range(n_obs):
+        cur_node = tree.root
+        while isinstance(cur_node, DecisionNode):
+            cur_split_idx = cur_node.split_idx
+            cur_threshold = cur_node.threshold
+            if X[i, cur_split_idx] < cur_threshold:
+                cur_node = cur_node.left_child
+            else:
+                cur_node = cur_node.right_child
+
+        indices[i] = cur_node.indices
+    return indices
 
 cdef class Predict():
 
@@ -35,6 +54,8 @@ cdef class Predict():
             if X.shape[1] != self.n_features:
                 raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
         return X
+
+    #TODO: predict_indices
 
     def predict(self, object X, **kwargs):
         raise NotImplementedError("Function predict is not implemented for this Predict class")
@@ -266,6 +287,14 @@ cdef class PredictQuantile(Predict):
             else:
                 Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
+
+    @staticmethod
+    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+        predict_list = [X_new for _ in range(len(trees))]
+        predictions = parallel.async_starmap(default_predict,
+                           map_input=zip(trees, predict_list),
+                           **kwargs)
+        return np.apply_along_axis(mode, 0, predictions)
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
