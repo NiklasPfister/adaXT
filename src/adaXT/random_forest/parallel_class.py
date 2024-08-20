@@ -2,9 +2,9 @@ from functools import partial
 import multiprocessing
 from multiprocessing import cpu_count
 from multiprocessing.managers import BaseManager
+from itertools import starmap
 from numbers import Integral
-from types import FunctionType
-from typing import Any
+from typing import Any, Callable, Iterable
 
 import numpy as np
 
@@ -40,28 +40,35 @@ class ParallelModel:
         else:
             raise ValueError("Random state either has to be Integral or None")
 
-    def async_map_multiple(self, functions: list[FunctionType], constant_inputs:
-                           list[dict], map_inputs: list[Any]):
-        partial_funcs = [partial(func, **const)
-                         for func, const in zip(functions, constant_inputs)]
-        ret = []
+    def async_map(self, function: Callable, map_input: Any, **kwargs):
+        partial_func = partial(function, **kwargs)
+        print(partial_func, map_input)
         if self.n_jobs == 1:
-            for f, i in zip(partial_funcs, map_inputs):
-                ret.append(list(map(f, i)))
-        else:
-            with self.ctx.Pool(self.n_jobs) as p:
-                for f, i in zip(partial_funcs, map_inputs):
-                    promise = p.map_async(f, i)
-                    ret.append(promise.get())
-        return ret
-
-    def async_map_single(self, function: FunctionType, constant_input:
-                         dict, map_input: Any):
-        partial_func = partial(function, **constant_input)
-        if self.n_jobs == 1:
-            ret = (list(map(function, map_input)))
+            ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
                 promise = p.map_async(partial_func, map_input)
                 ret = promise.get()
+        return ret
+
+    def async_starmap(self, function: Callable, map_input: Iterable,
+                      **kwargs):
+        partial_func = partial(function, **kwargs)
+        if self.n_jobs == 1:
+            ret = list(starmap(partial_func, map_input))
+        else:
+            with self.ctx.Pool(self.n_jobs) as p:
+                promise = p.starmap_async(partial_func, map_input)
+                ret = promise.get()
+        return ret
+
+    def async_apply(self, function: Callable, n_iterations: int, **kwargs):
+        partial_func = partial(function, **kwargs)
+        if self.n_jobs == 1:
+            ret = [partial_func() for _ in range(n_iterations)]
+        else:
+            with self.ctx.Pool(self.n_jobs) as p:
+                promise = [p.apply_async(partial_func)
+                           for _ in range(n_iterations)]
+                ret = [res.get() for res in promise]
         return ret

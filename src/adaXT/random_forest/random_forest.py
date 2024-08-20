@@ -2,13 +2,13 @@ import ctypes
 import multiprocessing
 import sys
 from functools import partial
-from multiprocessing import RawArray, cpu_count
-from multiprocessing.managers import BaseManager
-from numbers import Integral
-from typing import Literal
+from multiprocessing import RawArray
+from typing import Iterable, Literal
 
 import numpy as np
 from numpy import float64 as DOUBLE
+
+from adaXT.random_forest.parallel_class import ParallelModel
 
 
 from ..criteria import Criteria
@@ -28,7 +28,7 @@ def get_sample_indices(
     random_state: np.random.RandomState,
     sampling_parameter: int | tuple[int, int],
     sampling: str | None,
-) -> tuple[np.ndarray | None, np.ndarray | None]:
+) -> Iterable:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -68,9 +68,11 @@ def honest_refit(
 
 
 def build_single_tree(
-    sample_indices: np.ndarray | None,
+    fitting_indices: np.ndarray | None,
+    prediction_indices: np.ndarray | None,
     X: np.ndarray,
     Y: np.ndarray,
+    honest_tree: bool,
     criteria: type[Criteria],
     predict: type[Predict],
     leaf_builder: type[LeafBuilder],
@@ -85,6 +87,8 @@ def build_single_tree(
     skip_check_input: bool = True,
     sample_weight: np.ndarray | None = None,
 ):
+    print("CALLED BUILD")
+    print(fitting_indices, prediction_indices)
     # subset the feature indices
     tree = DecisionTree(
         tree_type=tree_type,
@@ -100,7 +104,11 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(X, Y, sample_indices=sample_indices, sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices,
+             sample_weight=sample_weight)
+    if honest_tree:
+        tree.refit_leaf_nodes(X=X, Y=Y, sample_weight=sample_weight,
+                              prediction_indices=prediction_indices)
 
     return tree
 
@@ -161,7 +169,7 @@ def shared_numpy_array(array):
     return shared_array_np
 
 
-class RandomForest(BaseModel):
+class RandomForest(BaseModel, ParallelModel):
     """
     The Random Forest
     """
@@ -240,11 +248,11 @@ class RandomForest(BaseModel):
             leaf_builder,
             predict)
         self.ctx = multiprocessing.get_context("spawn")
+        ParallelModel.__init__(self, n_jobs=n_jobs, random_state=random_state)
         self.X, self.Y = None, None
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
-        self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
         self.sampling = sampling
         self.sampling_parameter = sampling_parameter
         self.max_depth = max_depth
@@ -253,16 +261,6 @@ class RandomForest(BaseModel):
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
         self.forest_fitted = False
-        BaseManager.register("RandomState", np.random.RandomState)
-        self.manager = BaseManager()
-        self.manager.start()
-        self.random_state = self.__get_random_state(random_state)
-
-    def __get_random_state(self, random_state):
-        if isinstance(random_state, Integral) or (random_state is None):
-            return self.manager.RandomState(random_state)
-        else:
-            raise ValueError("Random state either has to be Integral or None")
 
     def __get_sampling_parameter(self, sampling_parameter):
         if self.sampling == "bootstrap":
@@ -336,6 +334,36 @@ class RandomForest(BaseModel):
 
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
+
+    def __build_trees(self):
+        fitting_prediction_indices = self.async_apply(
+            get_sample_indices,
+            n_iterations=self.n_estimators,
+            n_rows=self.n_rows,
+            random_state=self.random_state,
+            sampling_parameter=self.sampling_parameter,
+            sampling=self.sampling,
+        )
+        self.trees = self.async_starmap(
+            build_single_tree,
+            map_input=fitting_prediction_indices,
+            X=self.X,
+            Y=self.Y,
+            honest_tree=self.__is_honest(),
+            criteria=self.criteria_class,
+            predict=self.predict_class,
+            leaf_builder=self.leaf_builder_class,
+            splitter=self.splitter,
+            tree_type=self.forest_type,
+            max_depth=self.max_depth,
+            impurity_tol=self.impurity_tol,
+            min_samples_split=self.min_samples_split,
+            min_samples_leaf=self.min_samples_leaf,
+            min_improvement=self.min_improvement,
+            max_features=self.max_features,
+            skip_check_input=True,
+            sample_weight=self.sample_weight,
+        )
 
     def __build_trees(self):
         if self.n_jobs == 1:
@@ -515,7 +543,7 @@ class RandomForest(BaseModel):
         self.sampling_parameter = self.__get_sampling_parameter(
             self.sampling_parameter)
         # Fit trees
-        self.__build_trees()
+        self.__build_trees_new()
 
         # Register that the forest was succesfully fitted
         self.forest_fitted = True

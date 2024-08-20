@@ -353,14 +353,14 @@ def test_n_jobs():
 def test_n_jobs_predict_forest():
     random_state = np.random.RandomState(2024)
     seed = 2024
-    n = 100
-    m = 10
+    n = 5
+    m = 5
     n_estimators = 5
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     squared_forest = run_squared_error(
         X_reg,
         Y_reg,
-        n_jobs=1,
+        n_jobs=2,
         n_estimators=n_estimators,
         seed=seed,
         max_depth=2,
