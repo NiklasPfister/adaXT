@@ -138,7 +138,7 @@ class DecisionTree(BaseModel):
                 else:
                     Y = Y.reshape(-1)
         return X, Y
-   
+
     def fit(self,
             X: ArrayLike,
             Y: ArrayLike,
