@@ -9,7 +9,7 @@ from typing import Literal
 
 import numpy as np
 from numpy import float64 as DOUBLE
-
+from numpy.typing import ArrayLike
 
 from ..criteria import Criteria
 from ..decision_tree import DecisionTree
@@ -419,7 +419,7 @@ class RandomForest(BaseModel):
 
     # Function to call predict on all the trees of the forest, differentiates
     # between running in parallel and sequential
-    def __predict_trees(self, X: np.ndarray, **kwargs):
+    def __predict_trees(self, X: np.ndarray, **kwargs) -> np.ndarray:
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
@@ -437,7 +437,7 @@ class RandomForest(BaseModel):
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
-    def __predict_proba_trees(self, X: np.ndarray, **kwargs):
+    def __predict_proba_trees(self, X: np.ndarray, **kwargs) -> np.ndarray:
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
@@ -456,55 +456,64 @@ class RandomForest(BaseModel):
 
         return np.stack(predictions, axis=-1)
 
-    def __check_dimensions(self, X: np.ndarray):
-        # If there is only a single point
-        if X.ndim == 1:
-            if X.shape[0] != self.n_features:
-                raise ValueError(
-                    f"Number of features should be {self.n_features}, got {X.shape[0]}"
-                )
-        else:
-            if X.shape[1] != self.n_features:
-                raise ValueError(
-                    f"Dimension should be {self.n_features}, got {X.shape[1]}"
-                )
+    # Check whether dimension of X matches self.n_features
+    def __check_dimensions(self, X: np.ndarray) -> None:
+        if X.shape[1] != self.n_features:
+            raise ValueError(
+                f"Number of features should be {self.n_features}, got {X.shape[1]}"
+            )
 
-    def __check_input(self, X: np.ndarray, Y: np.ndarray):
-        # Check if X and Y has same number of rows
-        if X.shape[0] != Y.shape[0]:
-            raise ValueError("X and Y should have the same number of rows")
-
-        # Check if Y has dimensions (n, 1) or (n,)
-        if 2 < Y.ndim:
-            raise ValueError("Y should have dimensions (n,1) or (n,)")
-        elif 2 == Y.ndim:
-            if 1 < Y.shape[1]:
-                raise ValueError("Y should have dimensions (n,1) or (n,)")
-            else:
-                Y = Y.reshape(-1)
-
+    # Check whether X and Y match and convert array-like to ndarray
+    def __check_input(self,
+                      X: ArrayLike,
+                      Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+        Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
+        # Check that X is two dimensional
+        if X.ndim != 2:
+            raise ValueError("X should be two-dimensional")
+
+        # If Y is not None perform checks for Y
+        if Y_check:
+            # Check if X and Y has same number of rows
+            if X.shape[0] != Y.shape[0]:
+                raise ValueError("X and Y should have the same number of rows")
+
+            # Check if Y has dimensions (n, 1) or (n,)
+            if 2 < Y.ndim:
+                raise ValueError("Y should have dimensions (n,1) or (n,)")
+            elif 2 == Y.ndim:
+                if 1 < Y.shape[1]:
+                    raise ValueError("Y should have dimensions (n,1) or (n,)")
+                else:
+                    Y = Y.reshape(-1)
         return X, Y
 
-    def fit(self, X: np.ndarray, Y: np.ndarray,
+    def fit(self, X: ArrayLike, Y: ArrayLike,
             sample_weight: np.ndarray | None = None):
         """
         Function used to fit a forest using many DecisionTrees for the given data
 
         Parameters
         ----------
-        X : np.ndarray
-            feature values
-        Y : np.ndarray
-            response values
+        X : array-like object of dimension 2
+            The feature values used for training. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
+        Y : array-like object
+            The response values used for training. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
+        sample_weight : np.ndarray | None
+            Sample weights. Currently not implemented.
         """
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
         self.n_rows, self.n_features = self.X.shape
+        # TODO: Do we need the number of classes as an attribute? This seems to
+        # add too much complexity...
         if self.forest_type == "Classification":
             self.classes = np.unique(self.Y)
 
@@ -522,7 +531,7 @@ class RandomForest(BaseModel):
 
         return self
 
-    def predict(self, X: np.ndarray, **kwargs):
+    def predict(self, X: ArrayLike, **kwargs):
         """
         Predicts response values at X using fitted random forest.  The behavior
         of this function is determined by the Prediction class used in the
@@ -546,8 +555,9 @@ class RandomForest(BaseModel):
 
         Parameters
         ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
+        X : array-like object of dimension 2
+            New samples at which to predict the response. Internally it will be
+            converted to np.ndarray with dtype=np.float64. 
 
         Returns
         -------
@@ -559,25 +569,31 @@ class RandomForest(BaseModel):
                 "The forest has not been fitted before trying to call predict"
             )
 
+        # Check inputs
+        X, _ = self.__check_input(X)
+        self.__check_dimensions(X)
+
         # Predict using all the trees, each column is the predictions from one
         # tree
         tree_predictions = self.__predict_trees(X, **kwargs)
 
         return self.predict_class.forest_predict(tree_predictions, **kwargs)
 
-    def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
+    def predict_proba(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
         Predicts a probability for each response for given X values using the trees of the forest
 
         Parameters
         ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
+        X : array-like
+            New samples at which to predict the response. Internally it will be
+            converted to np.ndarray with dtype=np.float64. 
 
         Returns
         -------
         np.ndarray
-            Returns an ndarray with the probabilities for each class per observation in X. The order of the classes corresponds to that in the attribute classes
+            (n, n_classes) matrix where each row corresponds to the
+            probabilities for each class for one observation in X.
         """
         if not self.forest_fitted:
             raise AttributeError(
@@ -591,15 +607,17 @@ class RandomForest(BaseModel):
                 "predict_proba can only be called on a Classification tree"
             )
 
-        # Check dimensions
+        # Check inputs
+        X, _ = self.__check_input(X)
         self.__check_dimensions(X)
+
         # Predict_proba using all the trees, each element of list is the
         # predict_proba from one tree
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(
             tree_predictions, **kwargs)
 
-    def __get_forest_matrix(self, scale: bool = False):
+    def __get_forest_matrix(self, scale: bool = False) -> np.ndarray:
         # if n_jobs = 1
         if self.n_jobs == 1:
             tree_weights = []
@@ -615,7 +633,7 @@ class RandomForest(BaseModel):
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
     def predict_forest_weight(
-        self, X: np.ndarray | None = None, scale: bool = False
+        self, X: ArrayLike | None = None, scale: bool = False
     ) -> np.ndarray:
         if not self.forest_fitted:
             raise AttributeError(
@@ -624,6 +642,11 @@ class RandomForest(BaseModel):
             )
         if X is None:
             return self.__get_forest_matrix(scale=scale)
+
+        # Check input
+        X, _ = self.__check_input(X)
+        self.__check_dimensions(X)
+
         if self.n_jobs == 1:
             tree_weights = []
             for tree in self.trees:
