@@ -464,9 +464,8 @@ class RandomForest(BaseModel):
             )
 
     # Check whether X and Y match and convert array-like to ndarray
-    def __check_input(self,
-                      X: ArrayLike,
-                      Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+    def __check_input(self, X: ArrayLike, Y: ArrayLike |
+                      None = None) -> tuple[np.ndarray, np.ndarray]:
         Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -557,7 +556,7 @@ class RandomForest(BaseModel):
         ----------
         X : array-like object of dimension 2
             New samples at which to predict the response. Internally it will be
-            converted to np.ndarray with dtype=np.float64. 
+            converted to np.ndarray with dtype=np.float64.
 
         Returns
         -------
@@ -587,7 +586,7 @@ class RandomForest(BaseModel):
         ----------
         X : array-like
             New samples at which to predict the response. Internally it will be
-            converted to np.ndarray with dtype=np.float64. 
+            converted to np.ndarray with dtype=np.float64.
 
         Returns
         -------
