@@ -1,17 +1,24 @@
 # Random Forests
 
 [Random forests](https://en.wikipedia.org/wiki/Random_forest) are ensembles of
-decision trees that aggregate the predictions of the individual trees.
+decision trees that aggregate the predictions of the individual trees. By
+combining multiple decision trees, each trained on slightly different training
+data, random forests naturally avoid overfitting and tend to generalize much
+better than individual trees.
 
 The [RandomForest](../api_docs/RandomForest.md) class is used in adaXT to create
-random forests.
+random forests. It takes mostly the same parameters as the
+[DecisionTree](/docs/api_docs/DecisionTree.md) class, as illustrated in the
+example below.
 
+<!--TODO: Input checks need to be improved!-->
 ```python
+import numpy as np
 from adaXT.random_forest import RandomForest
-from adaXT.criteria import Gini_index
-X = [[0, 0], [1, 0]]
-Y = [0, 1]
-forest = RandomForest("Classification", criteria=Gini_index)
+from adaXT.criteria import Partial_linear
+X = np.random.normal(0, 1, (200, 1))
+Y = np.sin(X[:, 0]*np.pi) + np.random.normal(0, 0.2, 1)
+forest = RandomForest("Regression", criteria=Partial_linear)
 forest.fit(X, Y)
 ```
 
@@ -21,6 +28,11 @@ manner as the [DecisionTree](../api_docs/DecisionTree.md).
 ```python
 forest.predict(X)  # results in [0, 1]
 ```
+Internally passed to
+the individual trees. This in particular means that it is in most cases
+sufficient to extend or modify.
+
+
 
 ### How to chose the n_jobs parameter
 

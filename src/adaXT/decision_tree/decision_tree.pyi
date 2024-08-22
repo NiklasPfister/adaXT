@@ -9,6 +9,7 @@ import sys
 
 
 class DecisionTree:
+    # TODO: Remove classes and n_classes from tree attributes
     """
     Attributes
     ----------
