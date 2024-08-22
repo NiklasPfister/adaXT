@@ -14,7 +14,7 @@ function_ $\mathcal{L}:\mathcal{X}\times\mathcal{X}\rightarrow{0,1}$ which
 determines for all $x,x'\in\mathcal{X}$ whether they lie in the same leaf, i.e.,
 $\mathcal{L}(x, x')=1$ if $x$ and $x'$ are in the same leaf and
 $\mathcal{L}(x,x')=0$ if $x$ and $x'$ are in different leafs. Furthermore,
-define for all $i\in{1,\ldots,n}$ a weight function
+define for all $i\in\{1,\ldots,n\}$ a weight function
 $w_i:\mathcal{X}\rightarrow[0,1]$ for all $x\in\mathcal{X}$ by
 
 
@@ -39,7 +39,7 @@ response values making them _adaptive_.
 As random forests are just averages over a collection of trees, the discussion
 above naturally extends to them as well. For a fitted random forest, denote by
 $\mathcal{L}_1,\ldots,\mathcal{L}_M$ denote the leaf functions for each of the
-$M$ trees in the forest. Then, for all $i\in{1,\ldots,n}$ and all
+$M$ trees in the forest. Then, for all $i\in\{1,\ldots,n\}$ and all
 $x\in\mathcal{X}$ define the weights by
 
 $$
@@ -88,5 +88,4 @@ weights = rf.predict_forest_weights(scale=True)
 Using the notation above, the weights computed in this example satisfy
 $\texttt{weights}[i, j]=w_i(X_j)$.
 
-**Problem:** The current behavior of the weight functions may be problematic
-after refit_leaf_nodes was called.
+<!--TODO: Update this section-->
