@@ -86,12 +86,12 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    cdef __predict(self, object X):
+    cdef cnp.ndarray __predict(self, object X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray Y
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
@@ -113,7 +113,7 @@ cdef class PredictClassification(Predict):
                 Y[i] = self.classes[idx]
         return Y
 
-    cdef __predict_proba(self, object X):
+    cdef cnp.ndarray __predict_proba(self, object X):
         cdef:
             int i, cur_split_idx, n_obs1
             double cur_threshold
@@ -135,15 +135,14 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return ret_val
+        return np.array(ret_val)
 
 
     def predict(self, object X, **kwargs):
-        predict_proba = kwargs["predict_proba"]
-        if predict_proba:
-            self.__predict_proba(X)
+        if "predict_proba" in kwargs:
+            return self.__predict_proba(X)
         else:
-            self.__predict(X)
+            return self.__predict(X)
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):

@@ -159,27 +159,18 @@ class DecisionTree:
         """
         pass
 
-    def predict_leaf_matrix(
-        self, X: np.ndarray | None, scale: bool = False
+    def predict_tree_based_weights(
+        self, X: np.ndarray | None, scale: bool = True
     ) -> np.ndarray:
-        """
-        Creates NxN matrix, where N is the number of observations in X.
-        If A_{i,j} = Z then i and j are in the same leafnode, Z number of times.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node.
+        # TODO: Documentation
+        pass
 
-        Parameters
-        ----------
-        X : np.ndarray
-            New values to be fitted, if None returns leaf matrix
-        scale : bool, optional
-            Whether to scale the entries, by default False
+    def predict_leaf(self, X: np.ndarray | None):
+        # TODO: Documentation
+        pass
 
-        Returns
-        -------
-        np.ndarray
-            NxN matrix
-        """
+    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+        # TODO: Documentation
         pass
 
     def refit_leaf_nodes(
