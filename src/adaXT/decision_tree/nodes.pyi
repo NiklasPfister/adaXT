@@ -1,20 +1,17 @@
 import numpy as np
 
-
 class Node:
     """
     Base node which other Nodes must inherit from.
     """
+
     indices: np.ndarray
     depth: int
     impurity: float
 
     def __init__(
-            self,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int) -> None:
+        self, indices: np.ndarray, depth: int, impurity: float, n_samples: int
+    ) -> None:
         """
         Parameters
         ----------
@@ -27,25 +24,26 @@ class Node:
         """
         pass
 
-
 class DecisionNode(Node):
     threshold: float
     split_indx: int
     left_child: Node | None
     right_child: Node | None
     parent: DecisionNode | None
+    split_idx: int
     visited: int
 
     def __init__(
-            self,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            threshold: float,
-            split_idx: int,
-            left_child: "DecisionNode|LeafNode|None" = None,
-            right_child: "DecisionNode|LeafNode|None" = None,
-            parent: "DecisionNode|None" = None) -> None:
+        self,
+        indices: np.ndarray,
+        depth: int,
+        impurity: float,
+        threshold: float,
+        split_idx: int,
+        left_child: "DecisionNode|LeafNode|None" = None,
+        right_child: "DecisionNode|LeafNode|None" = None,
+        parent: "DecisionNode|None" = None,
+    ) -> None:
         """
         Parameters
         ----------
@@ -68,7 +66,6 @@ class DecisionNode(Node):
         """
         pass
 
-
 class LeafNode(Node):
     value: list[float]
     parent: DecisionNode | None
@@ -76,14 +73,15 @@ class LeafNode(Node):
     weighted_samples: float
 
     def __init__(
-            self,
-            id: int,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            n_samples: int,
-            value: list[float],
-            parent: DecisionNode) -> None:
+        self,
+        id: int,
+        indices: np.ndarray,
+        depth: int,
+        impurity: float,
+        n_samples: int,
+        value: list[float],
+        parent: DecisionNode,
+    ) -> None:
         """
         Parameters
         ----------
@@ -102,19 +100,19 @@ class LeafNode(Node):
         """
         pass
 
-
 class LinearRegressionLeafNode(LeafNode):
     def __init__(
-            self,
-            id: int,
-            indices: np.ndarray,
-            depth: int,
-            impurity: float,
-            weighted_samples: float,
-            value: np.ndarray,
-            parent: object,
-            theta0: float,
-            theta1: float) -> None:
+        self,
+        id: int,
+        indices: np.ndarray,
+        depth: int,
+        impurity: float,
+        weighted_samples: float,
+        value: np.ndarray,
+        parent: object,
+        theta0: float,
+        theta1: float,
+    ) -> None:
         """
         Parameters
         ----------

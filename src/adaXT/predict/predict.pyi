@@ -1,11 +1,10 @@
 import numpy as np
 from ..decision_tree.nodes import DecisionNode
 
-
 class Predict:
     """
-        The Predict class which the DecisionTree depends on.
-        Other implementations must inherit from this class.
+    The Predict class which the DecisionTree depends on.
+    Other implementations must inherit from this class.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -70,14 +69,13 @@ class Predict:
         Parameters
         ----------
         predictions : np.ndarray
-            An array of predictions. 
+            An array of predictions.
         """
         pass
 
-
 class PredictClassification(Predict):
     """
-        The default prediction class for the Classification DecisionTree.
+    The default prediction class for the Classification DecisionTree.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -133,7 +131,6 @@ class PredictClassification(Predict):
         """
         pass
 
-
 class PredictRegression(Predict):
     """
     Default used for Regression.
@@ -176,13 +173,11 @@ class PredictRegression(Predict):
         """
         pass
 
-
 class PredictLinearRegression(Predict):
-
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Predicts which LeafNode each $x \in X$ would land in, and calculates the
-        $$ 
+        $$
         Y_i = L_{j,theta0} + L_{j,theta1}*X_{i, 0}
         $$
         For each $i \in X$ where $L_j$ is the LeafNode x would fall into, and
@@ -200,6 +195,12 @@ class PredictLinearRegression(Predict):
         """
         pass
 
+class PredictLocalPolynomial(Predict):
+    """
+    Default used for Gradient
+    """
+
+    pass
 
 class PredictQuantile(Predict):
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:

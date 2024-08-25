@@ -418,9 +418,11 @@ class RandomForest(BaseModel):
 
             for tree in self.trees:
                 if self.__is_honest():
-                    tree.refit_leaf_nodes(X=self.X, Y=self.Y,
-                                          sample_weight=self.sample_weight,
-                                          prediction_indices=prediction_indices)
+                    tree.refit_leaf_nodes(
+                        X=self.X,
+                        Y=self.Y,
+                        sample_weight=self.sample_weight,
+                        prediction_indices=prediction_indices)
         else:
             partial_func = partial(
                 build_single_tree,
@@ -482,7 +484,7 @@ class RandomForest(BaseModel):
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
-        return np.column_stack(predictions)
+        return np.stack(predictions, axis=-1)
 
     # Function to call predict_proba on all the trees of the forest,
     # differentiates between running in parallel and sequential
@@ -503,7 +505,7 @@ class RandomForest(BaseModel):
                 promise = p.map_async(partial_func, self.trees)
                 predictions = promise.get()
 
-        return predictions
+        return np.stack(predictions, axis=-1)
 
     def __check_dimensions(self, X: np.ndarray):
         # If there is only a single point
@@ -587,7 +589,7 @@ class RandomForest(BaseModel):
 
         Regression:
         ----------
-        Returns the average response among all trees. 
+        Returns the average response among all trees.
 
         Quantile:
         ----------

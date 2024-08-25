@@ -49,7 +49,7 @@ class LeafNode(Node):
         self.value = np.asarray(value)
 
 
-class LinearRegressionLeafNode(LeafNode):
+class LocalPolynomialLeafNode(LeafNode):
     def __init__(
             self,
             id: int,
@@ -60,7 +60,9 @@ class LinearRegressionLeafNode(LeafNode):
             value: np.ndarray,
             parent: object,
             theta0: float,
-            theta1: float) -> None:
+            theta1: float,
+            theta2: float) -> None:
         super().__init__(id, indices, depth, impurity, weighted_samples, value, parent)
         self.theta0 = theta0
         self.theta1 = theta1
+        self.theta2 = theta2

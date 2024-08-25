@@ -6,6 +6,8 @@ from libc.string cimport memset
 import numpy as np
 from .crit_helpers cimport weighted_mean
 
+
+# Abstract Criteria class
 cdef class Criteria:
     def __cinit__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.x = x
@@ -65,6 +67,7 @@ cdef class Criteria:
 
         return (crit, mean_thresh)
 
+# Gini index criteria
 cdef class Gini_index(Criteria):
 
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
@@ -88,26 +91,9 @@ cdef class Gini_index(Criteria):
 
             self.first_call = False
 
-        return self._gini(indices, self.weight_in_class_left)
+        return self.__gini(indices, self.weight_in_class_left)
 
-    cdef double _gini(self, int[::1] indices, double* class_occurences):
-        """
-        Function that calculates the gini index of a dataset
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            The indices to calculate the gini index for
-
-        class_occurences : double pointer
-            A pointer to an double array for the number of elements seen of each class
-
-        Returns
-        -----------
-        double
-            The value of the gini index
-        """
+    cdef double __gini(self, int[::1] indices, double* class_occurences):
         self.reset_weight_list(class_occurences)  # Reset the counter such that no previous values influence the new ones
 
         cdef:
@@ -210,6 +196,7 @@ cdef class Gini_index(Criteria):
         return (1.0 - sum_left)*self.weight_left + (1.0 - sum_right)*self.weight_right
 
 
+# Entropy criteria
 cdef class Entropy(Criteria):
     def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
         self.first_call = True
@@ -229,30 +216,13 @@ cdef class Entropy(Criteria):
             self.first_call = False
 
         # weight_in_class_left can be use as the int pointer as it will be cleared before and after this use
-        return self._entropy(indices, self.weight_in_class_left)
+        return self.__entropy(indices, self.weight_in_class_left)
 
     cdef void reset_weight_list(self, double* class_occurences):
         # Use memset to set the entire malloc to 0
         memset(class_occurences, 0, self.num_classes*sizeof(double))
 
-    cdef double _entropy(self, int[:] indices, double* class_occurences):
-        """
-        Function that calculates the entropy index of a dataset
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            The indices to calculate
-
-        class_occurences : double pointer
-            A pointer to an double array for the number of elements seen of each class
-
-        Returns
-        -----------
-        double
-            The value of the entropy index
-        """
+    cdef double __entropy(self, int[:] indices, double* class_occurences):
         self.reset_weight_list(class_occurences)  # Reset the counter such that no previous values influence the new ones
 
         cdef:
@@ -361,6 +331,7 @@ cdef class Entropy(Criteria):
         return sum_left*self.weight_left + sum_right*self.weight_right
 
 
+# Squared error criteria
 cdef class Squared_error(Criteria):
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
@@ -408,26 +379,9 @@ cdef class Squared_error(Criteria):
                  (self.right_sum*self.right_sum) / self.weight_right)
 
     cpdef double impurity(self, int[::1] indices):
-        return self._squared_error(indices)
+        return self.__squared_error(indices)
 
-    cdef double _squared_error(self, int[::1] indices):
-        """
-        Function used to calculate the squared error of y[indices]
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            The indices to calculate
-
-        left_or_right : int
-            An int indicating whether we are calculating on the left or right dataset
-
-        Returns
-        -------
-        double
-            The variance of the response y
-        """
+    cdef double __squared_error(self, int[::1] indices):
         cdef:
             double cur_sum = 0.0
             double[::1] y = self.y
@@ -445,10 +399,12 @@ cdef class Squared_error(Criteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class Linear_regression(Criteria):
+
+# Partial linear criteria
+cdef class Partial_linear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
-    cdef (double, double) custom_mean(self, int[:] indices):
+    cdef (double, double) __custom_mean(self, int[:] indices):
         cdef:
             double sumX, sumY
             int i
@@ -461,22 +417,7 @@ cdef class Linear_regression(Criteria):
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
-    cdef (double, double) theta(self, int[:] indices):
-        """
-        Calculate theta0 and theta1 by a linear regression
-        of Y on X[:, 0]
-        ----------
-
-        Parameters
-        ----------
-        indices : memoryview of NDArray
-            indices included in calculation
-
-        Returns
-        -------
-        (double, double)
-            where the first element is theta0 and second element is theta1
-        """
+    cdef (double, double) __theta(self, int[:] indices):
         cdef:
             double muX, muY, theta0, theta1
             int length, i
@@ -486,7 +427,7 @@ cdef class Linear_regression(Criteria):
         length = indices.shape[0]
         denominator = 0.0
         numerator = 0.0
-        muX, muY = self.custom_mean(indices)
+        muX, muY = self.__custom_mean(indices)
         for i in range(length):
             X_diff = self.x[indices[i], 0] - muX
             numerator += (X_diff)*(self.y[indices[i]]-muY)
@@ -499,15 +440,96 @@ cdef class Linear_regression(Criteria):
         return (theta0, theta1)
 
     cpdef double impurity(self, int[::1] indices):
+        cdef:
+            double step_calc, theta0, theta1, cur_sum
+            int i, length
+
+        length = indices.shape[0]
+        theta0, theta1 = self.__theta(indices)
+        cur_sum = 0.0
+        for i in range(length):
+            step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
+            cur_sum += step_calc * step_calc
+        return cur_sum
+
+cdef class Partial_quadratic(Criteria):
+
+    # Custom mean function, such that we don't have to loop through twice.
+    cdef (double, double, double) __custom_mean(self, int[:] indices):
+        cdef:
+            double sumXsq, sumX, sumY
+            int i
+            int length = indices.shape[0]
+        sumX = 0.0
+        sumXsq = 0.0
+        sumY = 0.0
+        for i in range(length):
+            sumX += self.x[indices[i], 0]
+            sumXsq += self.x[indices[i], 0] * self.x[indices[i], 0]
+            sumY += self.y[indices[i]]
+
+        return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
+
+    cdef (double, double, double) __theta(self, int[:] indices):
         """
-        Calculates the impurity of a node by
-        L = sum_{i in indices} (Y[i] - theta0 - theta1 X[i, 0])^2
+        Estimates regression parameters for a linear regression of the response
+        on the first coordinate, i.e., Y is approximated by theta0 + theta1 *
+        X[:, 0] + theta2 * X[:, 0] ** 2.
         ----------
 
         Parameters
         ----------
         indices : memoryview of NDArray
-            The indices to calculate
+            indices included in calculation
+
+        Returns
+        -------
+        (double, double, double)
+            where first element is theta0, second is theta1, third is theta2
+            and fourth is the mean of Y
+        """
+        cdef:
+            double muX, muXsq, muY, theta0, theta1, theta2
+            int length, i
+            double covXXsq, varX, varXsq, covXY, covXsqY
+            double X_diff, Xsq_diff
+
+        length = indices.shape[0]
+        covXXsq = 0.0
+        covXY = 0.0
+        covXsqY = 0.0
+        varX = 0.0
+        varXsq = 0.0
+        muX, muXsq, muY = self.__custom_mean(indices)
+        for i in range(length):
+            X_diff = self.x[indices[i], 0] - muX
+            Xsq_diff = self.x[indices[i], 0] * self.x[indices[i], 0] - muXsq
+            Y_diff = self.y[indices[i]] - muY
+            covXXsq += X_diff * Xsq_diff
+            varX += X_diff * X_diff
+            varXsq += Xsq_diff * Xsq_diff
+            covXY += X_diff * Y_diff
+            covXsqY += Xsq_diff * Y_diff
+        det = varX * varXsq - covXXsq * covXXsq
+        if det == 0.0:
+            theta1 = 0.0
+            theta2 = 0.0
+        else:
+            theta1 = (varXsq*covXY - covXXsq * covXsqY) / det
+            theta2 = (varX*covXsqY - covXXsq * covXY) / det
+        theta0 = muY - theta1*muX - theta2*muXsq
+        return (theta0, theta1, theta2)
+
+    cpdef double impurity(self, int[::1] indices):
+        """
+        Calculates the impurity of a node by
+        L = sum_{i in indices} (Y[i] - theta0 - theta1*X[i, 0] - theta2*X[i, 0]**2)**2
+        ----------
+
+        Parameters
+        ----------
+        indices : memoryview of NDArray
+            indices included in calculation
 
         Returns
         -------
@@ -515,13 +537,15 @@ cdef class Linear_regression(Criteria):
             evaluated impurity
         """
         cdef:
-            double step_calc, theta0, theta1, cur_sum
+            double step_calc, theta0, theta1, theta2, cur_sum
             int i, length
 
         length = indices.shape[0]
-        theta0, theta1 = self.theta(indices)
+        theta0, theta1, theta2 = self.__theta(indices)
         cur_sum = 0.0
         for i in range(length):
-            step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
-            cur_sum += step_calc*step_calc
+            step_calc = self.y[indices[i]] - theta0
+            step_calc -= theta1 * self.x[indices[i], 0]
+            step_calc -= theta2 * self.x[indices[i], 0] * self.x[indices[i], 0]
+            cur_sum += step_calc * step_calc
         return cur_sum

@@ -29,7 +29,7 @@ cdef class PredictRegression(Predict):
     pass
 
 
-cdef class PredictLinearRegression(PredictRegression):
+cdef class PredictLocalPolynomial(PredictRegression):
     pass
 
 

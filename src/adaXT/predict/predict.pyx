@@ -5,6 +5,7 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 cimport numpy as cnp
 
+
 cdef class Predict():
 
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
@@ -72,6 +73,7 @@ cdef class Predict():
     @staticmethod
     def forest_predict_proba(predictions: np.ndarray, **kwargs):
         raise NotImplementedError("The forest predict function is not implemented for this Predict class")
+
 
 cdef class PredictClassification(Predict):
     def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
@@ -155,11 +157,7 @@ cdef class PredictClassification(Predict):
 
     @staticmethod
     def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        # Stack the predict_probas
-        stacked_tree_predictions = np.stack(predictions, axis=0)
-
-        # Return the mean along the newly created axis
-        return np.mean(stacked_tree_predictions, axis=0)
+        return np.mean(predictions, axis=-1)
 
 
 cdef class PredictRegression(Predict):
@@ -189,19 +187,28 @@ cdef class PredictRegression(Predict):
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
-        return np.mean(predictions, axis=1)
+        return np.mean(predictions, axis=-1)
 
-cdef class PredictLinearRegression(PredictRegression):
+
+cdef class PredictLocalPolynomial(PredictRegression):
+
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, ind, oo
             double cur_threshold
             object cur_node
-            double[:] Y
+            double[:, ::1] deriv_mat
+
+        if "order" not in kwargs.keys():
+            order = [0, 1, 2]
+        else:
+            order = np.array(kwargs['order'], ndmin=1, dtype='int')
+            if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
+                raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
 
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        deriv_mat = np.empty((n_obs, len(order)))
 
         for i in range(n_obs):
             cur_node = self.root
@@ -212,8 +219,16 @@ cdef class PredictLinearRegression(PredictRegression):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = cur_node.theta0 + cur_node.theta1*X[i, 0]
-        return Y
+            ind = 0
+            for oo in order:
+                if oo == 0:
+                    deriv_mat[i, ind] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0]*X[i, 0]
+                elif oo == 1:
+                    deriv_mat[i, ind] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
+                elif oo == 2:
+                    deriv_mat[i, ind] = 2.0 * cur_node.theta2
+                ind += 1
+        return deriv_mat
 
 
 cdef class PredictQuantile(Predict):
@@ -254,7 +269,8 @@ cdef class PredictQuantile(Predict):
                 Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
 
+    # TODO: Check whether this does what it should
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):
         quantile = kwargs['quantile']
-        return np.quantile(predictions, quantile, axis=1)
+        return np.quantile(predictions, quantile, axis=-1)

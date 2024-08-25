@@ -3,10 +3,11 @@ from adaXT.criteria import (
     Gini_index,
     Squared_error,
     Entropy,
-    Linear_regression,
+    Partial_quadratic,
 )
-from adaXT.predict import PredictLinearRegression
-from adaXT.leaf_builder import LeafBuilderLinearRegression
+from adaXT.leaf_builder.leaf_builder import LeafBuilderPartialQuadratic
+from adaXT.predict import PredictLocalPolynomial
+from adaXT.leaf_builder import LeafBuilderPartialQuadratic
 from adaXT.random_forest import RandomForest
 import numpy as np
 import json
@@ -231,22 +232,22 @@ def test_random_forest():
     ), "Squared Error prediction incorrect"
 
 
-def test_linear_regression_forest():
+def test_gradient_forest():
     random_state = np.random.RandomState(2024)
     n = 1000
     m = 10
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     tree = DecisionTree(
-        "Linear Regression",
-        leaf_builder=LeafBuilderLinearRegression,
-        predict=PredictLinearRegression,
-        criteria=Linear_regression,
+        "Gradient",
+        leaf_builder=LeafBuilderPartialQuadratic,
+        predict=PredictLocalPolynomial,
+        criteria=Partial_quadratic,
     )
     forest = RandomForest(
-        "Linear Regression",
-        leaf_builder=LeafBuilderLinearRegression,
-        predict=PredictLinearRegression,
-        criteria=Linear_regression,
+        "Gradient",
+        leaf_builder=LeafBuilderPartialQuadratic,
+        predict=PredictLocalPolynomial,
+        criteria=Partial_quadratic,
         sampling=None,
     )
     tree.fit(X_reg, Y_reg)
@@ -306,6 +307,7 @@ def __check_leaf_count(forest: RandomForest, expected_weight: float):
         tree_sum = np.sum([node.weighted_samples for node in tree.leaf_nodes])
         assert tree_sum == expected_weight, "The expected leaf node failed for\
         the given forest"
+
 
 def test_honest_sampling_leaf_samples():
     random_state = np.random.RandomState(2024)
