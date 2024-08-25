@@ -114,18 +114,6 @@ cdef class PredictClassification(Predict):
         return Y
 
     cdef __predict_proba(self, object X):
-
-
-
-    def predict(self, object X, **kwargs):
-        #TODO: Make sure this is correct.
-        predict_proba = kwargs["predict_proba"]
-        if predict_proba:
-            self.__predict_proba(X)
-        else:
-            self.__predict(X)
-
-    cpdef list predict_proba(self, object X):
         cdef:
             int i, cur_split_idx, n_obs1
             double cur_threshold
@@ -148,6 +136,14 @@ cdef class PredictClassification(Predict):
             if self.classes is not None:
                 ret_val.append(cur_node.value)
         return ret_val
+
+
+    def predict(self, object X, **kwargs):
+        predict_proba = kwargs["predict_proba"]
+        if predict_proba:
+            self.__predict_proba(X)
+        else:
+            self.__predict(X)
 
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs):

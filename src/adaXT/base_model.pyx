@@ -102,5 +102,3 @@ class BaseModel:
     def predict(self, X: np.ndarray, Y: np.ndarray, **kwargs):
         pass
 
-    def predict_proba(self, X: np.ndarray):
-        pass

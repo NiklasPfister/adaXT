@@ -12,10 +12,7 @@ import numpy as np
 
 def uniform_x_y(n, m):
     np.random.seed(2024)
-    return (
-        np.random.uniform(
-            1, 1000, (n, m)), np.random.uniform(
-            1, 1000, (n)))
+    return (np.random.uniform(1, 1000, (n, m)), np.random.uniform(1, 1000, (n)))
 
 
 def test_predict_leaf_matrix_classification():
@@ -138,7 +135,7 @@ def test_predict_proba_probability():
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     classes = np.unique(Y_cla)
-    prediction = tree.predict_proba(X)
+    prediction = tree.predict(X, predict_proba=True)
     assert prediction.shape[0] == X.shape[0]
     for i in range(len(Y_cla)):
         assert (
@@ -155,7 +152,7 @@ def test_predict_proba_against_predict():
 
     predict = tree.predict(X)
     classes = np.unique(Y)
-    predict_proba = tree.predict_proba(X)
+    predict_proba = tree.predict(X, predict_proba=True)
 
     for i in range(predict.shape[0]):
         assert (
@@ -223,9 +220,8 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        impurity_tol=impurity_tol_desired)
+        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -248,8 +244,7 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
     for node in tree.leaf_nodes:
         assert (
-            min_samples_split_desired <=
-            (len(node.parent.indices))
+            min_samples_split_desired <= (len(node.parent.indices))
         ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
@@ -260,9 +255,8 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_samples_leaf=min_samples_leaf_desired)
+        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -278,9 +272,8 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_improvement=min_improvement_desired)
+        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -341,8 +334,7 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
             assert np.array_equal(
                 node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(
-        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
@@ -490,8 +482,8 @@ def test_quantile_predict_array():
         X[0], quantile=[0.95, 0.1]
     )  # As we are never splitting, we can just check a single data point
     np_quantile = np.quantile(Y, [0.95, 0.1])
-    assert (
-        np.array_equal(pred, [np_quantile])
+    assert np.array_equal(
+        pred, [np_quantile]
     ), f"Quantile predict failed with {pred} - should be {np_quantile}"
 
 

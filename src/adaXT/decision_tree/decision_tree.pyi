@@ -7,7 +7,6 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
-
 class DecisionTree:
     """
     Attributes
@@ -63,7 +62,7 @@ class DecisionTree:
         """
         Parameters
         ----------
-        tree_type : str | None 
+        tree_type : str | None
             The type of tree, either  a string specifying a supported type
             (currently "Regression", "Classification" and "Quantile") or None.
         max_depth : int
@@ -134,6 +133,9 @@ class DecisionTree:
         ----------
         Returns the class with the highest proportion within the final leaf node.
 
+        Given predict_proba=True, it instead calculates the probability
+        distribution.
+
         Regression:
         ----------
         Returns the mean value of the response within the final leaf node.
@@ -157,26 +159,9 @@ class DecisionTree:
         """
         pass
 
-    def predict_proba(self, X: np.ndarray):
-        """
-        Predicts a probability for each response for given X values. Only
-        useable by the Classification Tree.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
-
-        Returns
-        -------
-        np.ndarray
-            Returns an np.ndarray with the the probabilities for each class per
-            observation in X, the order of the classes corresponds to that in
-            the attribute classes.
-        """
-        pass
-
-    def predict_leaf_matrix(self, X: np.ndarray | None, scale: bool = False) -> np.ndarray:
+    def predict_leaf_matrix(
+        self, X: np.ndarray | None, scale: bool = False
+    ) -> np.ndarray:
         """
         Creates NxN matrix, where N is the number of observations in X.
         If A_{i,j} = Z then i and j are in the same leafnode, Z number of times.
@@ -197,11 +182,15 @@ class DecisionTree:
         """
         pass
 
-    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray,
-                         sample_weight: np.ndarray | None,
-                         sample_indices: np.ndarray | None) -> None:
+    def refit_leaf_nodes(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        sample_weight: np.ndarray | None,
+        sample_indices: np.ndarray | None,
+    ) -> None:
         """
-        Refits the leaf nodes in a previously fitted decision tree. 
+        Refits the leaf nodes in a previously fitted decision tree.
 
         More precisely, the method removes all leafnodes created on the initial
         fit and replaces them by predicting all samples in X that appear in

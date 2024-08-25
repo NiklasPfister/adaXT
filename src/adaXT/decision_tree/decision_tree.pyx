@@ -192,7 +192,6 @@ class DecisionTree(BaseModel):
                 indices_2 = hash2[xi]
                 if scaling == 0: 
                     val = 1.0/len(indices_1)
-                    print(val)
                 elif scaling == 1:
                     val = 1.0/(len(indices_1) + len(indices_2))
                 else:
@@ -210,17 +209,21 @@ class DecisionTree(BaseModel):
         return self.__tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
                                          scaling)
 
-    def predict_tree_based_weights(self, X: np.ndarray|None):
-        #TODO: Should this function take in scaling too?
+    def predict_tree_based_weights(self, X: np.ndarray|None, scaling: bool=True):
         if X is None:
             size_2 = self.n_rows_predict
             new_hash = self.__get_leaf()
         else:
             size_2 = X.shape[0]
             new_hash = self.predict_leaf(X)
+        if scaling:
+            scaling = 0
+        else:
+            scaling = -1
         default_hash_table = self.__get_leaf()
         return self.__tree_based_weights(default_hash_table, new_hash,
-                                         self.n_rows_predict, size_2, scaling=0)
+                                         self.n_rows_predict, size_2,
+                                         scaling=scaling)
 
     def predict_leaf(self, X: np.ndarray|None):
         if X is None:
