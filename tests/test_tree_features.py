@@ -472,7 +472,7 @@ def test_quantile_predict():
     )
     tree.fit(X, Y)
     pred = tree.predict(
-        X[0], quantile=0.95
+        X[0, :].reshape(1, -1), quantile=0.95
     )  # As we are never splitting, we can just check a single data point
     np_quantile = np.quantile(Y, 0.95)
     assert (
@@ -491,7 +491,7 @@ def test_quantile_predict_array():
     )
     tree.fit(X, Y)
     pred = tree.predict(
-        X[0], quantile=[0.95, 0.1]
+        X[0, :].reshape(1, -1), quantile=[0.95, 0.1]
     )  # As we are never splitting, we can just check a single data point
     np_quantile = np.quantile(Y, [0.95, 0.1])
     assert (
