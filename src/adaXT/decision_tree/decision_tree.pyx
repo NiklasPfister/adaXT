@@ -3,7 +3,9 @@
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
+from numpy.typing import ArrayLike
 import sys
+
 
 # Custom
 from .splitter import Splitter
@@ -164,12 +166,6 @@ class DecisionTree(BaseModel):
         return np.asarray(self.predictor.predict_proba(X))
 
     def __get_leaf(self, scale: bool = False) -> dict:
-        cdef:
-            int i, j
-            int[::1] indices
-            int n_node
-            int n_rows_predict
-
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
 
@@ -182,7 +178,8 @@ class DecisionTree(BaseModel):
             ht[node.id] = node.indices
         return ht
 
-    def __tree_based_weights(self, hash1, hash2, size_X0, size_X1, scale):
+    def __tree_based_weights(self, hash1: dict, hash2: dict, size_X0: int,
+                             size_X1: int, scale: bool) -> np.ndarray:
         matrix = np.zeros((size_X0, size_X1))
         hash1_keys = hash1.keys()
         hash2_keys = hash2.keys()
@@ -190,7 +187,7 @@ class DecisionTree(BaseModel):
             if xi in hash2_keys:
                 indices_1 = hash1[xi]
                 indices_2 = hash2[xi]
-                if scale == 0: 
+                if scale == 0:
                     val = 1.0/len(indices_1)
                 elif scale == 1:
                     val = 1.0/(len(indices_1) + len(indices_2))
@@ -199,7 +196,7 @@ class DecisionTree(BaseModel):
                 matrix[np.ix_(indices_1, indices_2)] = val
         return matrix
 
-    def similarity(self, X0, X1, scale=True):
+    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale=True: bool):
         hash1 = self.predict_leaf(X0)
         hash2 = self.predict_leaf(X1)
         if scale:
@@ -209,7 +206,8 @@ class DecisionTree(BaseModel):
         return self.__tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
                                          scale)
 
-    def predict_tree_based_weights(self, X: np.ndarray|None, scale: bool=True):
+    def tree_based_weights(self, X: np.ndarray|None = None, scale: bool = True) ->
+    np.ndarray:
         if X is None:
             size_2 = self.n_rows_predict
             new_hash = self.__get_leaf()
@@ -225,7 +223,7 @@ class DecisionTree(BaseModel):
                                          self.n_rows_predict, size_2,
                                          scale=scale)
 
-    def predict_leaf(self, X: np.ndarray|None):
+    def predict_leaf(self, X: np.ndarray|None = None):
         if X is None:
             return self.__get_leaf()
         if not self.predictor:

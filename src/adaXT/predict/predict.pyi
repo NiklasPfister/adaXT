@@ -33,7 +33,7 @@ class Predict:
         """
         pass
 
-    def predict_leaf_matrix(self, X: np.ndarray, scale: bool):
+    def predict_leaf(self, X: np.ndarray, scale: bool) -> dict:
         """
         Function called when tree.predict_leaf_matrix is called.
 

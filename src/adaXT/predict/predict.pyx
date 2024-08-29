@@ -117,7 +117,7 @@ cdef class PredictClassification(Predict):
 
     cdef cnp.ndarray __predict_proba(self, object X):
         cdef:
-            int i, cur_split_idx, n_obs1
+            int i, cur_split_idx
             double cur_threshold
             object cur_node
             list ret_val
@@ -138,7 +138,6 @@ cdef class PredictClassification(Predict):
             if self.classes is not None:
                 ret_val.append(cur_node.value)
         return np.array(ret_val)
-
 
     def predict(self, object X, **kwargs):
         if "predict_proba" in kwargs:

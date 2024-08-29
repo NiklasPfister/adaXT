@@ -104,4 +104,3 @@ class BaseModel:
 
     def predict(self, X: np.ndarray, Y: np.ndarray, **kwargs):
         pass
-
