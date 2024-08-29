@@ -7,7 +7,7 @@ from statistics import mode
 cimport numpy as cnp
 
 def default_predict(tree, X, **kwargs):
-    return tree.predict(X, **kwargs)
+    return np.array(tree.predict(X, **kwargs))
 
 def quantile_predict(tree, X, quantile):
     n_obs = X.shape[0]
@@ -94,10 +94,10 @@ cdef class Predict():
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
-        predict_list = [X_new for _ in range(len(trees))]
-        predictions = parallel.async_starmap(default_predict,
-                           map_input=zip(trees, predict_list),
-                           **kwargs)
+        predictions = parallel.async_map(default_predict,
+                                         trees,
+                                         X=X_new,
+                                         **kwargs)
         return np.mean(predictions, axis=0)
 
 
@@ -173,10 +173,10 @@ cdef class PredictClassification(Predict):
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
-        predict_list = [X_new for _ in range(len(trees))]
-        predictions = parallel.async_starmap(default_predict,
-                           map_input=zip(trees, predict_list),
-                           **kwargs)
+        predictions = parallel.async_map(default_predict,
+                                         trees,
+                                         X=X_new,
+                                         **kwargs)
         return np.apply_along_axis(mode, 0, predictions)
 
 

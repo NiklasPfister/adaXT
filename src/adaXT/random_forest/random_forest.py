@@ -19,8 +19,21 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
-def predict_single_leaf(tree: DecisionTree, X: np.ndarray | None, scale: bool):
-    return tree.predict_leaf_matrix(X=X, scale=scale)
+def get_single_leaf(tree: DecisionTree, X: np.ndarray | None = None) -> dict:
+    return tree.predict_leaf(X=X)
+
+
+def tree_based_weights(
+    tree: DecisionTree,
+    hash1: dict,
+    hash2: dict,
+    size_X0: int,
+    size_X1: int,
+    scale: bool,
+) -> np.ndarray:
+    return tree.tree_based_weights(
+        hash1=hash1, hash2=hash2, size_X0=size_X0, size_X1=size_X1, scale=scale
+    )
 
 
 def get_sample_indices(
@@ -265,7 +278,7 @@ class RandomForest(BaseModel):
             default.
         predict: Predict
             The Prediction class to use, if None it defaults to the forest_type
-            default. 
+            default.
         splitter : Splitter | None, optional
             The Splitter class to use, if None it defaults to the default
             Splitter class.
@@ -577,49 +590,50 @@ class RandomForest(BaseModel):
         tree_predictions = self.__predict_proba_trees(X, **kwargs)
         return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
 
-    def __get_forest_matrix(self, scale: bool = False):
-        tree_weights = self.parallel.async_map(
-            predict_single_leaf, self.trees, X=None, scale=scale
-        )
-        return np.sum(tree_weights, axis=0) / self.n_estimators
-
-    def predict_forest_weight(self, X: np.ndarray | None = None, scale: bool = False) -> np.ndarray:
-        """
-        Creates NxN matrix, where N is the number of observations in X.
-        If A_{i,j} = Z then i and j are in the same leafnode Z number of times.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node. If X is None this is done over the
-        training data.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Data to predict over
-        scale : bool
-            Whether to scale the output
-
-        Returns
-        -------
-        np.ndarray
-            NxN matrix where N is the number of observations in X.
-
-        Raises
-        ------
-        AttributeError:
-            Forest not fitted prior to use.
-        """
-
-        if not self.forest_fitted:
-            raise AttributeError(
-                "The forest has not been fitted before trying to call\
-                predict_forest_weight"
-            )
+    def predict_weights(
+        self, X: np.ndarray | None = None, scale: bool = True
+    ) -> np.ndarray:
         if X is None:
-            return self.__get_forest_matrix(scale=scale)
-        tree_weights = self.parallel.async_map(
-            predict_single_leaf,
-            self.trees,
-            X=X,
-            scale=scale,
+            size_1 = self.n_rows
+        else:
+            size_1 = X.shape[0]
+
+        new_hash_list = self.predict_leaf(X=X)
+        if scale:
+            scaling = 0
+        else:
+            scaling = -1
+        default_hash_table = self.__get_forest_leaf()
+        weight_list = self.parallel.async_starmap(
+            tree_based_weights,
+            map_input=(self.trees, new_hash_list),
+            hash_2=default_hash_table,
+            size_2=self.n_rows,
+            size_1=size_1,
+            scale=scaling,
         )
-        return np.sum(tree_weights, axis=0) / self.n_estimators
+        return np.sum(weight_list, axis=-1)
+
+    def predict_leaf(self, X: np.ndarray | None = None) -> list[dict]:
+        # get_single_leaf takes care of it, when X=Noneself
+        if X is not None:
+            X = shared_numpy_array(X)
+        return self.parallel.async_map(get_single_leaf, self.trees, X=X)
+
+    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+        hash1_list = self.predict_leaf(X0)
+        hash2_list = self.predict_leaf(X1)
+        if scale:
+            scaling = 1
+        else:
+            scaling = -1
+        size_1 = X0.shape[0]
+        size_2 = X1.shape[0]
+        weight_list = self.parallel.async_starmap(
+            tree_based_weights,
+            map_input=(self.trees, hash1_list, hash2_list),
+            size_1=size_1,
+            size_2=size_2,
+            scale=scaling,
+        )
+        return np.sum(weight_list, axis=-1)

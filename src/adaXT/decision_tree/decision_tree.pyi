@@ -159,9 +159,7 @@ class DecisionTree:
         """
         pass
 
-    def predict_tree_based_weights(
-        self, X: np.ndarray | None, scale: bool = True
-    ) -> np.ndarray:
+    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
         # TODO: Documentation
         pass
 
@@ -171,6 +169,12 @@ class DecisionTree:
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
         # TODO: Documentation
+        pass
+
+    def tree_based_weights(
+        self, hash1: dict, hash2: dict, size_X0: int, size_X1: int, scale: bool
+    ) -> np.ndarray:
+        # TODO: Documentaion
         pass
 
     def refit_leaf_nodes(
