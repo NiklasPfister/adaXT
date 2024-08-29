@@ -63,7 +63,7 @@ cdef class Predict():
     cpdef list predict_proba(self, object X):
         raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
-    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
+    cpdef dict predict_leaf(self, object X):
         cdef:
             int i
             int row
@@ -90,16 +90,7 @@ cdef class Predict():
                 ht[cur_node.id] = [i]
             else:
                 ht[cur_node.id] += [i]
-        matrix = np.zeros((row, row))
-        for key in ht.keys():
-            indices = ht[key]
-            val = 1
-            count = len(indices)
-            if scale:
-                val = 1/count
-            matrix[np.ix_(indices, indices)] = val
-
-        return matrix
+        return ht
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
@@ -123,12 +114,12 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    def predict(self, object X, **kwargs):
+    cdef cnp.ndarray __predict(self, object X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray Y
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
@@ -150,9 +141,9 @@ cdef class PredictClassification(Predict):
                 Y[i] = self.classes[idx]
         return Y
 
-    cpdef list predict_proba(self, object X):
+    cdef cnp.ndarray __predict_proba(self, object X):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx
             double cur_threshold
             object cur_node
             list ret_val
@@ -172,7 +163,13 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return ret_val
+        return np.array(ret_val)
+
+    def predict(self, object X, **kwargs):
+        if "predict_proba" in kwargs:
+            return self.__predict_proba(X)
+        else:
+            return self.__predict(X)
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):

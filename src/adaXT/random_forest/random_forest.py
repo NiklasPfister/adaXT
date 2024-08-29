@@ -40,13 +40,13 @@ def get_sample_indices(
         random_state.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
-        fitting_data = random_state.randint(
+        fitting_indices = random_state.randint(
             low=0, high=sampling_parameter[0], size=sampling_parameter[1]
         )
-        prediction_data = random_state.randint(
+        prediction_indices = random_state.randint(
             low=sampling_parameter[0], high=n_rows, size=sampling_parameter[1]
         )
-        return (fitting_data, prediction_data)
+        return (fitting_indices, prediction_indices)
     else:
         return (None, None)
 
@@ -149,9 +149,52 @@ def shared_numpy_array(array):
 
 class RandomForest(BaseModel):
     """
-    The Random Forest
+    Attributes
+    ----------
+    max_features: int | float | Literal["sqrt", "log2"] | None = None
+        The number of features to consider when looking for a split.
+    max_depth : int
+        The maximum depth of the tree.
+    forest_type : str
+        The type of random forest, either  a string specifying a supported type
+        (currently "Regression", "Classification" and "Quantile") or None.
+    n_estimators : int
+        The number of trees in the random forest.
+    n_jobs : int
+        The number of processes used to fit, and predict for the forest, -1
+        uses all available proccesors.
+    sampling: str | None
+        Either bootstrap, honest_tree, honest_forest or None. See
+        sampling_parameter for exact behaviour.
+    sampling_parameter: int | float | tuple[int, int|float] | None
+        A parameter used to control the behavior of the sampling. For
+        bootstrap it can be an int representing the number of randomly
+        drawn indices (with replacement) to fit on or a float for a
+        percentage.
+        For honest_forest it is a tuple of two ints: The first
+        value specifies a splitting index such that the indices on the left
+        are used in the fitting of all trees and the indices on the right
+        are used for prediction (i.e., populating the leafs). The second
+        value specifies the number of randomly drawn (with replacement)
+        indices used for both fitting and prediction.
+        For honest_tree it is the number of elements to use for both fitting
+        and prediction, where there might be overlap between trees in
+        fitting and prediction data, but not for an individual tree.
+        If None, all samples are used for each tree.
+    impurity_tol : float
+        The tolerance of impurity in a leaf node.
+    min_samples_split : int
+        The minimum number of samples in a split.
+    min_samples_leaf : int
+        The minimum number of samples in a leaf node.
+    min_improvement: float
+        The minimum improvement gained from performing a split.
     """
 
+    # TODO: Save prediction_indicies and fitting_indicies.
+    # TODO: predict_tree_weights, which create an NxN matrix similair to
+    # the tree.predict_tree_weights
+    # TODO: Similairity.
     def __init__(
         self,
         forest_type: str | None,
@@ -160,12 +203,12 @@ class RandomForest(BaseModel):
         sampling: str | None = "bootstrap",
         sampling_parameter: int | float | tuple[int, int] | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
-        random_state: int | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
+        random_state: int | None = None,
         criteria: type[Criteria] | None = None,
         leaf_builder: type[LeafBuilder] | None = None,
         predict: type[Predict] | None = None,
@@ -175,49 +218,57 @@ class RandomForest(BaseModel):
         Parameters
         ----------
         forest_type : str
-            Classification or Regression
-        n_estimators : int, default=100
-            The number of trees in the forest.
-        n_jobs : int, default=1
-            The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
-        sampling: str | None, default="bootstrap"
-            Either bootstrap, honest_tree or honest_forest. See sampling_parameter
-            for exact behaviour.
+            The type of random forest, either  a string specifying a supported type
+            (currently "Regression", "Classification" and "Quantile") or None.
+        n_estimators : int
+            The number of trees in the random forest.
+        n_jobs : int
+            The number of processes used to fit, and predict for the forest, -1
+            uses all available proccesors.
+        sampling: str | None
+            Either bootstrap, honest_tree, honest_forest or None. See
+            sampling_parameter for exact behaviour.
         sampling_parameter: int | float | tuple[int, int|float] | None
-            A parameter used to control the behaviour of the sampling.
-            For bootstrap it can be int representing number of randomly drawn
-            indices (with replacement) to fit on or float for a percentage.
-            For honest_forest it is a tuple of two ints: The first value specifies
-            a splitting index such that the indices on the left are used in the
-            fitting of all trees and the indices on the right are used for prediction
-            (i.e., populating the leafs). The second value specifies
-            the number of randomly drawn (with replacement) indices used for both
-            fitting and prediction.
+            A parameter used to control the behavior of the sampling. For
+            bootstrap it can be an int representing the number of randomly
+            drawn indices (with replacement) to fit on or a float for a
+            percentage.
+            For honest_forest it is a tuple of two ints: The first
+            value specifies a splitting index such that the indices on the left
+            are used in the fitting of all trees and the indices on the right
+            are used for prediction (i.e., populating the leafs). The second
+            value specifies the number of randomly drawn (with replacement)
+            indices used for both fitting and prediction.
             For honest_tree it is the number of elements to use for both fitting
             and prediction, where there might be overlap between trees in
             fitting and prediction data, but not for an individual tree.
+            If None, all samples are used for each tree.
         max_features: int | float | Literal["sqrt", "log2"] | None = None
-            The number of features to consider when looking for a split,
-        random_state: int
-            Used for deterministic seeding of the tree
+            The number of features to consider when looking for a split.
         max_depth : int
-            maximum depth of the tree, by default maximum system size
+            The maximum depth of the tree.
         impurity_tol : float
-            the tolerance of impurity in a leaf node, by default 0
+            The tolerance of impurity in a leaf node.
         min_samples_split : int
-            the minimum amount of samples in a split, by default 1
+            The minimum number of samples in a split.
         min_samples_leaf : int
-            the minimum amount of samples in a leaf node, by default 1
+            The minimum number of samples in a leaf node.
         min_improvement: float
-            the minimum improvement gained from performing a split, by default 0
+            The minimum improvement gained from performing a split.
+        random_state: int
+            Used for deterministic seeding of the tree.
         criteria : Criteria
-            The criteria function used to evaluate a split in a DecisionTree
+            The Criteria class to use, if None it defaults to the forest_type
+            default.
         leaf_builder : LeafBuilder
-            LeafBuilder class used for prediction
+            The LeafBuilder class to use, if None it defaults to the forest_type
+            default.
         predict: Predict
-            Prediction class used when predicting
+            The Prediction class to use, if None it defaults to the forest_type
+            default. 
         splitter : Splitter | None, optional
-            Splitter class if None uses premade Splitter class
+            The Splitter class to use, if None it defaults to the default
+            Splitter class.
         """
         # Must initialize Manager before ParallelModel
         BaseManager.register("RandomState", np.random.RandomState)
@@ -288,7 +339,7 @@ class RandomForest(BaseModel):
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
-                sampling_parameter = self.n_rows / 2
+                sampling_parameter = int(self.n_rows / 2)
             if isinstance(sampling_parameter, int):
                 if sampling_parameter > self.n_rows:
                     raise ValueError(
@@ -416,14 +467,16 @@ class RandomForest(BaseModel):
         self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray | None = None
     ):
         """
-        Function used to fit a forest using many DecisionTrees for the given data
+        Fit the random forest with training data (X, Y).
 
         Parameters
         ----------
         X : np.ndarray
-            feature values
+            The feature values used for training. Rows correspond to samples.
         Y : np.ndarray
-            response values
+            The response values used for training.
+        sample_weight : np.ndarray | None
+            Sample weights.
         """
         self.X, self.Y = self.__check_input(X, Y)
         self.X = shared_numpy_array(X)
@@ -475,7 +528,9 @@ class RandomForest(BaseModel):
         Returns
         -------
         np.ndarray
-            (N) numpy array with the prediction
+            (N, K) numpy array with the prediction, where K depends on the
+            Prediction class and is generally 1
+
         """
         if not self.forest_fitted:
             raise AttributeError(
@@ -488,7 +543,8 @@ class RandomForest(BaseModel):
 
     def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Predicts a probability for each response for given X values using the trees of the forest
+        Predicts a probability for each response for given X values using the
+        trees of the forest
 
         Parameters
         ----------
@@ -498,7 +554,9 @@ class RandomForest(BaseModel):
         Returns
         -------
         np.ndarray
-            Returns an ndarray with the probabilities for each class per observation in X. The order of the classes corresponds to that in the attribute classes
+            Returns an ndarray with the probabilities for each class per
+            observation in X. The order of the classes corresponds to that in
+            the attribute classes
         """
         if not self.forest_fitted:
             raise AttributeError(
@@ -525,9 +583,32 @@ class RandomForest(BaseModel):
         )
         return np.sum(tree_weights, axis=0) / self.n_estimators
 
-    def predict_forest_weight(
-        self, X: np.ndarray | None = None, scale: bool = False
-    ) -> np.ndarray:
+    def predict_forest_weight(self, X: np.ndarray | None = None, scale: bool = False) -> np.ndarray:
+        """
+        Creates NxN matrix, where N is the number of observations in X.
+        If A_{i,j} = Z then i and j are in the same leafnode Z number of times.
+        If they are scaled, then A_{i,j} is instead scaled by the number
+        of elements in the leaf node. If X is None this is done over the
+        training data.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            Data to predict over
+        scale : bool
+            Whether to scale the output
+
+        Returns
+        -------
+        np.ndarray
+            NxN matrix where N is the number of observations in X.
+
+        Raises
+        ------
+        AttributeError:
+            Forest not fitted prior to use.
+        """
+
         if not self.forest_fitted:
             raise AttributeError(
                 "The forest has not been fitted before trying to call\

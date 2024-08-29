@@ -349,6 +349,4 @@ if __name__ == "__main__":
     # test_gini_multi()
     # test_entropy_single()
     # test_entropy_multi()
-    test_regression()
-    test_sanity()
     # print("Done.")
