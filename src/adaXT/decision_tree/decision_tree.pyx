@@ -1,5 +1,8 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
+# TODO: left_child fails sometimes:AttributeError: 'NoneType' object has no
+# attribute 'left_child' 
+
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
@@ -226,7 +229,9 @@ class DecisionTree(BaseModel):
         n_nodes = len(self.leaf_nodes)
         for i in range(n_nodes):
             parent = self.leaf_nodes[i].parent
-            if parent.left_child == self.leaf_nodes[i]:
+            if parent is None:
+                self.root = None
+            elif parent.left_child == self.leaf_nodes[i]:
                 parent.left_child = None
             else:
                 parent.right_child = None
