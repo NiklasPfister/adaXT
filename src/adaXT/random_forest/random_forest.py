@@ -578,6 +578,7 @@ class RandomForest(BaseModel):
         if X is None:
             size_0 = self.n_rows
         else:
+            X = shared_numpy_array(X)
             size_0 = X.shape[0]
 
         if scale:
@@ -585,7 +586,6 @@ class RandomForest(BaseModel):
         else:
             scaling = -1
 
-        X = shared_numpy_array(X)
         weight_list = self.parallel.async_map(
             tree_based_weights,
             map_input=self.trees,
