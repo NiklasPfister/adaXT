@@ -391,13 +391,12 @@ def test_n_jobs_predict_forest():
 # TODO: Similarity test
 
 if __name__ == "__main__":
-    # test_dominant_feature()
-    # test_deterministic_seeding_classification()
-    # test_quantile_regression_forest()
-    # test_random_forest_weights()
-    # test_honest_sampling_leaf_samples()
-    # test_n_jobs_predict_forest()
-    # create_and_save_predict_data()
+    test_dominant_feature()
+    test_deterministic_seeding_classification()
+    test_quantile_regression_forest()
+    test_random_forest_weights()
+    test_honest_sampling_leaf_samples()
+    test_n_jobs_predict_forest()
     test_random_forest()
 
     print("Done")

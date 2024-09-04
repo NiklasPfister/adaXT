@@ -1,7 +1,6 @@
 from functools import partial
 import multiprocessing
 from multiprocessing import cpu_count
-from multiprocessing.context import SpawnContext
 from itertools import starmap
 from typing import Any, Callable, Iterable
 
@@ -23,7 +22,7 @@ class ParallelModel:
         random_state: int
             Used for deterministic seeding of the tree
         """
-        self.ctx = multiprocessing.get_context("spawn")
+        self.ctx = multiprocessing.get_context("fork")
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
 
     def async_map(self, function: Callable, map_input: Any, **kwargs):
