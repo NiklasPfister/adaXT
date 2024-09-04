@@ -1,10 +1,14 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
+# TODO: left_child fails sometimes:AttributeError: 'NoneType' object has no
+# attribute 'left_child' 
+
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
 from numpy.typing import ArrayLike
 import sys
+from numpy.typing import ArrayLike
 
 
 # Custom
@@ -105,34 +109,44 @@ class DecisionTree(BaseModel):
         else:
             raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
 
-    def __check_input(self, X: object, Y: object):
-        # If the skip_check_input option is set to True in the initialization of a tree, then simply return X and Y
-        if self.skip_check_input:
-            return X, Y
+    # Check whether dimension of X matches self.n_features
+    def __check_dimensions(self, X: np.ndarray) -> None:
+        if X.shape[1] != self.n_features:
+            raise ValueError(
+                f"Number of features should be {self.n_features}, got {X.shape[1]}"
+            )
 
+    def __check_input(self,
+                      X: ArrayLike,
+                      Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+        Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
         Y = np.ascontiguousarray(Y, dtype=DOUBLE)
 
-        # Check if X and Y has same number of rows
-        if X.shape[0] != Y.shape[0]:
-            raise ValueError("X and Y should have the same number of rows")
+        # Check that X is two dimensional
+        if X.ndim != 2:
+            raise ValueError("X should be two-dimensional")
 
-        # Check if Y has dimensions (n, 1) or (n,)
-        if 2 < Y.ndim:
-            raise ValueError("Y should have dimensions (n,1) or (n,)")
-        elif 2 == Y.ndim:
-            if 1 < Y.shape[1]:
+        # If Y is not None perform checks for Y
+        if Y_check:
+            # Check if X and Y has same number of rows
+            if X.shape[0] != Y.shape[0]:
+                raise ValueError("X and Y should have the same number of rows")
+
+            # Check if Y has dimensions (n, 1) or (n,)
+            if 2 < Y.ndim:
                 raise ValueError("Y should have dimensions (n,1) or (n,)")
-            else:
-                Y = Y.reshape(-1)
-
+            elif 2 == Y.ndim:
+                if 1 < Y.shape[1]:
+                    raise ValueError("Y should have dimensions (n,1) or (n,)")
+                else:
+                    Y = Y.reshape(-1)
         return X, Y
 
-    def fit(
-            self,
-            X,
-            Y,
+    def fit(self,
+            X: ArrayLike,
+            Y: ArrayLike,
             sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None) -> None:
 
@@ -140,7 +154,8 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
             row, _ = X.shape
-            # If sample_weight is valid it is simply passed through check_sample_weight, if it is None all entries are set to 1
+            # If sample_weight is valid it is simply passed through
+            # check_sample_weight, if it is None all entries are set to 1
             sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
 
         builder = DepthTreeBuilder(
@@ -155,14 +170,20 @@ class DecisionTree(BaseModel):
             splitter_class=self.splitter)
         builder.build_tree(self)
 
-    def predict(self, X: np.ndarray, **kwargs):
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         if not self.predictor:
             raise AttributeError("The tree has not been fitted before trying to call predict")
-        return self.predictor.predict(X, **kwargs)
+        if not self.skip_check_input:
+            X, _ = self.__check_input(X)
+            self.__check_dimensions(X)
+        return np.asarray(self.predictor.predict(X, **kwargs))
 
-    def predict_proba(self, X: np.ndarray):
+    def predict_proba(self, X: ArrayLike) -> np.ndarray:
         if not self.predictor:
             raise AttributeError("The tree has not been fitted before trying to call predict_proba")
+        if not self.skip_check_input:
+            X, _ = self.__check_input(X)
+            self.__check_dimensions(X)
         return np.asarray(self.predictor.predict_proba(X))
 
     def __get_leaf(self, scale: bool = False) -> dict:
@@ -238,7 +259,9 @@ class DecisionTree(BaseModel):
         n_nodes = len(self.leaf_nodes)
         for i in range(n_nodes):
             parent = self.leaf_nodes[i].parent
-            if parent.left_child == self.leaf_nodes[i]:
+            if parent is None:
+                self.root = None
+            elif parent.left_child == self.leaf_nodes[i]:
                 parent.left_child = None
             else:
                 parent.right_child = None
@@ -369,26 +392,18 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
-    def refit_leaf_nodes(
-            self,
-            X: np.ndarray,
-            Y: np.ndarray,
-            sample_weight: np.ndarray | None = None,
-            sample_indices: np.ndarray | None = None,
-            **kwargs):
+    def refit_leaf_nodes(self,
+                         X: ArrayLike,
+                         Y: ArrayLike,
+                         sample_weight: np.ndarray | None = None,
+                         sample_indices: np.ndarray | None = None,
+                         **kwargs) -> None:
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
-        # Check inputs
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
-        row, _ = X.shape
-        self.n_rows_predict = row
-
-        # If sample_weight is valid it is simply passed through
-        # check_sample_weight, if it is None all entries are set to 1
-        sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
-
+            self.__check_dimensions(X)
         # Remove current leaf nodes
         indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
@@ -519,7 +534,7 @@ class DepthTreeBuilder:
         else:
             raise ValueError("Unable to parse max_features")
 
-    def build_tree(self, tree: DecisionTree):
+    def build_tree(self, tree: DecisionTree) -> int:
         """
         Builds the tree
 

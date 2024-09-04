@@ -1,4 +1,5 @@
 from typing import Type, Literal
+from numpy.typing import ArrayLike
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
@@ -6,6 +7,8 @@ from .nodes import LeafNode, Node
 from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
+
+# TODO: Update the documentation
 
 class DecisionTree:
     """
@@ -90,15 +93,16 @@ class DecisionTree:
             The Splitter class to use, if None it defaults to the default
             Splitter class.
         skip_check_input : bool
-            Whether to skip checking the input for consistency.
-
+            Skips any error checking on the features and response in the fitting
+            function of a tree, should only be used if you know what you are
+            doing, by default false.
         """
         pass
 
     def fit(
         self,
-        X,
-        Y,
+        X: ArrayLike,
+        Y: ArrayLike,
         sample_indices: np.ndarray | None = None,
         sample_weight: np.ndarray | None = None,
     ) -> None:
@@ -107,22 +111,21 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like object
+        X : array-like object of dimension 2
             The feature values used for training. Internally it will be
-            converted to np.ndarray with dtype=np.float64. Rows correspond to
-            samples.
+            converted to np.ndarray with dtype=np.float64.
         Y : array-like object
             The response values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        sample_indices : array-like object | None
-            A vector specifying samples of the training data that should be
-            used during training. If None all samples are used.
+        sample_indices : array-like object | None, optional
+            A vector specifying samples of the training data that should be used
+            during training. If None all samples are used.
         sample_weight : np.ndarray | None
             Sample weights. Currently not implemented.
         """
         pass
 
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
         Predict response values at X using fitted decision tree. The behavior
         of this function is determined by the Prediction class used in the
@@ -148,8 +151,9 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
+        X : array-like object of dimension 2
+            New samples at which to predict the response. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
 
         Returns
         -------
@@ -199,7 +203,7 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like object
+        X : array-like object of dimension 2
             The feature values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
         Y : array-like object
@@ -207,7 +211,7 @@ class DecisionTree:
             converted to np.ndarray with dtype=np.float64.
         sample_weight : np.ndarray | None
             Sample weights. Currently not implemented.
-        sample_indices: np.ndarray
+        prediction_indices: np.ndarray | None
             Values to create new leaf nodes with
         """
         pass
