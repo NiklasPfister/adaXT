@@ -4,6 +4,25 @@ from multiprocessing import cpu_count
 from itertools import starmap
 from typing import Any, Callable, Iterable
 
+from multiprocessing import RawArray
+import numpy as np
+import ctypes
+
+
+def shared_numpy_array(array):
+    if array.ndim == 2:
+        row, col = array.shape
+        shared_array = RawArray(ctypes.c_double, (row * col))
+        shared_array_np = np.ndarray(
+            shape=(row, col), dtype=np.double, buffer=shared_array
+        )
+    else:
+        row = array.shape[0]
+        shared_array = RawArray(ctypes.c_double, row)
+        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
+    np.copyto(shared_array_np, array)
+    return shared_array_np
+
 
 class ParallelModel:
     """
