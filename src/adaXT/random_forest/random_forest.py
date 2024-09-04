@@ -130,7 +130,7 @@ def fill_with_zeros_for_missing_classes_in_tree(
 def predict_proba_single_tree(
     tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray, **kwargs
 ):
-    tree_predict_proba = tree.predict_proba(predict_values)
+    tree_predict_proba = tree.predict(predict_values, predict_proba=True)
     ret_val = fill_with_zeros_for_missing_classes_in_tree(
         tree.classes,
         tree_predict_proba,
@@ -428,7 +428,7 @@ class RandomForest(BaseModel):
         predictions = []
         if self.n_jobs == 1:
             for tree in self.trees:
-                predictions.append(tree.predict_proba(X))
+                predictions.append(tree.predict(X, predict_proba=True))
         else:
             predict_value = shared_numpy_array(X)
             partial_func = partial(
@@ -509,8 +509,6 @@ class RandomForest(BaseModel):
         # Register that the forest was succesfully fitted
         self.forest_fitted = True
 
-        return self
-
     def predict(self, X: np.ndarray, **kwargs):
         """
         Predicts response values at X using fitted random forest.  The behavior
@@ -551,46 +549,17 @@ class RandomForest(BaseModel):
             )
 
         self.__check_dimensions(X)
-        prediction = self.__predict_trees(X, **kwargs)
+        if "predict_proba" in kwargs.keys():
+            if self.forest_type != "Classification":
+                raise ValueError(
+                    "predict_proba can only be called on a Classification tree"
+                )
+            prediction = self.__predict_proba_trees(X, **kwargs)
+        else:
+            prediction = self.__predict_trees(X, **kwargs)
         return prediction
 
-    def predict_proba(self, X: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Predicts a probability for each response for given X values using the
-        trees of the forest
-
-        Parameters
-        ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
-
-        Returns
-        -------
-        np.ndarray
-            Returns an ndarray with the probabilities for each class per
-            observation in X. The order of the classes corresponds to that in
-            the attribute classes
-        """
-        if not self.forest_fitted:
-            raise AttributeError(
-                "The forest has not been fitted before trying to call predict_proba"
-            )
-
-        # Make sure that predict_proba is only called on Classification
-        # forests
-        if self.forest_type != "Classification":
-            raise ValueError(
-                "predict_proba can only be called on a Classification tree"
-            )
-
-        # Check dimensions
-        self.__check_dimensions(X)
-        # Predict_proba using all the trees, each element of list is the
-        # predict_proba from one tree
-        tree_predictions = self.__predict_proba_trees(X, **kwargs)
-        return self.predict_class.forest_predict_proba(tree_predictions, **kwargs)
-
-    def predict_weights(
+    def forest_weights(
         self, X: np.ndarray | None = None, scale: bool = True
     ) -> np.ndarray:
         if X is None:
