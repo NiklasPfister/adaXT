@@ -5,10 +5,39 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
+from adaXT.parallel import shared_numpy_array
 
 
 def default_predict(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
+
+def predict_proba(tree, Y, X, unique_classes):
+    cdef:
+        int i, cur_split_idx
+        double cur_threshold
+        object cur_node
+        list ret_val
+
+    # Make sure that x fits the dimensions.
+    n_obs = X.shape[0]
+    ret_val = []
+    for i in range(n_obs):
+        cur_node = tree.root
+        while isinstance(cur_node, DecisionNode):
+            cur_split_idx = cur_node.split_idx
+            cur_threshold = cur_node.threshold
+            if X[i, cur_split_idx] < cur_threshold:
+                cur_node = cur_node.left_child
+            else:
+                cur_node = cur_node.right_child
+        cur_array = np.zeros(unique_classes)
+        n_samples = len(cur_node.indices)
+        for idx in cur_node.indices: 
+            cur_array[np.where(unique_classes == Y[idx])] += 1
+
+        ret_val.append(cur_array/n_samples)
+
+    return np.array(ret_val)
 
 
 def quantile_predict(tree, X, quantile):
@@ -63,9 +92,6 @@ cdef class Predict():
 
     def predict(self, object X, **kwargs):
         raise NotImplementedError("Function predict is not implemented for this Predict class")
-
-    cpdef list predict_proba(self, object X):
-        raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
 
     cpdef dict predict_leaf(self, object X):
         cdef:
@@ -171,16 +197,30 @@ cdef class PredictClassification(Predict):
 
     def predict(self, object X, **kwargs):
         if "predict_proba" in kwargs:
-            return self.__predict_proba(X)
-        else:
-            return self.__predict(X)
+            if kwargs["predict_proba"]:
+                return self.__predict_proba(X)
+
+        # if predict_proba = False this return is hit
+        return self.__predict(X)
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+        # Forest_predict_proba
+        if "predict_proba" in kwargs:
+            if kwargs["predict_proba"]:
+                unique_classes = shared_numpy_array(np.unique(Y_old))
+                Y_old = shared_numpy_array(Y_old)
+                predictions = parallel.async_map(predict_proba, trees, Y=Y_old,
+                                                 unique_classes=unique_classes)
+                return np.mean(predictions, axis=0)
+
+
+
+
         predictions = parallel.async_map(default_predict,
-                                         trees,
-                                         X=X_new,
-                                         **kwargs)
+                                        trees,
+                                        X=X_new,
+                                        **kwargs)
         return np.apply_along_axis(mode, 0, predictions)
 
 

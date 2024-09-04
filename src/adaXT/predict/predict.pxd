@@ -11,8 +11,6 @@ cdef class Predict():
 
     cpdef dict predict_leaf(self, object X)
 
-    cpdef list predict_proba(self, object X)
-
 
 cdef class PredictClassification(Predict):
     cdef:

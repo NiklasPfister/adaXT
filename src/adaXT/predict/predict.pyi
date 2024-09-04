@@ -119,18 +119,6 @@ class PredictClassification(Predict):
 
         pass
 
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculates the mean predictions for all the predictions.
-
-        Parameters
-        ----------
-        predictions : np.ndarray
-            An array of predictions.
-        """
-        pass
-
 class PredictRegression(Predict):
     """
     Default used for Regression.

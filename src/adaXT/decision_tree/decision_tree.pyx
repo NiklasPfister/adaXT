@@ -54,6 +54,7 @@ class DecisionTree(BaseModel):
             leaf_builder: LeafBuilder | None = None,
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
+        #TODO: multiple Ys
 
         # Function defined in BaseModel
         if skip_check_input:
@@ -177,14 +178,6 @@ class DecisionTree(BaseModel):
             X, _ = self.__check_input(X)
             self.__check_dimensions(X)
         return np.asarray(self.predictor.predict(X, **kwargs))
-
-    def predict_proba(self, X: ArrayLike) -> np.ndarray:
-        if not self.predictor:
-            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
-        if not self.skip_check_input:
-            X, _ = self.__check_input(X)
-            self.__check_dimensions(X)
-        return np.asarray(self.predictor.predict_proba(X))
 
     def __get_leaf(self, scale: bool = False) -> dict:
         if not self.root:

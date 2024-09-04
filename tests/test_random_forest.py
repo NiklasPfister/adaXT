@@ -295,7 +295,7 @@ def test_random_forest_weights():
     seed = 2024
     n = 100
     m = 10
-    n_estimators = 5
+    n_estimators = 100
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     squared_forest = run_squared_error(
         X_reg,
@@ -307,12 +307,14 @@ def test_random_forest_weights():
         sampling=None,
     )
     res = squared_forest.predict_weights(X=None, scale=False)
-    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
-    tree_sum = np.mean(
+    tree_sum = np.sum(
         [tree.predict_weights(X=None, scale=False) for tree in trees], axis=0
     )
+    print(tree_sum)
+    print(res)
     assert np.array_equal(tree_sum, res)
 
 
@@ -382,7 +384,7 @@ def test_n_jobs_predict_forest():
     trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
-    tree_sum = np.mean(
+    tree_sum = np.sum(
         [tree.predict_weights(X=X_reg, scale=False) for tree in trees], axis=0
     )
     assert np.array_equal(tree_sum, res)
@@ -391,12 +393,12 @@ def test_n_jobs_predict_forest():
 # TODO: Similarity test
 
 if __name__ == "__main__":
-    test_dominant_feature()
-    test_deterministic_seeding_classification()
-    test_quantile_regression_forest()
+    # test_dominant_feature()
+    # test_deterministic_seeding_classification()
+    # test_quantile_regression_forest()
     test_random_forest_weights()
-    test_honest_sampling_leaf_samples()
-    test_n_jobs_predict_forest()
-    test_random_forest()
+    # test_honest_sampling_leaf_samples()
+    # test_n_jobs_predict_forest()
+    # test_random_forest()
 
     print("Done")

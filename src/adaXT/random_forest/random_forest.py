@@ -1,14 +1,11 @@
-import ctypes
 import sys
-from functools import partial
-from multiprocessing import RawArray
 from typing import Iterable, Literal
 
 import numpy as np
 from numpy import float64 as DOUBLE
-from numpy.random import Generator, SeedSequence, default_rng
+from numpy.random import Generator, default_rng
 
-from adaXT.parallel_class import ParallelModel
+from adaXT.parallel import ParallelModel, shared_numpy_array
 
 from numpy.typing import ArrayLike
 
@@ -115,56 +112,8 @@ def build_single_tree(
     return tree
 
 
-# Function used to add a column with zeros for all the classes that are in
-# the forest but not in a given tree
-
-
-def fill_with_zeros_for_missing_classes_in_tree(
-    tree_classes, predict_proba, num_rows_predict, classes
-):
-    n_classes = len(classes)
-    ret_val = np.zeros((num_rows_predict, n_classes))
-
-    # Find the indices of tree_classes in forest_classes
-    tree_class_indices = np.searchsorted(classes, tree_classes)
-
-    # Only update columns corresponding to tree_classes
-    ret_val[:, tree_class_indices] = predict_proba
-
-    return ret_val
-
-
-def predict_proba_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, classes: np.ndarray, **kwargs
-):
-    tree_predict_proba = tree.predict(predict_values, predict_proba=True)
-    ret_val = fill_with_zeros_for_missing_classes_in_tree(
-        tree.classes,
-        tree_predict_proba,
-        predict_values.shape[0],
-        classes=classes,
-        **kwargs,
-    )
-    return ret_val
-
-
 def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
     return tree.predict(predict_values, **kwargs)
-
-
-def shared_numpy_array(array):
-    if array.ndim == 2:
-        row, col = array.shape
-        shared_array = RawArray(ctypes.c_double, (row * col))
-        shared_array_np = np.ndarray(
-            shape=(row, col), dtype=np.double, buffer=shared_array
-        )
-    else:
-        row = array.shape[0]
-        shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
-    np.copyto(shared_array_np, array)
-    return shared_array_np
 
 
 class RandomForest(BaseModel):
@@ -487,39 +436,6 @@ class RandomForest(BaseModel):
 
         return self
 
-    def __predict_trees(self, X: np.ndarray, **kwargs):
-        predict_value = shared_numpy_array(X)
-        return self.predict_class.forest_predict(
-            X_old=self.X,
-            Y_old=self.Y,
-            X_new=predict_value,
-            trees=self.trees,
-            parallel=self.parallel,
-            **kwargs,
-        )
-
-    # Function to call predict_proba on all the trees of the forest,
-    # differentiates between running in parallel and sequential
-
-    def __predict_proba_trees(self, X: np.ndarray, **kwargs):
-        predictions = []
-        if self.n_jobs == 1:
-            for tree in self.trees:
-                predictions.append(tree.predict(X, predict_proba=True))
-        else:
-            predict_value = shared_numpy_array(X)
-            partial_func = partial(
-                predict_proba_single_tree,
-                predict_values=predict_value,
-                classes=self.classes,
-                **kwargs,
-            )
-            with self.ctx.Pool(self.n_jobs) as p:
-                promise = p.map_async(partial_func, self.trees)
-                predictions = promise.get()
-
-        return np.stack(predictions, axis=-1)
-
     def predict(self, X: ArrayLike, **kwargs):
         """
         Predicts response values at X using fitted random forest.  The behavior
@@ -561,14 +477,16 @@ class RandomForest(BaseModel):
             )
 
         self.__check_dimensions(X)
-        if "predict_proba" in kwargs.keys():
-            if self.forest_type != "Classification":
-                raise ValueError(
-                    "predict_proba can only be called on a Classification tree"
-                )
-            prediction = self.__predict_proba_trees(X, **kwargs)
-        else:
-            prediction = self.__predict_trees(X, **kwargs)
+
+        predict_value = shared_numpy_array(X)
+        prediction = self.predict_class.forest_predict(
+            X_old=self.X,
+            Y_old=self.Y,
+            X_new=predict_value,
+            trees=self.trees,
+            parallel=self.parallel,
+            **kwargs,
+        )
         return prediction
 
     def predict_weights(
@@ -595,8 +513,10 @@ class RandomForest(BaseModel):
             scale=scaling,
         )
 
-        # TODO: How do we want to scale it. Should we do so here?
-        ret = np.mean(weight_list, axis=0)
+        if scale:
+            ret = np.mean(weight_list, axis=0)
+        else:
+            ret = np.sum(weight_list, axis=0)
         return ret
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
