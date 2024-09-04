@@ -293,7 +293,3 @@ cdef class PredictQuantile(Predict):
                            **kwargs)
         return np.apply_along_axis(mode, 0, predictions)
 
-    @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        quantile = kwargs['quantile']
-        return np.quantile(predictions, quantile, axis=-1)

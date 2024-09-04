@@ -1,6 +1,7 @@
 from functools import partial
 import multiprocessing
 from multiprocessing import cpu_count
+from multiprocessing.context import SpawnContext
 from itertools import starmap
 from typing import Any, Callable, Iterable
 
@@ -44,8 +45,7 @@ class ParallelModel:
                 ret = p.map(partial_func, map_input)
         return ret
 
-    def async_starmap(self, function: Callable, map_input: Iterable,
-                      **kwargs):
+    def async_starmap(self, function: Callable, map_input: Iterable, **kwargs):
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -55,8 +55,7 @@ class ParallelModel:
                 ret = promise.get()
         return ret
 
-    def starmap(self, function: Callable, map_input: Iterable,
-                **kwargs):
+    def starmap(self, function: Callable, map_input: Iterable, **kwargs):
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -71,8 +70,7 @@ class ParallelModel:
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:
-                promise = [p.apply_async(partial_func)
-                           for _ in range(n_iterations)]
+                promise = [p.apply_async(partial_func) for _ in range(n_iterations)]
                 ret = [res.get() for res in promise]
         return ret
 
@@ -82,6 +80,5 @@ class ParallelModel:
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:
-                ret = [p.apply(partial_func)
-                       for _ in range(n_iterations)]
+                ret = [p.apply(partial_func) for _ in range(n_iterations)]
         return ret

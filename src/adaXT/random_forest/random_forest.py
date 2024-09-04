@@ -6,7 +6,8 @@ from multiprocessing import RawArray
 from typing import Iterable, Literal
 
 import numpy as np
-from numpy import float64 as 
+from numpy import float64 as DOUBLE
+from numpy.random import Generator, SeedSequence, default_rng
 
 from adaXT.parallel_class import ParallelModel
 
@@ -26,20 +27,26 @@ def get_single_leaf(tree: DecisionTree, X: np.ndarray | None = None) -> dict:
 
 def tree_based_weights(
     tree: DecisionTree,
-    hash1: dict,
-    hash2: dict,
+    X0: np.ndarray,
+    X1: np.ndarray,
     size_X0: int,
     size_X1: int,
     scale: bool,
 ) -> np.ndarray:
+    hash1 = tree.predict_leaf(X=X0)
+    hash2 = tree.predict_leaf(X=X1)
     return tree.tree_based_weights(
-        hash1=hash1, hash2=hash2, size_X0=size_X0, size_X1=size_X1, scale=scale
+        hash1=hash1,
+        hash2=hash2,
+        size_X0=size_X0,
+        size_X1=size_X1,
+        scale=scale,
     )
 
 
 def get_sample_indices(
+    gen: Generator,
     n_rows: int,
-    random_state: np.random.RandomState,
     sampling_parameter: int | tuple[int, int],
     sampling: str | None,
 ) -> Iterable:
@@ -48,16 +55,16 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "bootstrap":
-        return (random_state.randint(low=0, high=n_rows, size=sampling_parameter), None)
+        return (gen.integers(low=0, high=n_rows, size=sampling_parameter), None)
     elif sampling == "honest_tree":
         indices = np.arange(0, n_rows)
-        random_state.shuffle(indices)
+        gen.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
-        fitting_indices = random_state.randint(
+        fitting_indices = gen.integers(
             low=0, high=sampling_parameter[0], size=sampling_parameter[1]
         )
-        prediction_indices = random_state.randint(
+        prediction_indices = gen.integers(
             low=sampling_parameter[0], high=n_rows, size=sampling_parameter[1]
         )
         return (fitting_indices, prediction_indices)
@@ -103,7 +110,7 @@ def build_single_tree(
     tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X, Y=Y, sample_weight=sample_weight, prediction_indices=prediction_indices
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
         )
 
     return tree
@@ -222,7 +229,7 @@ class RandomForest(BaseModel):
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
-        random_state: int | None = None,
+        seed: int | None = None,
         criteria: type[Criteria] | None = None,
         leaf_builder: type[LeafBuilder] | None = None,
         predict: type[Predict] | None = None,
@@ -269,8 +276,8 @@ class RandomForest(BaseModel):
             The minimum number of samples in a leaf node.
         min_improvement: float
             The minimum improvement gained from performing a split.
-        random_state: int
-            Used for deterministic seeding of the tree.
+        seed: int | None
+            Seed used to reproduce a RandomForest
         criteria : Criteria
             The Criteria class to use, if None it defaults to the forest_type
             default.
@@ -285,10 +292,10 @@ class RandomForest(BaseModel):
             Splitter class.
         """
         # Must initialize Manager before ParallelModel
-        BaseManager.register("RandomState", np.random.RandomState)
-        self.manager = BaseManager()
-        self.manager.start()
+        self.parent_rng = self.__get_random_generator(seed)
 
+        # Make context the same from when getting indices and using
+        # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
         self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
@@ -305,11 +312,46 @@ class RandomForest(BaseModel):
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
         self.forest_fitted = False
-        self.random_state = self.__get_random_state(random_state)
 
-    def __get_random_state(self, random_state):
-        if isinstance(random_state, int) or (random_state is None):
-            return self.manager.RandomState(random_state)
+    # Check whether dimension of X matches self.n_features
+    def __check_dimensions(self, X: np.ndarray) -> None:
+        if X.shape[1] != self.n_features:
+            raise ValueError(
+                f"Number of features should be {self.n_features}, got {X.shape[1]}"
+            )
+
+    # Check whether X and Y match and convert array-like to ndarray
+    def __check_input(
+        self, X: ArrayLike, Y: ArrayLike | None = None
+    ) -> tuple[np.ndarray, np.ndarray]:
+        Y_check = Y is not None
+        # Make sure input arrays are c contigous
+        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
+
+        # Check that X is two dimensional
+        if X.ndim != 2:
+            raise ValueError("X should be two-dimensional")
+
+        # If Y is not None perform checks for Y
+        if Y_check:
+            # Check if X and Y has same number of rows
+            if X.shape[0] != Y.shape[0]:
+                raise ValueError("X and Y should have the same number of rows")
+
+            # Check if Y has dimensions (n, 1) or (n,)
+            if 2 < Y.ndim:
+                raise ValueError("Y should have dimensions (n,1) or (n,)")
+            elif 2 == Y.ndim:
+                if 1 < Y.shape[1]:
+                    raise ValueError("Y should have dimensions (n,1) or (n,)")
+                else:
+                    Y = Y.reshape(-1)
+        return X, Y
+
+    def __get_random_generator(self, seed):
+        if isinstance(seed, int) or (seed is None):
+            return default_rng(seed)
         else:
             raise ValueError("Random state either has to be Integral or None")
 
@@ -382,11 +424,11 @@ class RandomForest(BaseModel):
     # running in parallel and sequential
 
     def __build_trees(self):
-        fitting_prediction_indices = self.parallel.async_apply(
+        # parent_rng.spawn() spawns random generators that children can use
+        fitting_prediction_indices = self.parallel.async_map(
             get_sample_indices,
-            n_iterations=self.n_estimators,
+            map_input=self.parent_rng.spawn(self.n_estimators),
             n_rows=self.n_rows,
-            random_state=self.random_state,
             sampling_parameter=self.sampling_parameter,
             sampling=self.sampling,
         )
@@ -410,6 +452,41 @@ class RandomForest(BaseModel):
             skip_check_input=True,
             sample_weight=self.sample_weight,
         )
+
+    def fit(
+        self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray | None = None
+    ):
+        """
+        Fit the random forest with training data (X, Y).
+
+        Parameters
+        ----------
+        X : array-like object of dimension 2
+            The feature values used for training. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
+        Y : array-like object
+            The response values used for training. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
+        sample_weight : np.ndarray | None
+            Sample weights. Currently not implemented.
+        """
+        self.X, self.Y = self.__check_input(X, Y)
+        self.X = shared_numpy_array(X)
+        self.Y = shared_numpy_array(Y)
+        self.n_rows, self.n_features = self.X.shape
+
+        if sample_weight is None:
+            self.sample_weight = np.ones(self.X.shape[0])
+        else:
+            self.sample_weight = sample_weight
+        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
+        # Fit trees
+        self.__build_trees()
+
+        # Register that the forest was succesfully fitted
+        self.forest_fitted = True
+
+        return self
 
     def __predict_trees(self, X: np.ndarray, **kwargs):
         predict_value = shared_numpy_array(X)
@@ -443,80 +520,6 @@ class RandomForest(BaseModel):
                 predictions = promise.get()
 
         return np.stack(predictions, axis=-1)
-
-    # Check whether dimension of X matches self.n_features
-    def __check_dimensions(self, X: np.ndarray) -> None:
-        if X.shape[1] != self.n_features:
-            raise ValueError(
-                f"Number of features should be {self.n_features}, got {X.shape[1]}"
-            )
-
-    # Check whether X and Y match and convert array-like to ndarray
-    def __check_input(self, X: ArrayLike, Y: ArrayLike |
-                      None = None) -> tuple[np.ndarray, np.ndarray]:
-        Y_check = (Y is not None)
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
-        # Check that X is two dimensional
-        if X.ndim != 2:
-            raise ValueError("X should be two-dimensional")
-
-        # If Y is not None perform checks for Y
-        if Y_check:
-            # Check if X and Y has same number of rows
-            if X.shape[0] != Y.shape[0]:
-                raise ValueError("X and Y should have the same number of rows")
-
-            # Check if Y has dimensions (n, 1) or (n,)
-            if 2 < Y.ndim:
-                raise ValueError("Y should have dimensions (n,1) or (n,)")
-            elif 2 == Y.ndim:
-                if 1 < Y.shape[1]:
-                    raise ValueError("Y should have dimensions (n,1) or (n,)")
-                else:
-                    Y = Y.reshape(-1)
-        return X, Y
-
-    def fit(
-        self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray | None = None
-    ):
-        """
-        Fit the random forest with training data (X, Y).
-
-        Parameters
-        ----------
-        X : array-like object of dimension 2
-            The feature values used for training. Internally it will be
-            converted to np.ndarray with dtype=np.float64.
-        Y : array-like object
-            The response values used for training. Internally it will be
-            converted to np.ndarray with dtype=np.float64.
-        sample_weight : np.ndarray | None
-            Sample weights. Currently not implemented.
-        """
-        self.X, self.Y = self.__check_input(X, Y)
-        self.X = shared_numpy_array(X)
-        self.Y = shared_numpy_array(Y)
-        self.n_rows, self.n_features = self.X.shape
-        # TODO: Do we need the number of classes as an attribute? This seems to
-        # add too much complexity...
-        if self.forest_type == "Classification":
-            self.classes = np.unique(self.Y)
-
-        if sample_weight is None:
-            self.sample_weight = np.ones(self.X.shape[0])
-        else:
-            self.sample_weight = sample_weight
-        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
-        # Fit trees
-        self.__build_trees()
-
-        # Register that the forest was succesfully fitted
-        self.forest_fitted = True
-
-        return self
 
     def predict(self, X: ArrayLike, **kwargs):
         """
@@ -569,50 +572,48 @@ class RandomForest(BaseModel):
             prediction = self.__predict_trees(X, **kwargs)
         return prediction
 
-    def forest_weights(
+    def predict_weights(
         self, X: np.ndarray | None = None, scale: bool = True
     ) -> np.ndarray:
         if X is None:
-            size_1 = self.n_rows
+            size_0 = self.n_rows
         else:
-            size_1 = X.shape[0]
+            size_0 = X.shape[0]
 
-        new_hash_list = self.predict_leaf(X=X)
         if scale:
             scaling = 0
         else:
             scaling = -1
-        default_hash_table = self.__get_forest_leaf()
-        weight_list = self.parallel.async_starmap(
+
+        X = shared_numpy_array(X)
+        weight_list = self.parallel.async_map(
             tree_based_weights,
-            map_input=(self.trees, new_hash_list),
-            hash_2=default_hash_table,
-            size_2=self.n_rows,
-            size_1=size_1,
+            map_input=self.trees,
+            X0=X,
+            X1=None,
+            size_X0=size_0,
+            size_X1=self.n_rows,
             scale=scaling,
         )
-        return np.sum(weight_list, axis=-1)
 
-    def predict_leaf(self, X: np.ndarray | None = None) -> list[dict]:
-        # get_single_leaf takes care of it, when X=Noneself
-        if X is not None:
-            X = shared_numpy_array(X)
-        return self.parallel.async_map(get_single_leaf, self.trees, X=X)
+        # TODO: How do we want to scale it. Should we do so here?
+        ret = np.mean(weight_list, axis=0)
+        return ret
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
-        hash1_list = self.predict_leaf(X0)
-        hash2_list = self.predict_leaf(X1)
         if scale:
             scaling = 1
         else:
             scaling = -1
-        size_1 = X0.shape[0]
-        size_2 = X1.shape[0]
-        weight_list = self.parallel.async_starmap(
+        size_0 = X0.shape[0]
+        size_1 = X1.shape[0]
+        weight_list = self.parallel.async_map(
             tree_based_weights,
-            map_input=(self.trees, hash1_list, hash2_list),
-            size_1=size_1,
-            size_2=size_2,
+            map_input=self.trees,
+            X1=X0,
+            X2=X1,
+            size_X0=size_0,
+            size_X1=size_1,
             scale=scaling,
         )
-        return np.sum(weight_list, axis=-1)
+        return np.mean(weight_list, axis=0)

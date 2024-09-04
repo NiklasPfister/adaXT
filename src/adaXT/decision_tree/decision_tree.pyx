@@ -224,7 +224,7 @@ class DecisionTree(BaseModel):
             scale = 1
         else:
             scale = -1
-        return self.__tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
+        return self.tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
                                          scale)
 
     def predict_weights(
@@ -241,7 +241,7 @@ class DecisionTree(BaseModel):
         else:
             scale = -1
         default_hash_table = self.__get_leaf()
-        return self.__tree_based_weights(default_hash_table, new_hash,
+        return self.tree_based_weights(default_hash_table, new_hash,
                                          self.n_rows_predict, size_2,
                                          scale=scale)
 
