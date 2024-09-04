@@ -11,6 +11,7 @@ from adaXT.parallel import shared_numpy_array
 def default_predict(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
 
+
 def predict_proba(tree, Y, X, unique_classes):
     cdef:
         int i, cur_split_idx
@@ -32,7 +33,7 @@ def predict_proba(tree, Y, X, unique_classes):
                 cur_node = cur_node.right_child
         cur_array = np.zeros(unique_classes)
         n_samples = len(cur_node.indices)
-        for idx in cur_node.indices: 
+        for idx in cur_node.indices:
             cur_array[np.where(unique_classes == Y[idx])] += 1
 
         ret_val.append(cur_array/n_samples)
@@ -214,13 +215,8 @@ cdef class PredictClassification(Predict):
                                                  unique_classes=unique_classes)
                 return np.mean(predictions, axis=0)
 
-
-
-
-        predictions = parallel.async_map(default_predict,
-                                        trees,
-                                        X=X_new,
-                                        **kwargs)
+        predictions = parallel.async_map(default_predict, trees, X=X_new,
+                                         **kwargs)
         return np.apply_along_axis(mode, 0, predictions)
 
 

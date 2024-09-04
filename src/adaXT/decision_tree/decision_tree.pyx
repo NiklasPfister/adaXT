@@ -54,7 +54,8 @@ class DecisionTree(BaseModel):
             leaf_builder: LeafBuilder | None = None,
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
-        #TODO: multiple Ys
+
+        # TODO: multiple Ys
 
         # Function defined in BaseModel
         if skip_check_input:
