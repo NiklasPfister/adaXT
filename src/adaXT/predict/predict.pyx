@@ -6,8 +6,10 @@ from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
 
+
 def default_predict(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
+
 
 def quantile_predict(tree, X, quantile):
     n_obs = X.shape[0]
@@ -29,6 +31,7 @@ def quantile_predict(tree, X, quantile):
 
         indices[i] = cur_node.indices
     return indices
+
 
 cdef class Predict():
 
@@ -52,10 +55,11 @@ cdef class Predict():
             X = np.expand_dims(X, axis=0)
         else:
             if X.shape[1] != self.n_features:
-                raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
+                raise ValueError(f"Dimension should be {self.n_features}, got\
+                {X.shape[1]}")
         return X
 
-    #TODO: predict_indices
+    # TODO: predict_indices
 
     def predict(self, object X, **kwargs):
         raise NotImplementedError("Function predict is not implemented for this Predict class")
@@ -289,7 +293,6 @@ cdef class PredictQuantile(Predict):
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
         predict_list = [X_new for _ in range(len(trees))]
         predictions = parallel.async_starmap(default_predict,
-                           map_input=zip(trees, predict_list),
-                           **kwargs)
+                                             map_input=zip(trees, predict_list),
+                                             **kwargs)
         return np.apply_along_axis(mode, 0, predictions)
-

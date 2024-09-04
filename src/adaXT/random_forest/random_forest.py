@@ -1,5 +1,4 @@
 import ctypes
-from multiprocessing.managers import BaseManager
 import sys
 from functools import partial
 from multiprocessing import RawArray
