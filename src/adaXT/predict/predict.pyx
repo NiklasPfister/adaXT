@@ -38,16 +38,12 @@ def predict_proba(tree, Y, X, unique_classes):
 
         ret_val.append(cur_array/n_samples)
 
-    return np.array(ret_val)
+    return np.array(ret_val, dtype=int)
 
 
-def quantile_predict(tree, X, quantile):
-    n_obs = X.shape[0]
+def quantile_predict(tree, X, n_obs):
     # Check if quantile is an array
-    if isinstance(quantile, Sequence):
-        indices = np.empty((n_obs, len(quantile)))
-    else:
-        indices = np.empty(n_obs)
+    indices = []
 
     for i in range(n_obs):
         cur_node = tree.root
@@ -59,7 +55,7 @@ def quantile_predict(tree, X, quantile):
             else:
                 cur_node = cur_node.right_child
 
-        indices[i] = cur_node.indices
+        indices.append(cur_node.indices)
     return indices
 
 
@@ -85,8 +81,7 @@ cdef class Predict():
             X = np.expand_dims(X, axis=0)
         else:
             if X.shape[1] != self.n_features:
-                raise ValueError(f"Dimension should be {self.n_features}, got\
-                {X.shape[1]}")
+                raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
         return X
 
     # TODO: predict_indices
@@ -295,11 +290,11 @@ cdef class PredictQuantile(Predict):
             double cur_threshold
             object cur_node
             bint save_indices
+        if "quantile" not in kwargs.keys():
+            raise ValueError(
+                    "quantile called without quantile passed as argument"
+                    )
         quantile = kwargs['quantile']
-        if "save_indices" in kwargs.keys():
-            save_indices = <bint> kwargs['save_indices']
-        else:
-            save_indices = False
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
@@ -319,16 +314,32 @@ cdef class PredictQuantile(Predict):
                 else:
                     cur_node = cur_node.right_child
 
-            if save_indices:
-                Y[i] = self.Y.base[cur_node.indices]
-            else:
-                Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
+            Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
         return Y
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
-        predict_list = [X_new for _ in range(len(trees))]
-        predictions = parallel.async_starmap(default_predict,
-                                             map_input=zip(trees, predict_list),
-                                             **kwargs)
-        return np.apply_along_axis(mode, 0, predictions)
+        cdef:
+            int i, j, n_obs, n_trees
+            list prediction_indices, pred_indices_combined, indices_combined
+        if "quantile" not in kwargs.keys():
+            raise ValueError(
+            "quantile called without quantile passed as argument"
+            )
+        quantile = kwargs['quantile']
+        n_obs = X_new.shape[0]
+        prediction_indices = parallel.async_map(quantile_predict,
+                                                map_input=trees, X=X_new,
+                                                n_obs=n_obs)
+        # In case the leaf nodes have multiple elements and not just one, we
+        # have to combine them together
+        n_trees = len(prediction_indices)
+        pred_indices_combined = []
+        for i in range(n_obs):
+            indices_combined = []
+            for j in range(n_trees):
+                indices_combined.extend(prediction_indices[j][i])
+            pred_indices_combined.append(indices_combined)
+        ret = [np.quantile(Y_old[pred_indices_combined[i]], quantile) for i in
+               range(n_obs)]
+        return np.array(ret, dtype=DOUBLE)

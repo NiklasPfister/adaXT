@@ -29,12 +29,6 @@ class DecisionTree:
         The number of features in the training data.
     n_rows: int
         The number of rows (i.e., samples) in the training data.
-    n_classes: int
-        The number of classes in the training data if
-        tree_type=="Classification", otherwise None.
-    classes: np.ndarray
-        A list of all class labels if tree_type=="Classification", otherwise
-        None.
     """
 
     max_depth: int
@@ -175,7 +169,7 @@ class DecisionTree:
         # TODO: Documentation
         pass
 
-    def tree_based_weights(
+    def _tree_based_weights(
         self, hash1: dict, hash2: dict, size_X0: int, size_X1: int, scale: bool
     ) -> np.ndarray:
         # TODO: Documentaion

@@ -22,17 +22,6 @@ class Predict:
         """
         pass
 
-    def predict_proba(self, X: np.ndarray):
-        """
-        Predict proba function call.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Array that should be carried out predictions on.
-        """
-        pass
-
     def predict_leaf(self, X: np.ndarray, scale: bool) -> dict:
         """
         Function called when tree.predict_leaf_matrix is called.
@@ -59,20 +48,6 @@ class Predict:
         """
         pass
 
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        """
-        Function called by the RandomForest after it has gotten the result of
-        predict_proba from each tree. This function should then do any changes
-        seen fit.
-
-        Parameters
-        ----------
-        predictions : np.ndarray
-            An array of predictions.
-        """
-        pass
-
 class PredictClassification(Predict):
     """
     The default prediction class for the Classification DecisionTree.
@@ -89,18 +64,6 @@ class PredictClassification(Predict):
         Parameters
         ----------
         X: np.ndarray
-            Array that should be carried out predictions on.
-        """
-        pass
-
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """
-        Predicts the LeafNode every $x \in X$ would fall into and returns the
-        fraction of occurences each unique class has within the LeafNode.
-
-        Parameters
-        ----------
-        X : np.ndarray
             Array that should be carried out predictions on.
         """
         pass

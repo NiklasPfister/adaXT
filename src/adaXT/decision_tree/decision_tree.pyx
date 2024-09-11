@@ -193,7 +193,7 @@ class DecisionTree(BaseModel):
             ht[node.id] = node.indices
         return ht
 
-    def tree_based_weights(self, hash1: dict, hash2: dict, size_X0: int,
+    def _tree_based_weights(self, hash1: dict, hash2: dict, size_X0: int,
                            size_X1: int, scale: bool) -> np.ndarray:
         matrix = np.zeros((size_X0, size_X1))
         hash1_keys = hash1.keys()
@@ -218,7 +218,7 @@ class DecisionTree(BaseModel):
             scale = 1
         else:
             scale = -1
-        return self.tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
+        return self._tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
                                        scale)
 
     def predict_weights(
@@ -235,7 +235,7 @@ class DecisionTree(BaseModel):
         else:
             scale = -1
         default_hash_table = self.__get_leaf()
-        return self.tree_based_weights(default_hash_table, new_hash,
+        return self._tree_based_weights(default_hash_table, new_hash,
                                        self.n_rows_predict, size_2,
                                        scale=scale)
 
