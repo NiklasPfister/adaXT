@@ -9,9 +9,9 @@ from .crit_helpers cimport weighted_mean
 
 # Abstract Criteria class
 cdef class Criteria:
-    def __cinit__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
-        self.x = x
-        self.y = y
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+        self.X = X
+        self.Y = Y
         self.sample_weight = sample_weight
         self.old_obs = -1
         self.old_feature = -1
@@ -63,14 +63,14 @@ cdef class Criteria:
             self.old_obs = n_obs
 
         self.old_split = split_idx
-        mean_thresh = (self.x[indices[split_idx-1]][feature] + self.x[indices[split_idx]][feature]) / 2.0
+        mean_thresh = (self.X[indices[split_idx-1]][feature] + self.X[indices[split_idx]][feature]) / 2.0
 
         return (crit, mean_thresh)
 
 # Gini index criteria
 cdef class Gini_index(Criteria):
 
-    def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         self.first_call = True
 
     def __del__(self):
@@ -83,7 +83,7 @@ cdef class Gini_index(Criteria):
 
     cpdef double impurity(self, int[::1] indices):
         if self.first_call:
-            self.class_labels = np.unique(self.y.base[indices])
+            self.class_labels = np.unique(self.Y.base[indices, 0])
             self.num_classes = self.class_labels.shape[0]
 
             self.weight_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
@@ -102,13 +102,13 @@ cdef class Gini_index(Criteria):
             double obs_weight = 0.0
             double proportion_cls, weight
             int i, j, p
-            double[:] y = self.y
+            double[:, ::1] Y = self.Y
             double[:] class_labels = self.class_labels
 
         for i in range(n_obs):  # loop over all indices
             for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     class_occurences[j] += weight
                     obs_weight += weight
@@ -133,7 +133,7 @@ cdef class Gini_index(Criteria):
         for i in range(start_idx, new_split):  # loop over indices to be updated
             for j in range(self.num_classes):
                 p = indices[i]
-                if self.y[p] == self.class_labels[j]:
+                if self.Y[p, 0] == self.class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_left[j] += weight
                     self.weight_left += weight
@@ -158,7 +158,7 @@ cdef class Gini_index(Criteria):
             double sum_right = 0.0
             double proportion_cls_left, proportion_cls_right, weight
             int i, j, p
-            double[:] y = self.y
+            double[:, ::1] Y = self.Y
             double[:] class_labels = self.class_labels
 
         # Reset weights as we are in a new node
@@ -170,7 +170,7 @@ cdef class Gini_index(Criteria):
         for i in range(split_idx):
             for j in range(self.num_classes):
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_left[j] += weight
                     self.weight_left += weight
@@ -179,7 +179,7 @@ cdef class Gini_index(Criteria):
         for i in range(split_idx, n_obs):
             for j in range(self.num_classes):
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_right[j] += weight
                     self.weight_right += weight
@@ -198,7 +198,7 @@ cdef class Gini_index(Criteria):
 
 # Entropy criteria
 cdef class Entropy(Criteria):
-    def __init__(self, double[:, ::1] x, double[::1] y, double[::1] sample_weight):
+    def __init__(self, double[:, ::1] X, double[::1] Y, double[::1] sample_weight):
         self.first_call = True
 
     def __del__(self):  # Called by garbage collector.
@@ -207,7 +207,7 @@ cdef class Entropy(Criteria):
 
     cpdef double impurity(self, int[::1] indices):
         if self.first_call:
-            self.class_labels = np.unique(self.y.base[indices])
+            self.class_labels = np.unique(self.Y.base[indices, 0])
             self.num_classes = self.class_labels.shape[0]
 
             self.weight_in_class_right = <double *> malloc(sizeof(double) * self.num_classes)
@@ -231,13 +231,13 @@ cdef class Entropy(Criteria):
             int n_obs = indices.shape[0]
             double pp, weight
             int i, j, p
-            double[:] y = self.y
+            double[:, ::1] Y = self.Y
             double[:] class_labels = self.class_labels
 
         for i in range(n_obs):  # loop over all indices
             for j in range(self.num_classes):  # Find the element we are currently on and increase it's counter
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     obs_weight += weight
                     class_occurences[j] += weight
@@ -259,7 +259,7 @@ cdef class Entropy(Criteria):
             int n_obs = indices.shape[0]
             double weight
             int i, j, p
-            double[:] y = self.y
+            double[:, ::1] Y = self.Y
             double[:] class_labels = self.class_labels
 
         # Reset weights as we are in a new node
@@ -271,7 +271,7 @@ cdef class Entropy(Criteria):
         for i in range(split_idx):
             for j in range(self.num_classes):
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_left[j] += weight
                     self.weight_left += weight
@@ -280,7 +280,7 @@ cdef class Entropy(Criteria):
         for i in range(split_idx, n_obs):
             for j in range(self.num_classes):
                 p = indices[i]
-                if y[p] == class_labels[j]:
+                if Y[p, 0] == class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_right[j] += weight
                     self.weight_right += weight
@@ -310,7 +310,7 @@ cdef class Entropy(Criteria):
         for i in range(start_idx, new_split):  # loop over indices to be updated
             for j in range(self.num_classes):
                 p = indices[i]
-                if self.y[p] == self.class_labels[j]:
+                if self.Y[p, 0] == self.class_labels[j]:
                     weight = self.sample_weight[p]
                     self.weight_in_class_left[j] += weight
                     self.weight_left += weight
@@ -341,7 +341,7 @@ cdef class Squared_error(Criteria):
         for i in range(self.old_split, new_split):
             idx = indices[i]
             weight = self.sample_weight[idx]
-            y_val = self.y[idx]*weight
+            y_val = self.Y[idx, 0]*weight
             self.left_sum += y_val
             self.right_sum -= y_val
             self.weight_left += weight
@@ -364,14 +364,14 @@ cdef class Squared_error(Criteria):
         for i in range(split_idx):
             idx = indices[i]
             weight = self.sample_weight[idx]
-            y_val = self.y[idx]*weight
+            y_val = self.Y[idx, 0]*weight
             self.left_sum += y_val
             self.weight_left += weight
 
         for i in range(split_idx, n_obs):
             idx = indices[i]
             weight = self.sample_weight[idx]
-            y_val = self.y[idx]*weight
+            y_val = self.Y[idx, 0]*weight
             self.right_sum += y_val
             self.weight_right += weight
 
@@ -384,8 +384,8 @@ cdef class Squared_error(Criteria):
     cdef double __squared_error(self, int[::1] indices):
         cdef:
             double cur_sum = 0.0
-            double[::1] y = self.y
-            double mu = weighted_mean(y, indices, self.sample_weight)  # set mu to be the mean of the dataset
+            double[:, ::1] Y = self.Y
+            double mu = weighted_mean(Y[:, 0], indices, self.sample_weight)  # set mu to be the mean of the dataset
             double square_err, tmp
             double obs_weight = 0.0
             int i, p
@@ -393,7 +393,7 @@ cdef class Squared_error(Criteria):
         # Calculate the variance using: variance = sum((y_i - mu)^2)/y_len
         for i in range(n_indices):
             p = indices[i]
-            tmp = y[p] * self.sample_weight[p]
+            tmp = Y[p, 0] * self.sample_weight[p]
             cur_sum += tmp*tmp
             obs_weight += self.sample_weight[p]
         square_err = cur_sum/obs_weight - mu*mu
@@ -412,8 +412,8 @@ cdef class Partial_linear(Criteria):
         sumX = 0.0
         sumY = 0.0
         for i in range(length):
-            sumX += self.x[indices[i], 0]
-            sumY += self.y[indices[i]]
+            sumX += self.X[indices[i], 0]
+            sumY += self.Y[indices[i], 0]
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
@@ -429,8 +429,8 @@ cdef class Partial_linear(Criteria):
         numerator = 0.0
         muX, muY = self.__custom_mean(indices)
         for i in range(length):
-            X_diff = self.x[indices[i], 0] - muX
-            numerator += (X_diff)*(self.y[indices[i]]-muY)
+            X_diff = self.X[indices[i], 0] - muX
+            numerator += (X_diff)*(self.Y[indices[i], 0]-muY)
             denominator += (X_diff)*X_diff
         if denominator == 0.0:
             theta1 = 0.0
@@ -448,7 +448,7 @@ cdef class Partial_linear(Criteria):
         theta0, theta1 = self.__theta(indices)
         cur_sum = 0.0
         for i in range(length):
-            step_calc = self.y[indices[i]] - theta0 - theta1 * self.x[indices[i], 0]
+            step_calc = self.Y[indices[i], 0] - theta0 - theta1 * self.X[indices[i], 0]
             cur_sum += step_calc * step_calc
         return cur_sum
 
@@ -464,9 +464,9 @@ cdef class Partial_quadratic(Criteria):
         sumXsq = 0.0
         sumY = 0.0
         for i in range(length):
-            sumX += self.x[indices[i], 0]
-            sumXsq += self.x[indices[i], 0] * self.x[indices[i], 0]
-            sumY += self.y[indices[i]]
+            sumX += self.X[indices[i], 0]
+            sumXsq += self.X[indices[i], 0] * self.X[indices[i], 0]
+            sumY += self.Y[indices[i], 0]
 
         return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
 
@@ -502,9 +502,9 @@ cdef class Partial_quadratic(Criteria):
         varXsq = 0.0
         muX, muXsq, muY = self.__custom_mean(indices)
         for i in range(length):
-            X_diff = self.x[indices[i], 0] - muX
-            Xsq_diff = self.x[indices[i], 0] * self.x[indices[i], 0] - muXsq
-            Y_diff = self.y[indices[i]] - muY
+            X_diff = self.X[indices[i], 0] - muX
+            Xsq_diff = self.X[indices[i], 0] * self.X[indices[i], 0] - muXsq
+            Y_diff = self.Y[indices[i], 0] - muY
             covXXsq += X_diff * Xsq_diff
             varX += X_diff * X_diff
             varXsq += Xsq_diff * Xsq_diff
@@ -544,8 +544,8 @@ cdef class Partial_quadratic(Criteria):
         theta0, theta1, theta2 = self.__theta(indices)
         cur_sum = 0.0
         for i in range(length):
-            step_calc = self.y[indices[i]] - theta0
-            step_calc -= theta1 * self.x[indices[i], 0]
-            step_calc -= theta2 * self.x[indices[i], 0] * self.x[indices[i], 0]
+            step_calc = self.Y[indices[i], 0] - theta0
+            step_calc -= theta1 * self.X[indices[i], 0]
+            step_calc -= theta2 * self.X[indices[i], 0] * self.X[indices[i], 0]
             cur_sum += step_calc * step_calc
         return cur_sum

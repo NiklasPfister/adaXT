@@ -1,7 +1,7 @@
 cdef class Criteria:
     cdef:
-        double[:, ::1] x
-        double[::1] y
+        double[:, ::1] X
+        double[:, ::1] Y
         double[::1] sample_weight
         int old_obs
         int old_split

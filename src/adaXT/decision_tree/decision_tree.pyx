@@ -138,12 +138,9 @@ class DecisionTree(BaseModel):
 
             # Check if Y has dimensions (n, 1) or (n,)
             if 2 < Y.ndim:
-                raise ValueError("Y should have dimensions (n,1) or (n,)")
-            elif 2 == Y.ndim:
-                if 1 < Y.shape[1]:
-                    raise ValueError("Y should have dimensions (n,1) or (n,)")
-                else:
-                    Y = Y.reshape(-1)
+                raise ValueError("Y should not have more than 2 dimensions")
+            elif Y.ndim == 1:
+                Y = np.expand_dims(Y, axis=0)
         return X, Y
 
     def fit(self,
