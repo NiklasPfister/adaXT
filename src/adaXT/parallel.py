@@ -16,10 +16,12 @@ def shared_numpy_array(array):
         shared_array_np = np.ndarray(
             shape=(row, col), dtype=np.double, buffer=shared_array
         )
-    else:
+    elif array.ndim == 1:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
         shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
+    else:
+        raise ValueError("Array is neither 1 dimensional nor 2 dimensional")
     np.copyto(shared_array_np, array)
     return shared_array_np
 
@@ -36,8 +38,9 @@ class ParallelModel:
         """
         Parameters
         ----------
-        n_jobs : int, default=1
-            The number of processes used to fit, and predict for the forest, -1 uses all available proccesors
+        n_jobs : int, default=Number of cpu cores
+            The number of processes used to fit, and predict for the forest, -1
+            uses all available proccesors
         random_state: int
             Used for deterministic seeding of the tree
         """
