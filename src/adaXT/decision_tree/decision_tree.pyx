@@ -178,7 +178,7 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, _ = self.__check_input(X)
             self.__check_dimensions(X)
-        return np.asarray(self.predictor.predict(X, **kwargs))
+        return self.predictor.predict(X, **kwargs)
 
     def __get_leaf(self, scale: bool = False) -> dict:
         if not self.root:

@@ -86,7 +86,7 @@ cdef class Predict():
 
     # TODO: predict_indices
 
-    def predict(self, object X, **kwargs):
+    def predict(self, object X, **kwargs) -> np.ndarray:
         raise NotImplementedError("Function predict is not implemented for this Predict class")
 
     cpdef dict predict_leaf(self, object X):
@@ -124,7 +124,7 @@ cdef class Predict():
                                          trees,
                                          X=X_new,
                                          **kwargs)
-        return np.mean(predictions, axis=0)
+        return np.mean(predictions, axis=0, dtype=DOUBLE)
 
 
 cdef class PredictClassification(Predict):
@@ -150,7 +150,7 @@ cdef class PredictClassification(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        Y = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -189,7 +189,7 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return np.array(ret_val)
+        return np.array(ret_val, dtype=int)
 
     def predict(self, object X, **kwargs):
         if "predict_proba" in kwargs:
@@ -208,11 +208,11 @@ cdef class PredictClassification(Predict):
                 Y_old = shared_numpy_array(Y_old)
                 predictions = parallel.async_map(predict_proba, trees, Y=Y_old,
                                                  unique_classes=unique_classes)
-                return np.mean(predictions, axis=0)
+                return np.mean(predictions, axis=0, dtype=int)
 
         predictions = parallel.async_map(default_predict, trees, X=X_new,
                                          **kwargs)
-        return np.apply_along_axis(mode, 0, predictions)
+        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=DOUBLE)
 
 
 cdef class PredictRegression(Predict):
@@ -226,7 +226,7 @@ cdef class PredictRegression(Predict):
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        Y = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -253,13 +253,13 @@ cdef class PredictLocalPolynomial(PredictRegression):
         if "order" not in kwargs.keys():
             order = [0, 1, 2]
         else:
-            order = np.array(kwargs['order'], ndmin=1, dtype='int')
+            order = np.array(kwargs['order'], ndmin=1, dtype=int)
             if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
                 raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
 
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        deriv_mat = np.empty((n_obs, len(order)))
+        deriv_mat = np.empty((n_obs, len(order)), dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -299,9 +299,9 @@ cdef class PredictQuantile(Predict):
         n_obs = X.shape[0]
         # Check if quantile is an array
         if isinstance(quantile, Sequence):
-            Y = np.empty((n_obs, len(quantile)))
+            Y = np.empty((n_obs, len(quantile)), dtype=DOUBLE)
         else:
-            Y = np.empty(n_obs)
+            Y = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
