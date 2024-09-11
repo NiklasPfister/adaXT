@@ -289,10 +289,9 @@ cdef class PredictQuantile(Predict):
             int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
-            bint save_indices
         if "quantile" not in kwargs.keys():
             raise ValueError(
-                    "quantile called without quantile passed as argument"
+                        "quantile called without quantile passed as argument"
                     )
         quantile = kwargs['quantile']
         # Make sure that x fits the dimensions.
@@ -324,7 +323,7 @@ cdef class PredictQuantile(Predict):
             list prediction_indices, pred_indices_combined, indices_combined
         if "quantile" not in kwargs.keys():
             raise ValueError(
-            "quantile called without quantile passed as argument"
+                "quantile called without quantile passed as argument"
             )
         quantile = kwargs['quantile']
         n_obs = X_new.shape[0]
