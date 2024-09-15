@@ -29,11 +29,11 @@ def tree_based_weights(
     size_X1: int,
     scale: bool,
 ) -> np.ndarray:
-    hash1 = tree.predict_leaf(X=X0)
-    hash2 = tree.predict_leaf(X=X1)
+    hash0 = tree.predict_leaf(X=X0)
+    hash1 = tree.predict_leaf(X=X1)
     return tree._tree_based_weights(
+        hash0=hash0,
         hash1=hash1,
-        hash2=hash2,
         size_X0=size_X0,
         size_X1=size_X1,
         scale=scale,
