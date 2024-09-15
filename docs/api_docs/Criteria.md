@@ -1,6 +1,6 @@
 # Criteria Class
 
-This is the class used to evaluate the quality of a split while
+This class is used to evaluate the quality of a split while
 fitting a decision tree.
 
 There are several default Criteria classes implemented in adaXT that

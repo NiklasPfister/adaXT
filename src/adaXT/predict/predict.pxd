@@ -9,9 +9,7 @@ cdef class Predict():
 
     cdef double[:, ::1] __check_dimensions(self, object X)
 
-    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale=*)
-
-    cpdef list predict_proba(self, object X)
+    cpdef dict predict_leaf(self, object X)
 
 
 cdef class PredictClassification(Predict):
@@ -20,7 +18,9 @@ cdef class PredictClassification(Predict):
 
     cdef int __find_max_index(self, double[::1] lst)
 
-    cpdef list predict_proba(self, object X)
+    cdef cnp.ndarray __predict_proba(self, object X)
+
+    cdef cnp.ndarray __predict(self, object X)
 
 
 cdef class PredictRegression(Predict):

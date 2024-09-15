@@ -17,7 +17,8 @@ class DecisionTree:
     max_depth: int
         The maximum depth of the tree.
     tree_type: str
-        The type of tree, either "Regression" or "Classification".
+        The type of tree, either  a string specifying a supported type
+        (currently "Regression", "Classification" and "Quantile") or None.
     leaf_nodes: list[LeafNode]
         A list of all leaf nodes in the tree.
     root: Node
@@ -26,12 +27,8 @@ class DecisionTree:
         The number of nodes in the tree.
     n_features: int
         The number of features in the training data.
-    n_classes: int
-        The number of classes in the training data. None for "Regression" tree.
     n_rows: int
-        The number of rows in the training data.
-    classes: np.ndarray
-        A list of all class labels. None for "Regression" tree.
+        The number of rows (i.e., samples) in the training data.
     """
 
     max_depth: int
@@ -40,8 +37,8 @@ class DecisionTree:
     root: Node
     n_nodes: int
     n_features: int
-    n_classes: int
     n_rows: int
+    n_classes: int
     classes: np.ndarray
 
     def __init__(
@@ -50,7 +47,6 @@ class DecisionTree:
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
-        skip_check_input: bool = False,
         min_samples_split: int = 1,
         min_samples_leaf: int = 1,
         min_improvement: float = 0,
@@ -58,38 +54,38 @@ class DecisionTree:
         leaf_builder: Type[LeafBuilder] | None = None,
         predict: Type[Predict] | None = None,
         splitter: Type[Splitter] | None = None,
+        skip_check_input: bool = False,
     ) -> None:
         """
         Parameters
         ----------
-        tree_type : str
-            Classification or Regression
+        tree_type : str | None
+            The type of tree, either  a string specifying a supported type
+            (currently "Regression", "Classification" and "Quantile") or None.
         max_depth : int
             The maximum depth of the tree.
         impurity_tol : float
             The tolerance of impurity in a leaf node.
         max_features: int | float | Literal["sqrt", "log2"] | None
-            The number of features to consider when looking for a split,
-        skip_check_input : bool
-            Whether to skip checking the input for consistency
+            The number of features to consider when looking for a split.
         min_samples_split : int
-            The minimum amount of samples in a split.
+            The minimum number of samples in a split.
         min_samples_leaf : int
-            the minimum amount of samples in a leaf node, by default 1
+            The minimum number of samples in a leaf node.
         min_improvement : float
-            the minimum improvement gained from performing a split,
-            by default 0
-        criteria : Criteria
-            The Criteria class to use,
-            if none defaults to tree_type default
-        leaf_builder : LeafBuilder
-            LeafBuilder class to use when building a given leaf,
-            if none defaults to tree_type default
-        predict : Predict
-            Predict class to use when predicting,
-            if none defaults to tree_type default
+            The minimum improvement gained from performing a split.
+        criteria : Criteria | None
+            The Criteria class to use, if None it defaults to the tree_type
+            default.
+        leaf_builder : LeafBuilder | None
+            The LeafBuilder class to use, if None it defaults to the tree_type
+            default.
+        predict : Predict | None
+            The Predict class to use, if None it defaults to the tree_type
+            default.
         splitter : Splitter | None
-            The Splitter class if None uses default Splitter class.
+            The Splitter class to use, if None it defaults to the default
+            Splitter class.
         skip_check_input : bool
             Skips any error checking on the features and response in the fitting
             function of a tree, should only be used if you know what you are
@@ -105,7 +101,7 @@ class DecisionTree:
         sample_weight: np.ndarray | None = None,
     ) -> None:
         """
-        Build the decision tree from the training data (X, y).
+        Fit the decision tree with training data (X, Y).
 
         Parameters
         ----------
@@ -123,83 +119,77 @@ class DecisionTree:
         """
         pass
 
-
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
-        Works in two ways depending on if the tree is a Classification or Regression tree.
+        Predict response values at X using fitted decision tree. The behavior
+        of this function is determined by the Prediction class used in the
+        decision tree. For currently existing tree types the corresponding
+        behavior is as follows:
 
         Classification:
         ----------
-        Returns the class with the highest proportion within the final leaf node
+        Returns the class with the highest proportion within the final leaf node.
+
+        Given predict_proba=True, it instead calculates the probability
+        distribution.
 
         Regression:
         ----------
-        Returns the mean value of the outcomes within the final leaf node.
+        Returns the mean value of the response within the final leaf node.
+
+        Quantile:
+        ----------
+        Returns the conditional quantile of the response, where the quantile is
+        specified by passing a list of quantiles via the `quantile` parameter.
+
 
         Parameters
         ----------
         X : array-like object of dimension 2
             New samples at which to predict the response. Internally it will be
-            converted to np.ndarray with dtype=np.float64. 
+            converted to np.ndarray with dtype=np.float64.
 
         Returns
         -------
         np.ndarray
-            (N) numpy array with the prediction
+            (N, K) numpy array with the prediction, where K depends on the
+            Prediction class and is generally 1
         """
         pass
 
-    def predict_proba(self, X: ArrayLike):
-        """
-        Predicts a probability for each response for given X values. Only
-        useable if tree_type == "Classification"
-
-        Parameters
-        ----------
-        X : array-like object of dimension 2
-            New samples at which to predict the response. Internally it will be
-            converted to np.ndarray with dtype=np.float64. 
-
-        Returns
-        -------
-        np.ndarray
-            (n, n_classes) matrix where each row corresponds to the
-            probabilities for each class for one observation in X.
-        """
+    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
+        # TODO: Documentation
         pass
 
-    def predict_leaf_matrix(self, X: ArrayLike | None, scale: bool = False) -> np.ndarray:
-        """
-        Creates (N, N) matrix,
-        where N is the number of observations in X.
-        If A_{i,j} = 1 then i and j are in the same leafnode, otherwise 0.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node.
-
-        Parameters
-        ----------
-        X : array-like object of dimension 2 | None
-            New samples to be fitted. Internally it will be converted to
-            np.ndarray with dtype=np.float64. If None returns training leaf
-            matrix.
-        scale : bool
-            Whether to scale the entries, by default False.
-
-        Returns
-        -------
-        np.ndarray
-            (N, N) matrix
-        """
+    def predict_leaf(self, X: np.ndarray | None):
+        # TODO: Documentation
         pass
 
-    def refit_leaf_nodes(self, X: ArrayLike, Y: ArrayLike,
-                         sample_weight: np.ndarray | None = None,
-                         prediction_indices: np.ndarray | None = None) -> None:
-        """
-        Removes all leafnodes created on the initial fit and replaces them by
-        predicting all prediction_indices and placing them into new leaf nodes.
+    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+        # TODO: Documentation
+        pass
 
-        This method can be used to update the leafs node in decision tree based
+    def _tree_based_weights(
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
+    ) -> np.ndarray:
+        # TODO: Documentaion
+        pass
+
+    def refit_leaf_nodes(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        sample_weight: np.ndarray | None,
+        sample_indices: np.ndarray | None,
+    ) -> None:
+        """
+        Refits the leaf nodes in a previously fitted decision tree.
+
+        More precisely, the method removes all leafnodes created on the initial
+        fit and replaces them by predicting all samples in X that appear in
+        sample_indices and placing them into new leaf nodes.
+
+        This method can be used to update the leaf nodes in a decision tree based
         on a new data while keeping the original splitting rules. If X does not
         contain the original training data the tree structure might change as
         leaf nodes without samples are collapsed. The method is also used to

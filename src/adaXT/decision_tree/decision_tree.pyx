@@ -1,13 +1,15 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
 # TODO: left_child fails sometimes:AttributeError: 'NoneType' object has no
-# attribute 'left_child' 
+# attribute 'left_child'
 
 # General
 import numpy as np
 from numpy import float64 as DOUBLE
+from numpy.typing import ArrayLike
 import sys
 from numpy.typing import ArrayLike
+
 
 # Custom
 from .splitter import Splitter
@@ -52,6 +54,8 @@ class DecisionTree(BaseModel):
             leaf_builder: LeafBuilder | None = None,
             predict: Predict | None = None,
             splitter: Splitter | None = None) -> None:
+
+        # TODO: multiple Ys
 
         # Function defined in BaseModel
         if skip_check_input:
@@ -148,6 +152,7 @@ class DecisionTree(BaseModel):
             sample_indices: np.ndarray | None = None,
             sample_weight: np.ndarray | None = None) -> None:
 
+        # Check inputs
         if not self.skip_check_input:
             X, Y = self.__check_input(X, Y)
             row, _ = X.shape
@@ -173,23 +178,9 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, _ = self.__check_input(X)
             self.__check_dimensions(X)
-        return np.asarray(self.predictor.predict(X, **kwargs))
+        return self.predictor.predict(X, **kwargs)
 
-    def predict_proba(self, X: ArrayLike) -> np.ndarray:
-        if not self.predictor:
-            raise AttributeError("The tree has not been fitted before trying to call predict_proba")
-        if not self.skip_check_input:
-            X, _ = self.__check_input(X)
-            self.__check_dimensions(X)
-        return np.asarray(self.predictor.predict_proba(X))
-
-    def __get_leaf_matrix(self, scale: bool = False) -> np.ndarray:
-        cdef:
-            int i, j
-            int[::1] indices
-            int n_node
-            int n_rows
-
+    def __get_leaf(self, scale: bool = False) -> dict:
         if not self.root:
             raise ValueError("The tree has not been trained before trying to predict")
 
@@ -197,30 +188,63 @@ class DecisionTree(BaseModel):
         if (not leaf_nodes):  # make sure that there are calculated observations
             raise ValueError("The tree has no leaf nodes")
 
-        n_rows = self.n_rows
-        matrix = np.zeros((n_rows, n_rows))
+        ht = {}
         for node in leaf_nodes:
-            indices = node.indices
-            for i in indices:
-                for j in indices:
-                    if scale:
-                        n_node = len(node.indices)
-                        matrix[i, j] += 1/n_node
-                    else:
-                        matrix[i, j] += 1
+            ht[node.id] = node.indices
+        return ht
+
+    def _tree_based_weights(self, hash0: dict, hash1: dict, size_X0: int,
+                            size_X1: int, scale: bool) -> np.ndarray:
+        matrix = np.zeros((size_X0, size_X1))
+        hash0_keys = hash0.keys()
+        hash1_keys = hash1.keys()
+        for xi in hash0_keys:
+            if xi in hash1_keys:
+                indices_1 = hash0[xi]
+                indices_2 = hash1[xi]
+                if scale == "column":
+                    val = 1.0/len(indices_1)
+                elif scale == "symmetric":
+                    val = 1.0/(len(indices_1) + len(indices_2))
+                elif scale == "none":
+                    val = 1.0
+                matrix[np.ix_(indices_1, indices_2)] = val
         return matrix
 
-    def predict_leaf_matrix(self,
-                            X: ArrayLike | None = None,
-                            scale: bool = False) -> np.ndarray:
+    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
+        hash0 = self.predict_leaf(X0)
+        hash1 = self.predict_leaf(X1)
+        if scale:
+            scale = "symmetric"
+        else:
+            scale = "none"
+        return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
+                                        scale)
+
+    def predict_weights(
+            self, X: np.ndarray|None = None,
+            scale: bool = True) -> np.ndarray:
         if X is None:
-            return self.__get_leaf_matrix(scale=scale)
+            size_1 = self.n_rows_predict
+            new_hash = self.__get_leaf()
+        else:
+            size_1 = X.shape[0]
+            new_hash = self.predict_leaf(X)
+        if scale:
+            scale = "column"
+        else:
+            scale = "none"
+        default_hash_table = self.__get_leaf()
+        return self._tree_based_weights(default_hash_table, new_hash,
+                                        self.n_rows_predict, size_1,
+                                        scale=scale)
+
+    def predict_leaf(self, X: np.ndarray|None = None):
+        if X is None:
+            return self.__get_leaf()
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
-        if not self.skip_check_input:
-            X, _ = self.__check_input(X)
-            self.__check_dimensions(X)
-        return self.predictor.predict_leaf_matrix(X, scale)
+        return self.predictor.predict_leaf(X)
 
     def __remove_leaf_nodes(self) -> None:
         cdef:
@@ -650,7 +674,8 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
-        tree.n_rows = X.shape[0]
+        tree.n_rows_fit = X.shape[0]
+        tree.n_rows_predict = X.shape[0]
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
         tree.n_features = X.shape[1]

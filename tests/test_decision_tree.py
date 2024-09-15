@@ -1,6 +1,11 @@
 from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
-from adaXT.criteria import (Gini_index, Squared_error, Entropy, Partial_linear,
-                            Partial_quadratic)
+from adaXT.criteria import (
+    Gini_index,
+    Squared_error,
+    Entropy,
+    Partial_linear,
+    Partial_quadratic,
+)
 
 import numpy as np
 
@@ -313,8 +318,7 @@ def sanity_entropy(n, m):
 
 
 def sanity_partial_linear(n, m):
-    X = np.c_[np.linspace(-1, 1, n),
-              np.random.uniform(-1, 1, (n, m))]
+    X = np.c_[np.linspace(-1, 1, n), np.random.uniform(-1, 1, (n, m))]
     Y = X[:, 0] * (X[:, 0] > 0)
     tree = DecisionTree("Gradient", criteria=Partial_linear, max_depth=1)
     tree.fit(X, Y)
@@ -324,8 +328,7 @@ def sanity_partial_linear(n, m):
 
 
 def sanity_partial_quadratic(n, m):
-    X = np.c_[np.linspace(-1, 1, n),
-              np.random.uniform(-1, 1, (n, m))]
+    X = np.c_[np.linspace(-1, 1, n), np.random.uniform(-1, 1, (n, m))]
     Y = X[:, 0] ** 2 * (X[:, 0] > 0)
     tree = DecisionTree("Gradient", criteria=Partial_quadratic, max_depth=1)
     tree.fit(X, Y)
@@ -349,6 +352,4 @@ if __name__ == "__main__":
     # test_gini_multi()
     # test_entropy_single()
     # test_entropy_multi()
-    test_regression()
-    test_sanity()
-    # print("Done.")
+    print("Done.")

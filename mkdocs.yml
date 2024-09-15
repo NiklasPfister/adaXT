@@ -22,7 +22,7 @@ plugins:
             filters: ["!^_"]
             show_source: false
             show_root_heading: false
-            merge_init_into_class: yes
+            merge_init_into_class: true
             show_docstring_attributes: true
             line_length: 60
             separate_signature: true
@@ -65,7 +65,6 @@ nav:
       - Existing functionality:
           - Decision trees: user_guide/decision_tree.md
           - Random forests: user_guide/random_forest.md 
-          - Existing tree types: user_guide/tree_types.md
           - Honest splitting: user_guide/honest_splitting.md
           - Tree-based weights: user_guide/tree_based_weights.md
           - Visualizing and debugging: user_guide/vis_and_debug.md
@@ -78,6 +77,7 @@ nav:
       - RandomForest: api_docs/RandomForest.md
       - Criteria: api_docs/Criteria.md
       - Prediction: api_docs/Prediction.md
+      - Nodes: api_docs/Nodes.md
       - LeafBuilder: api_docs/LeafBuilder.md
       - Splitter: api_docs/Splitter.md
       - Tree utilities: api_docs/tree_utils.md
