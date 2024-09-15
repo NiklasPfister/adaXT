@@ -170,7 +170,7 @@ class DecisionTree:
         pass
 
     def _tree_based_weights(
-        self, hash1: dict, hash2: dict, size_X0: int, size_X1: int, scale: bool
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
     ) -> np.ndarray:
         # TODO: Documentaion
         pass
