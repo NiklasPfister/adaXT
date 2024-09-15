@@ -202,11 +202,11 @@ class DecisionTree(BaseModel):
             if xi in hash2_keys:
                 indices_1 = hash1[xi]
                 indices_2 = hash2[xi]
-                if scale == 0:
+                if scale == "column":
                     val = 1.0/len(indices_1)
-                elif scale == 1:
+                elif scale == "symmetric":
                     val = 1.0/(len(indices_1) + len(indices_2))
-                else:
+                elif scale == "none":
                     val = 1.0
                 matrix[np.ix_(indices_1, indices_2)] = val
         return matrix
@@ -215,9 +215,9 @@ class DecisionTree(BaseModel):
         hash1 = self.predict_leaf(X0)
         hash2 = self.predict_leaf(X1)
         if scale:
-            scale = 1
+            scale = "symmetric"
         else:
-            scale = -1
+            scale = "none"
         return self._tree_based_weights(hash1, hash2, X0.shape[0], X1.shape[0],
                                         scale)
 
@@ -231,9 +231,9 @@ class DecisionTree(BaseModel):
             size_2 = X.shape[0]
             new_hash = self.predict_leaf(X)
         if scale:
-            scale = 0
+            scale = "column"
         else:
-            scale = -1
+            scale = "none"
         default_hash_table = self.__get_leaf()
         return self._tree_based_weights(default_hash_table, new_hash,
                                         self.n_rows_predict, size_2,
