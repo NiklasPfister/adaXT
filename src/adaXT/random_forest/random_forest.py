@@ -499,9 +499,9 @@ class RandomForest(BaseModel):
             size_0 = X.shape[0]
 
         if scale:
-            scaling = 0
+            scaling = "column"
         else:
-            scaling = -1
+            scaling = "none"
 
         weight_list = self.parallel.async_map(
             tree_based_weights,
@@ -521,9 +521,9 @@ class RandomForest(BaseModel):
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
         if scale:
-            scaling = 1
+            scaling = "symmetric"
         else:
-            scaling = -1
+            scaling = "none"
         size_0 = X0.shape[0]
         size_1 = X1.shape[0]
         weight_list = self.parallel.async_map(
