@@ -24,8 +24,8 @@ class BaseModel:
             )
 
     def _check_input(self,
-                    X: ArrayLike, 
-                    Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+                     X: ArrayLike,
+                     Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
         Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
