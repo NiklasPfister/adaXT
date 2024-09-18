@@ -10,6 +10,7 @@ from adaXT.parallel import shared_numpy_array
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t
 
+
 def default_predict(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
 

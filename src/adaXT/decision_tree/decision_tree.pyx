@@ -5,7 +5,6 @@
 
 # General
 import numpy as np
-from numpy import float64 as DOUBLE
 from numpy.typing import ArrayLike
 import sys
 from numpy.typing import ArrayLike
