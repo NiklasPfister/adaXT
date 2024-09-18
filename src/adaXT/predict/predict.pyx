@@ -221,15 +221,19 @@ cdef class PredictClassification(Predict):
 cdef class PredictRegression(Predict):
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, n_col
             double cur_threshold
             object cur_node
-            cnp.ndarray[DOUBLE_t, ndim=1] prediction
+            cnp.ndarray prediction
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        prediction = np.empty(n_obs, dtype=DOUBLE)
+        n_col = self.Y.shape[1]
+        if n_col > 1:
+            prediction = np.empty((n_obs, n_col), dtype=DOUBLE) 
+        else:
+            prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -240,7 +244,10 @@ cdef class PredictRegression(Predict):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            prediction[i] = cur_node.value[0]
+            if cur_node.value.ndim == 1:
+                prediction[i] = cur_node.value[0]
+            else:
+                prediction[i] = cur_node.value
         return prediction
 
 

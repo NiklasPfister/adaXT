@@ -54,11 +54,12 @@ cdef class LeafBuilderClassification(LeafBuilder):
 
 cdef class LeafBuilderRegression(LeafBuilder):
 
-    cdef double __get_mean(self, int[::1] indices):
+    cdef cnp.ndarray[DOUBLE_t, ndim=1] __get_mean(self, int[::1] indices):
         cdef:
             int i
-            double sum = 0.0
+            cnp.ndarray[DOUBLE_t, ndim=1] sum
             int count = len(indices)
+        sum = np.zeros(self.Y.shape[1])
 
         for i in indices:
             sum += self.Y[i, 0]
@@ -73,7 +74,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
                             double weighted_samples,
                             object parent):
 
-        cdef double[::1] mean = np.array(self.__get_mean(indices), dtype=np.double, ndmin=1)
+        cdef cnp.ndarray[DOUBLE_t, ndim=1] mean = self.__get_mean(indices)
         return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
                         mean, parent)
 
