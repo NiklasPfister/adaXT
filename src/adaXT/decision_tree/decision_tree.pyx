@@ -173,6 +173,12 @@ class DecisionTree(BaseModel):
         return matrix
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
+        if not self.skip_check_input:
+            X0, _ = self._check_input(X0)
+            self._check_dimensions(X0)
+            X1, _ = self._check_input(X1)
+            self._check_dimensions(X1)
+
         hash0 = self.predict_leaf(X0)
         hash1 = self.predict_leaf(X1)
         if scale:
@@ -189,6 +195,9 @@ class DecisionTree(BaseModel):
             size_1 = self.n_rows_predict
             new_hash = self.__get_leaf()
         else:
+            if not self.skip_check_input:
+                X, _ = self._check_input(X)
+                self._check_dimensions(X)
             size_1 = X.shape[0]
             new_hash = self.predict_leaf(X)
         if scale:
@@ -203,6 +212,10 @@ class DecisionTree(BaseModel):
     def predict_leaf(self, X: np.ndarray|None = None):
         if X is None:
             return self.__get_leaf()
+        else:
+            if not self.skip_check_input:
+                X, _ = self._check_input(X)
+                self._check_dimensions(X)
         if not self.predictor:
             raise ValueError("The tree has not been trained before trying to predict")
         return self.predictor.predict_leaf(X)
