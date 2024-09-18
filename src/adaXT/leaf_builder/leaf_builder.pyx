@@ -5,9 +5,9 @@ import numpy as np
 cimport numpy as cnp
 
 cdef class LeafBuilder:
-    def __cinit__(self, double[:, ::1] x, double[::1] y, int[::1] all_idx, **kwargs):
-        self.x = x
-        self.y = y
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
+        self.X = X
+        self.Y = Y
 
     cpdef object build_leaf(self,
                             int leaf_id,
@@ -20,8 +20,8 @@ cdef class LeafBuilder:
 
 
 cdef class LeafBuilderClassification(LeafBuilder):
-    def __cinit__(self, double[:, ::1] x, double[::1] y, int[::1] all_idx, **kwargs):
-        self.classes = np.array(np.unique(y.base[all_idx]), dtype=np.double)
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
+        self.classes = np.array(np.unique(Y.base[all_idx, 0]), dtype=np.double)
         self.n_classes = self.classes.shape[0]
 
     cdef double[::1] __get_mean(self, int[::1] indices):
@@ -33,7 +33,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
         ret = np.zeros(self.n_classes)
         for idx in range(n_samples):
             for i in range(self.n_classes):
-                if self.y[indices[idx]] == self.classes[i]:
+                if self.Y[indices[idx], 0] == self.classes[i]:
                     ret[i] += 1  # add 1, if the value is the same as class value
                     break
 
@@ -61,7 +61,7 @@ cdef class LeafBuilderRegression(LeafBuilder):
             int count = len(indices)
 
         for i in indices:
-            sum += self.y[i]
+            sum += self.Y[i, 0]
 
         return sum / count
 
@@ -88,8 +88,8 @@ cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
         sumX = 0.0
         sumY = 0.0
         for i in range(length):
-            sumX += self.x[indices[i], 0]
-            sumY += self.y[indices[i]]
+            sumX += self.X[indices[i], 0]
+            sumY += self.Y[indices[i], 0]
 
         return ((sumX / (<double> length)), (sumY/ (<double> length)))
 
@@ -122,8 +122,8 @@ cdef class LeafBuilderPartialLinear(LeafBuilderRegression):
         numerator = 0.0
         muX, muY = self.__custom_mean(indices)
         for i in range(length):
-            X_diff = self.x[indices[i], 0] - muX
-            numerator += (X_diff)*(self.y[indices[i]]-muY)
+            X_diff = self.X[indices[i], 0] - muX
+            numerator += (X_diff)*(self.Y[indices[i], 0]-muY)
             denominator += (X_diff)*X_diff
         if denominator == 0.0:
             theta1 = 0.0
@@ -163,9 +163,9 @@ cdef class LeafBuilderPartialQuadratic(LeafBuilderRegression):
         sumXsq = 0.0
         sumY = 0.0
         for i in range(length):
-            sumX += self.x[indices[i], 0]
-            sumXsq += self.x[indices[i], 0] * self.x[indices[i], 0]
-            sumY += self.y[indices[i]]
+            sumX += self.X[indices[i], 0]
+            sumXsq += self.X[indices[i], 0] * self.X[indices[i], 0]
+            sumY += self.Y[indices[i], 0]
 
         return ((sumX / (<double> length)), (sumXsq / (<double> length)), (sumY/ (<double> length)))
 
@@ -202,9 +202,9 @@ cdef class LeafBuilderPartialQuadratic(LeafBuilderRegression):
         varXsq = 0.0
         muX, muXsq, muY = self.__custom_mean(indices)
         for i in range(length):
-            X_diff = self.x[indices[i], 0] - muX
-            Xsq_diff = self.x[indices[i], 0] * self.x[indices[i], 0] - muXsq
-            Y_diff = self.y[indices[i]] - muY
+            X_diff = self.X[indices[i], 0] - muX
+            Xsq_diff = self.X[indices[i], 0] * self.X[indices[i], 0] - muXsq
+            Y_diff = self.Y[indices[i], 0] - muY
             covXXsq += X_diff * Xsq_diff
             varX += X_diff * X_diff
             varXsq += Xsq_diff * Xsq_diff

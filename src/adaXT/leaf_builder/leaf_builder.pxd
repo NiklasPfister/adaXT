@@ -2,8 +2,8 @@ cimport numpy as cnp
 
 cdef class LeafBuilder:
     cdef:
-        double[::1] y
-        double[:, ::1] x
+        double[:, ::1] Y
+        double[:, ::1] X
 
     cpdef object build_leaf(self,
                             int leaf_id,

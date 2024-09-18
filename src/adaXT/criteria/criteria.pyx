@@ -198,7 +198,7 @@ cdef class Gini_index(Criteria):
 
 # Entropy criteria
 cdef class Entropy(Criteria):
-    def __init__(self, double[:, ::1] X, double[::1] Y, double[::1] sample_weight):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         self.first_call = True
 
     def __del__(self):  # Called by garbage collector.
