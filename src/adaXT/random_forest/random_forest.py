@@ -246,7 +246,7 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self.check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
+        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
         self.X, self.Y = None, None
         self.max_features = max_features
@@ -260,42 +260,6 @@ class RandomForest(BaseModel):
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
         self.forest_fitted = False
-
-    # Check whether dimension of X matches self.n_features
-    def __check_dimensions(self, X: np.ndarray) -> None:
-        if X.shape[1] != self.n_features:
-            raise ValueError(
-                f"Number of features should be {self.n_features}, got {X.shape[1]}"
-            )
-
-    # Check whether X and Y match and convert array-like to ndarray
-    def __check_input(
-        self, X: ArrayLike, Y: ArrayLike | None = None
-    ) -> tuple[np.ndarray, np.ndarray]:
-        Y_check = Y is not None
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-
-        # Check that X is two dimensional
-        if X.ndim != 2:
-            raise ValueError("X should be two-dimensional")
-
-        # If Y is not None perform checks for Y
-        if Y_check:
-            # Check if X and Y has same number of rows
-            if X.shape[0] != Y.shape[0]:
-                raise ValueError("X and Y should have the same number of rows")
-
-            # Check if Y has dimensions (n, 1) or (n,)
-            if 2 < Y.ndim:
-                raise ValueError("Y should have dimensions (n,1) or (n,)")
-            elif 2 == Y.ndim:
-                if 1 < Y.shape[1]:
-                    raise ValueError("Y should have dimensions (n,1) or (n,)")
-                else:
-                    Y = Y.reshape(-1)
-        return X, Y
 
     def __get_random_generator(self, seed):
         if isinstance(seed, int) or (seed is None):
@@ -401,9 +365,7 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(
-        self, X: np.ndarray, Y: np.ndarray, sample_weight: np.ndarray | None = None
-    ):
+    def fit(self, X: ArrayLike, Y: ArrayLike, sample_weight: np.ndarray | None = None):
         """
         Fit the random forest with training data (X, Y).
 
@@ -418,7 +380,7 @@ class RandomForest(BaseModel):
         sample_weight : np.ndarray | None
             Sample weights. Currently not implemented.
         """
-        self.X, self.Y = self.__check_input(X, Y)
+        X, Y = self._check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
         self.n_rows, self.n_features = self.X.shape
@@ -476,7 +438,8 @@ class RandomForest(BaseModel):
                 "The forest has not been fitted before trying to call predict"
             )
 
-        self.__check_dimensions(X)
+        X, _ = self._check_input(X)
+        self._check_dimensions(X)
 
         predict_value = shared_numpy_array(X)
         prediction = self.predict_class.forest_predict(
@@ -495,6 +458,8 @@ class RandomForest(BaseModel):
         if X is None:
             size_0 = self.n_rows
         else:
+            X, _ = self._check_input(X)
+            self._check_dimensions(X)
             X = shared_numpy_array(X)
             size_0 = X.shape[0]
 
@@ -524,6 +489,12 @@ class RandomForest(BaseModel):
             scaling = "symmetric"
         else:
             scaling = "none"
+
+        X0, _ = self._check_input(X0)
+        self._check_dimensions(X0)
+        X1, _ = self._check_input(X1)
+        self._check_dimensions(X1)
+
         size_0 = X0.shape[0]
         size_1 = X1.shape[0]
         weight_list = self.parallel.async_map(

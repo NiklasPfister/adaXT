@@ -1,9 +1,11 @@
 cimport numpy as cnp
 
+ctypedef cnp.float64_t DOUBLE_t
+
 cdef class LeafBuilder:
     cdef:
-        double[::1] y
-        double[:, ::1] x
+        double[:, ::1] Y
+        double[:, ::1] X
 
     cpdef object build_leaf(self,
                             int leaf_id,
@@ -32,7 +34,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
 
 cdef class LeafBuilderRegression(LeafBuilder):
 
-    cdef double __get_mean(self, int[::1] indices)
+    cdef cnp.ndarray[DOUBLE_t, ndim=1] __get_mean(self, int[::1] indices)
 
     cpdef object build_leaf(self,
                             int leaf_id,

@@ -7,6 +7,9 @@ from statistics import mode
 cimport numpy as cnp
 from adaXT.parallel import shared_numpy_array
 
+# Use with cdef code instead of the imported DOUBLE
+ctypedef cnp.float64_t DOUBLE_t
+
 
 def default_predict(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
@@ -34,7 +37,7 @@ def predict_proba(tree, Y, X, unique_classes):
         cur_array = np.zeros(unique_classes)
         n_samples = len(cur_node.indices)
         for idx in cur_node.indices:
-            cur_array[np.where(unique_classes == Y[idx])] += 1
+            cur_array[np.where(unique_classes == Y[idx, 0])] += 1
 
         ret_val.append(cur_array/n_samples)
 
@@ -61,7 +64,7 @@ def quantile_predict(tree, X, n_obs):
 
 cdef class Predict():
 
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
@@ -128,7 +131,7 @@ cdef class Predict():
 
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root, **kwargs):
         self.classes = np.unique(Y)
 
     cdef int __find_max_index(self, double[::1] lst):
@@ -145,12 +148,12 @@ cdef class PredictClassification(Predict):
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            cnp.ndarray Y
+            cnp.ndarray prediction
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs, dtype=DOUBLE)
+        prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -164,8 +167,8 @@ cdef class PredictClassification(Predict):
 
             idx = self.__find_max_index(cur_node.value)
             if self.classes is not None:
-                Y[i] = self.classes[idx]
-        return Y
+                prediction[i] = self.classes[idx]
+        return prediction
 
     cdef cnp.ndarray __predict_proba(self, object X):
         cdef:
@@ -218,15 +221,19 @@ cdef class PredictClassification(Predict):
 cdef class PredictRegression(Predict):
     def predict(self, object X, **kwargs):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, n_col
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray prediction
 
         # Make sure that x fits the dimensions.
         X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs, dtype=DOUBLE)
+        n_col = self.Y.shape[1]
+        if n_col > 1:
+            prediction = np.empty((n_obs, n_col), dtype=DOUBLE)
+        else:
+            prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -237,8 +244,11 @@ cdef class PredictRegression(Predict):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = cur_node.value[0]
-        return Y
+            if cur_node.value.ndim == 1:
+                prediction[i] = cur_node.value[0]
+            else:
+                prediction[i] = cur_node.value
+        return prediction
 
 
 cdef class PredictLocalPolynomial(PredictRegression):
@@ -248,7 +258,7 @@ cdef class PredictLocalPolynomial(PredictRegression):
             int i, cur_split_idx, n_obs, ind, oo
             double cur_threshold
             object cur_node
-            double[:, ::1] deriv_mat
+            cnp.ndarray[DOUBLE_t, ndim=2] deriv_mat
 
         if "order" not in kwargs.keys():
             order = [0, 1, 2]
@@ -289,6 +299,7 @@ cdef class PredictQuantile(Predict):
             int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
+            cnp.ndarray prediction
         if "quantile" not in kwargs.keys():
             raise ValueError(
                         "quantile called without quantile passed as argument"
@@ -299,9 +310,9 @@ cdef class PredictQuantile(Predict):
         n_obs = X.shape[0]
         # Check if quantile is an array
         if isinstance(quantile, Sequence):
-            Y = np.empty((n_obs, len(quantile)), dtype=DOUBLE)
+            prediction = np.empty((n_obs, len(quantile)), dtype=DOUBLE)
         else:
-            Y = np.empty(n_obs, dtype=DOUBLE)
+            prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -313,8 +324,8 @@ cdef class PredictQuantile(Predict):
                 else:
                     cur_node = cur_node.right_child
 
-            Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
-        return Y
+            prediction[i] = np.quantile(self.Y.base[cur_node.indices, 0], quantile)
+        return prediction
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):

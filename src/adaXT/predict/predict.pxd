@@ -3,7 +3,7 @@ cimport numpy as cnp
 cdef class Predict():
     cdef:
         double[:, ::1] X
-        double[::1] Y
+        double[:, ::1] Y
         int n_features
         object root
 

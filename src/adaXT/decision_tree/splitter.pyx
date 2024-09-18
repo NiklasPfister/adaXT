@@ -49,12 +49,11 @@ cdef int[::1] sort_feature(int[::1] indices):
 
 
 cdef class Splitter:
-    def __init__(self, double[:, ::1] X, double[::1] Y, criteria: Criteria):
-        self.features = X
-        self.response = Y
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, criteria: Criteria):
+        self.X = X
+        self.Y = Y
         self.n_features = X.shape[1]
         self.criteria = criteria
-        self.n_class = len(np.unique(Y))
 
     cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         global current_feature_values
@@ -77,15 +76,15 @@ cdef class Splitter:
         best_sorted = None
         # For all features
         for feature in feature_indices:
-            current_feature_values = np.asarray(self.features[:, feature])
+            current_feature_values = np.asarray(self.X[:, feature])
             sorted_index_list_feature = sort_feature(indices)
 
             # Loop over sorted feature list
             for i in range(N_i):
                 # Skip one iteration of the loop if the current
                 # threshold value is the same as the next in the feature list
-                if (self.features[sorted_index_list_feature[i], feature] ==
-                        self.features[sorted_index_list_feature[i + 1], feature]):
+                if (self.X[sorted_index_list_feature[i], feature] ==
+                        self.X[sorted_index_list_feature[i + 1], feature]):
                     continue
                 # test the split
                 crit, threshold = self.criteria.evaluate_split(
