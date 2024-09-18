@@ -73,20 +73,6 @@ cdef class Predict():
     def __reduce__(self):
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
-    cdef double[:, ::1] __check_dimensions(self, object X):
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        # If there is only a single point
-        if X.ndim == 1:
-            if (X.shape[0] != self.n_features):
-                raise ValueError(f"Number of features should be {self.n_features}, got {X.shape[0]}")
-
-            # expand the dimensions
-            X = np.expand_dims(X, axis=0)
-        else:
-            if X.shape[1] != self.n_features:
-                raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
-        return X
-
     # TODO: predict_indices
 
     def predict(self, object X, **kwargs) -> np.ndarray:
@@ -101,7 +87,6 @@ cdef class Predict():
             double cur_threshold
 
         # Make sure that x fits the dimensions.
-        X = self.__check_dimensions(X)
         row = X.shape[0]
 
         ht = {}
@@ -151,7 +136,6 @@ cdef class PredictClassification(Predict):
             cnp.ndarray prediction
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         prediction = np.empty(n_obs, dtype=DOUBLE)
 
@@ -178,7 +162,6 @@ cdef class PredictClassification(Predict):
             list ret_val
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         ret_val = []
         for i in range(n_obs):
@@ -227,7 +210,6 @@ cdef class PredictRegression(Predict):
             cnp.ndarray[DOUBLE_t, ndim=1] prediction
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         prediction = np.empty(n_obs, dtype=DOUBLE)
 
@@ -260,7 +242,6 @@ cdef class PredictLocalPolynomial(PredictRegression):
             if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
                 raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
 
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         deriv_mat = np.empty((n_obs, len(order)), dtype=DOUBLE)
 
@@ -299,7 +280,6 @@ cdef class PredictQuantile(Predict):
                     )
         quantile = kwargs['quantile']
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         # Check if quantile is an array
         if isinstance(quantile, Sequence):

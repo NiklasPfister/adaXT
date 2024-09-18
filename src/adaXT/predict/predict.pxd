@@ -7,8 +7,6 @@ cdef class Predict():
         int n_features
         object root
 
-    cdef double[:, ::1] __check_dimensions(self, object X)
-
     cpdef dict predict_leaf(self, object X)
 
 

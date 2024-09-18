@@ -161,9 +161,6 @@ class RandomForest(BaseModel):
     """
 
     # TODO: Save prediction_indicies and fitting_indicies.
-    # TODO: predict_tree_weights, which create an NxN matrix similair to
-    # the tree.predict_tree_weights
-    # TODO: Similairity.
     def __init__(
         self,
         forest_type: str | None,
