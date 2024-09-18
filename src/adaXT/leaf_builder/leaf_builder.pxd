@@ -1,6 +1,6 @@
 cimport numpy as cnp
 
-ctypedef cnp.float64_t DOUBLE_t 
+ctypedef cnp.float64_t DOUBLE_t
 
 cdef class LeafBuilder:
     cdef:

@@ -231,7 +231,7 @@ cdef class PredictRegression(Predict):
         n_obs = X.shape[0]
         n_col = self.Y.shape[1]
         if n_col > 1:
-            prediction = np.empty((n_obs, n_col), dtype=DOUBLE) 
+            prediction = np.empty((n_obs, n_col), dtype=DOUBLE)
         else:
             prediction = np.empty(n_obs, dtype=DOUBLE)
 
