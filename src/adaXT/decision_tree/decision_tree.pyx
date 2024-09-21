@@ -360,11 +360,17 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.left_child)
                 decision_queue.append(cur_node.right_child)
 
+    def __check_sample_input(self, sample: ArrayLike, name: str, dtype: np.dtype) -> np.ndarray:
+        if sample.size > self.n_rows_predict:
+            raise ValueError(f"{name} has more elements than the given input\
+                             data X.")
+        return np.array(sample, dtype=dtype)
+
     def refit_leaf_nodes(self,
                          X: ArrayLike,
                          Y: ArrayLike,
-                         sample_weight: np.ndarray | None = None,
-                         sample_indices: np.ndarray | None = None,
+                         sample_weight: ArrayLike | None = None,
+                         sample_indices: ArrayLike | None = None,
                          **kwargs) -> None:
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
@@ -373,7 +379,19 @@ class DecisionTree(BaseModel):
             X, Y = self._check_input(X, Y)
             self._check_dimensions(X)
         # Remove current leaf nodes
-        indices = np.array(sample_indices, dtype=np.int32)
+        if sample_indices is None:
+            indices = np.arange(0, self.n_rows_predict, dtype=np.int32)
+        else:
+            indices = self.__check_sample_input(sample=sample_indices,
+                                                name="sample_indices",
+                                                dtype=np.int32)
+        if sample_weight is None:
+            sample_weight = np.ones(self.n_rows_predict, dtype=np.float64)
+        else:
+            sample_weight = self.__check_sample_input(sample=sample_weight,
+                                                      name="sample_weight",
+                                                      dtype=np.float64)
+
         self.__remove_leaf_nodes()
 
         # Find the leaf node, all samples would have been placed in
