@@ -1,4 +1,5 @@
 from typing import Type, Literal
+from numpy.typing import ArrayLike
 import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
@@ -7,6 +8,7 @@ from .predict import Predict
 from .leafbuilder import LeafBuilder
 import sys
 
+# TODO: Update the documentation
 
 class DecisionTree:
     # TODO: Remove classes and n_classes from tree attributes
@@ -28,12 +30,6 @@ class DecisionTree:
         The number of features in the training data.
     n_rows: int
         The number of rows (i.e., samples) in the training data.
-    n_classes: int
-        The number of classes in the training data if
-        tree_type=="Classification", otherwise None.
-    classes: np.ndarray
-        A list of all class labels if tree_type=="Classification", otherwise
-        None.
     """
 
     max_depth: int
@@ -64,7 +60,7 @@ class DecisionTree:
         """
         Parameters
         ----------
-        tree_type : str | None 
+        tree_type : str | None
             The type of tree, either  a string specifying a supported type
             (currently "Regression", "Classification" and "Quantile") or None.
         max_depth : int
@@ -92,15 +88,16 @@ class DecisionTree:
             The Splitter class to use, if None it defaults to the default
             Splitter class.
         skip_check_input : bool
-            Whether to skip checking the input for consistency.
-
+            Skips any error checking on the features and response in the fitting
+            function of a tree, should only be used if you know what you are
+            doing, by default false.
         """
         pass
 
     def fit(
         self,
-        X,
-        Y,
+        X: ArrayLike,
+        Y: ArrayLike,
         sample_indices: np.ndarray | None = None,
         sample_weight: np.ndarray | None = None,
     ) -> None:
@@ -109,22 +106,21 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like object
+        X : array-like object of dimension 2
             The feature values used for training. Internally it will be
-            converted to np.ndarray with dtype=np.float64. Rows correspond to
-            samples.
+            converted to np.ndarray with dtype=np.float64.
         Y : array-like object
             The response values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        sample_indices : array-like object | None
-            A vector specifying samples of the training data that should be
-            used during training. If None all samples are used.
+        sample_indices : array-like object | None, optional
+            A vector specifying samples of the training data that should be used
+            during training. If None all samples are used.
         sample_weight : np.ndarray | None
             Sample weights. Currently not implemented.
         """
         pass
 
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
         Predict response values at X using fitted decision tree. The behavior
         of this function is determined by the Prediction class used in the
@@ -134,6 +130,9 @@ class DecisionTree:
         Classification:
         ----------
         Returns the class with the highest proportion within the final leaf node.
+
+        Given predict_proba=True, it instead calculates the probability
+        distribution.
 
         Regression:
         ----------
@@ -147,8 +146,9 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
+        X : array-like object of dimension 2
+            New samples at which to predict the response. Internally it will be
+            converted to np.ndarray with dtype=np.float64.
 
         Returns
         -------
@@ -158,51 +158,33 @@ class DecisionTree:
         """
         pass
 
-    def predict_proba(self, X: np.ndarray):
-        """
-        Predicts a probability for each response for given X values. Only
-        useable by the Classification Tree.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            (N, M) numpy array with features to predict
-
-        Returns
-        -------
-        np.ndarray
-            Returns an np.ndarray with the the probabilities for each class per
-            observation in X, the order of the classes corresponds to that in
-            the attribute classes.
-        """
+    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
+        # TODO: Documentation
         pass
 
-    def predict_leaf_matrix(self, X: np.ndarray | None, scale: bool = False) -> np.ndarray:
-        """
-        Creates NxN matrix, where N is the number of observations in X.
-        If A_{i,j} = Z then i and j are in the same leafnode, Z number of times.
-        If they are scaled, then A_{i,j} is instead scaled by the number
-        of elements in the leaf node.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            New values to be fitted, if None returns leaf matrix
-        scale : bool, optional
-            Whether to scale the entries, by default False
-
-        Returns
-        -------
-        np.ndarray
-            NxN matrix
-        """
+    def predict_leaf(self, X: np.ndarray | None):
+        # TODO: Documentation
         pass
 
-    def refit_leaf_nodes(self, X: np.ndarray, Y: np.ndarray,
-                         sample_weight: np.ndarray | None,
-                         sample_indices: np.ndarray | None) -> None:
+    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+        # TODO: Documentation
+        pass
+
+    def _tree_based_weights(
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
+    ) -> np.ndarray:
+        # TODO: Documentaion
+        pass
+
+    def refit_leaf_nodes(
+        self,
+        X: np.ndarray,
+        Y: np.ndarray,
+        sample_weight: np.ndarray | None,
+        sample_indices: np.ndarray | None,
+    ) -> None:
         """
-        Refits the leaf nodes in a previously fitted decision tree. 
+        Refits the leaf nodes in a previously fitted decision tree.
 
         More precisely, the method removes all leafnodes created on the initial
         fit and replaces them by predicting all samples in X that appear in
@@ -216,7 +198,7 @@ class DecisionTree:
 
         Parameters
         ----------
-        X : array-like object
+        X : array-like object of dimension 2
             The feature values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
         Y : array-like object
@@ -224,7 +206,7 @@ class DecisionTree:
             converted to np.ndarray with dtype=np.float64.
         sample_weight : np.ndarray | None
             Sample weights. Currently not implemented.
-        sample_indices: np.ndarray
+        prediction_indices: np.ndarray | None
             Values to create new leaf nodes with
         """
         pass

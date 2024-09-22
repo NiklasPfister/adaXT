@@ -1,11 +1,10 @@
 import numpy as np
 from ..decision_tree.nodes import DecisionNode
 
-
 class Predict:
     """
-        The abstract Predict class. Any other predict class
-        implementation must inherit from this class.
+    The Predict class which the DecisionTree depends on.
+    Other implementations must inherit from this class.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -23,18 +22,7 @@ class Predict:
         """
         pass
 
-    def predict_proba(self, X: np.ndarray):
-        """
-        Predict proba function call.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Array that should be carried out predictions on.
-        """
-        pass
-
-    def predict_leaf_matrix(self, X: np.ndarray, scale: bool):
+    def predict_leaf(self, X: np.ndarray, scale: bool) -> dict:
         """
         Function called when tree.predict_leaf_matrix is called.
 
@@ -60,24 +48,9 @@ class Predict:
         """
         pass
 
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        """
-        Function called by the RandomForest after it has gotten the result of
-        predict_proba from each tree. This function should then do any changes
-        seen fit.
-
-        Parameters
-        ----------
-        predictions : np.ndarray
-            An array of predictions. 
-        """
-        pass
-
-
 class PredictClassification(Predict):
     """
-        The default prediction class for the Classification tree type.
+    The default prediction class for the Classification DecisionTree.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -95,18 +68,6 @@ class PredictClassification(Predict):
         """
         pass
 
-    def predict_proba(self, X: np.ndarray) -> np.ndarray:
-        """
-        Predicts the LeafNode each row in $X$ would fall into and returns the
-        fraction of occurences each unique class has within the LeafNode.
-
-        Parameters
-        ----------
-        X : np.ndarray
-            Array that should be carried out predictions on.
-        """
-        pass
-
     @staticmethod
     def forest_predict(predictions: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -120,19 +81,6 @@ class PredictClassification(Predict):
         """
 
         pass
-
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Calculates the mean predictions for all the predictions.
-
-        Parameters
-        ----------
-        predictions : np.ndarray
-            An array of predictions.
-        """
-        pass
-
 
 class PredictRegression(Predict):
     """
@@ -174,16 +122,12 @@ class PredictRegression(Predict):
         """
         pass
 
-
-class PredictLocalPolynomial(Predict):
-    """
-        The default prediction calls for the Gradient tree type.
-    """
+class PredictLinearRegression(Predict):
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Predicts which LeafNode each row $X_i$ in $X$ would land in, and calculates the
-        $$ 
-        \frac{1}{|L(X_i)|}\sum_{i\in L(X_i)} theta0 + theta1*\tilde{X}_{i, 0} + theta2*\tilde{X}_{i, 0},
+        Predicts which LeafNode each $x \in X$ would land in, and calculates the
+        $$
+        Y_i = L_{j,theta0} + L_{j,theta1}*X_{i, 0}
         $$
         where $L(X_i)$ denotes the index of all training samples in the leaf
         node in which $X_i$ landed and $\tilde{X}$ denotes the training
@@ -205,25 +149,12 @@ class PredictLocalPolynomial(Predict):
         """
         pass
 
-    @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Returns the mean value of all the predictions along axis 1.
+class PredictLocalPolynomial(Predict):
+    """
+    Default used for Gradient
+    """
 
-        Parameters
-        ----------
-        predictions
-            Predictions by the trees.
-
-        Returns
-        -------
-        np.ndarray
-            An array of predictions for each element X passed to
-            forest.predict.
-        """
-        pass
-
-
+    pass
 
 class PredictQuantile(Predict):
     """

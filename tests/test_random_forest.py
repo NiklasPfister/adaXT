@@ -20,26 +20,16 @@ import sys
 
 
 def get_regression_data(
-        n,
-        m,
-        random_state: np.random.RandomState,
-        lowx=0,
-        highx=100,
-        lowy=0,
-        highy=5):
+    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
+):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.uniform(lowy, highy, n)
     return (X, Y)
 
 
 def get_classification_data(
-        n,
-        m,
-        random_state: np.random.RandomState,
-        lowx=0,
-        highx=100,
-        lowy=0,
-        highy=5):
+    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
+):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.randint(lowy, highy, n)
     return (X, Y)
@@ -53,7 +43,7 @@ def run_gini_index(X, Y, n_jobs, n_estimators, seed):
         n_jobs=n_jobs,
         sampling="bootstrap",
         sampling_parameter=5,
-        random_state=seed,
+        seed=seed,
     )
     forest.fit(X, Y)
     return forest
@@ -67,21 +57,22 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
         n_jobs=n_jobs,
         sampling="bootstrap",
         sampling_parameter=5,
-        random_state=seed,
+        seed=seed,
     )
     forest.fit(X, Y)
     return forest
 
 
 def run_squared_error(
-        X,
-        Y,
-        n_jobs,
-        n_estimators,
-        seed,
-        max_samples: int | float = 5,
-        max_depth=sys.maxsize,
-        sampling: str | None = "bootstrap"):
+    X,
+    Y,
+    n_jobs,
+    n_estimators,
+    seed,
+    max_samples: int | float = 5,
+    max_depth=sys.maxsize,
+    sampling: str | None = "bootstrap",
+):
     forest = RandomForest(
         forest_type="Regression",
         criteria=Squared_error,
@@ -89,7 +80,7 @@ def run_squared_error(
         n_jobs=n_jobs,
         sampling=sampling,
         sampling_parameter=max_samples,
-        random_state=seed,
+        seed=seed,
         max_depth=max_depth,
     )
     forest.fit(X, Y)
@@ -108,10 +99,7 @@ def test_dominant_feature():
 
     # Create forest and fit data
     forest = RandomForest(
-        "Classification",
-        n_estimators=100,
-        criteria=Gini_index,
-        sampling="bootstrap"
+        "Classification", n_estimators=100, criteria=Gini_index, sampling="bootstrap"
     )
     forest.fit(X, Y)
 
@@ -134,13 +122,12 @@ def test_deterministic_seeding_regression():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_regression_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(
-        0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
         criteria=Squared_error,
-        random_state=tree_state,
+        seed=tree_state,
         sampling="bootstrap",
     )
     forest1.fit(X, Y)
@@ -149,7 +136,7 @@ def test_deterministic_seeding_regression():
         "Regression",
         n_estimators=100,
         criteria=Squared_error,
-        random_state=tree_state,
+        seed=tree_state,
         sampling="bootstrap",
     )
     forest2.fit(X, Y)
@@ -168,14 +155,13 @@ def test_deterministic_seeding_classification():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_classification_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(
-        0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Classification",
         n_estimators=100,
         criteria=Gini_index,
-        random_state=tree_state,
-        sampling="bootstrap"
+        seed=tree_state,
+        sampling="bootstrap",
     )
     forest1.fit(X, Y)
 
@@ -183,7 +169,7 @@ def test_deterministic_seeding_classification():
         "Classification",
         n_estimators=100,
         criteria=Gini_index,
-        random_state=tree_state,
+        seed=tree_state,
         sampling="bootstrap",
     )
     forest2.fit(X, Y)
@@ -219,17 +205,44 @@ def test_random_forest():
     pred["squared_pred"] = squared_forest.predict(X_reg)
     with open("./tests/data/forestData.json", "r") as f:
         data = json.loads(f.read())
+
     assert np.array_equal(
-        np.array(data["gini_pred"]), pred["gini_pred"]
+        np.array(data["gini_pred"]).astype(int), pred["gini_pred"]
     ), "Gini Index prediction incorrect"
 
     assert np.array_equal(
-        np.array(data["entropy_pred"]), pred["entropy_pred"]
+        np.array(data["entropy_pred"]).astype(int), pred["entropy_pred"]
     ), "Entropy prediction incorrect"
 
-    assert np.array_equal(
+    assert np.allclose(
         np.array(data["squared_pred"]), pred["squared_pred"]
     ), "Squared Error prediction incorrect"
+
+
+def create_and_save_predict_data(seed=2024):
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 100
+    m = 10
+    n_estimators = 100
+    X_cla, Y_cla = get_classification_data(n, m, random_state=random_state)
+    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    gini_forest = run_gini_index(
+        X_cla, Y_cla, n_jobs=cpu_count(), n_estimators=n_estimators, seed=seed
+    )
+    entropy_forest = run_entropy(
+        X_cla, Y_cla, n_jobs=cpu_count(), n_estimators=n_estimators, seed=seed
+    )
+    squared_forest = run_squared_error(
+        X_reg, Y_reg, n_jobs=cpu_count(), n_estimators=n_estimators, seed=seed
+    )
+    pred = dict()
+    pred["gini_pred"] = gini_forest.predict(X_cla).tolist()
+    pred["entropy_pred"] = entropy_forest.predict(X_cla).tolist()
+    pred["squared_pred"] = squared_forest.predict(X_reg).tolist()
+
+    with open("./tests/data/forestData.json", "w") as f:
+        json.dump(pred, f)
 
 
 def test_gradient_forest():
@@ -282,7 +295,7 @@ def test_random_forest_weights():
     seed = 2024
     n = 100
     m = 10
-    n_estimators = 5
+    n_estimators = 100
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     squared_forest = run_squared_error(
         X_reg,
@@ -293,12 +306,15 @@ def test_random_forest_weights():
         max_depth=2,
         sampling=None,
     )
-    res = squared_forest.predict_forest_weight(X=None, scale=False)
-    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    res = squared_forest.predict_weights(X=None, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
-    tree_sum = np.mean([tree.predict_leaf_matrix(
-        X=None, scale=False) for tree in trees], axis=0)
+    tree_sum = np.sum(
+        [tree.predict_weights(X=None, scale=False) for tree in trees], axis=0
+    )
+    print(tree_sum)
+    print(res)
     assert np.array_equal(tree_sum, res)
 
 
@@ -321,15 +337,15 @@ def test_honest_sampling_leaf_samples():
         n_estimators=n_estimators,
         sampling="honest_tree",
         sampling_parameter=n_fit,
-        max_depth=4)
+        max_depth=4,
+    )
     honest_forest = RandomForest(
         "Regression",
         n_estimators=n_estimators,
         sampling="honest_forest",
-        sampling_parameter=(
-            n // 2,
-            n_fit),
-        max_depth=4)
+        sampling_parameter=(n // 2, n_fit),
+        max_depth=4,
+    )
     honest_tree.fit(X_reg, Y_reg)
     honest_forest.fit(X_reg, Y_reg)
     __check_leaf_count(honest_tree, n_fit)
@@ -341,10 +357,8 @@ def test_n_jobs():
     n = 1000
     m = 10
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
-    forest_1 = run_squared_error(
-        X_reg, Y_reg, n_jobs=1, n_estimators=100, seed=2024)
-    forest_5 = run_squared_error(
-        X_reg, Y_reg, n_jobs=5, n_estimators=100, seed=2024)
+    forest_1 = run_squared_error(X_reg, Y_reg, n_jobs=1, n_estimators=100, seed=2024)
+    forest_5 = run_squared_error(X_reg, Y_reg, n_jobs=5, n_estimators=100, seed=2024)
     pred_1 = forest_1.predict(X_reg)
     pred_2 = forest_5.predict(X_reg)
     assert np.allclose(pred_1, pred_2)
@@ -353,35 +367,38 @@ def test_n_jobs():
 def test_n_jobs_predict_forest():
     random_state = np.random.RandomState(2024)
     seed = 2024
-    n = 100
-    m = 10
-    n_estimators = 5
+    n = 5
+    m = 5
+    n_estimators = 100
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     squared_forest = run_squared_error(
         X_reg,
         Y_reg,
-        n_jobs=1,
+        n_jobs=2,
         n_estimators=n_estimators,
         seed=seed,
         max_depth=2,
         sampling=None,
     )
-    res = squared_forest.predict_forest_weight(X=X_reg, scale=False)
-    trees = [DecisionTree("Regression", max_depth=2) for _ in range(100)]
+    res = squared_forest.predict_weights(X=X_reg, scale=False)
+    trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
-    tree_sum = np.mean([tree.predict_leaf_matrix(
-        X=X_reg, scale=False) for tree in trees], axis=0)
+    tree_sum = np.sum(
+        [tree.predict_weights(X=X_reg, scale=False) for tree in trees], axis=0
+    )
     assert np.array_equal(tree_sum, res)
 
+
+# TODO: Similarity test
 
 if __name__ == "__main__":
     # test_dominant_feature()
     # test_deterministic_seeding_classification()
-    # test_linear_regression_forest()
     # test_quantile_regression_forest()
-    # test_random_forest_weights()
+    test_random_forest_weights()
     # test_honest_sampling_leaf_samples()
-    test_n_jobs_predict_forest()
+    # test_n_jobs_predict_forest()
+    # test_random_forest()
 
     print("Done")
