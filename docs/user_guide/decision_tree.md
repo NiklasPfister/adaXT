@@ -60,14 +60,15 @@ import numpy as np
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index
 
-X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
-Y = [0, 1, 0, 1]
+X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1],
+              [1, 1], [1, -1], [-1, -1], [-1, 1]])
+Xtest = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
+Y = [0, 1, 0, 1, 0, 0, 1, 1]
 
-tree = DecisionTree("Classification", criteria=Gini_index, max_depth=1)
+tree = DecisionTree("Classification", criteria=Gini_index)
 tree.fit(X, Y)
-print(tree.predict(X))
-# TODO: update predict_proba
-print(tree.predict_proba(X))
+print(tree.predict(Xtest))
+print(tree.predict(Xtest, predict_proba=True))
 ```
 
 In this example we created and fit a classification tree using training data and
@@ -75,12 +76,10 @@ then used the fitted tree to predict the response at the training data. When
 initializing the tree we changed the default criteria to the
 [Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index); it is
 always possible to overwrite any of the default components of a specific tree
-type. While predicting the classification tree uses a majority vote in each of
-the leaf nodes to decide which class to predict. In this example each leaf node
-contains equal proportions of both classes, so the ties are broken by selecting
-the smallest class.
-
-<!--TODO: Update after predict_proba was changed-->
+type. Classification trees use a majority vote in each of the leaf nodes to
+decide which class to predict and ties are broken by selecting the smaller
+class. To predict the class probabilities instead of the class labels, one can
+add `predict_proba=True` as a keyword argument.
 
 For classification trees it is also possible, using the `predict_proba` method,
 to output the proportions of each class instead of only the majority class. That
@@ -186,15 +185,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 from adaXT.decision_tree import DecisionTree
 
-n = 100
+n = 200
 X = np.random.normal(0, 1, (n, 1))
 Y = X[:, 0] ** 2 + np.random.normal(0, 0.5, n)
 
-tree_reg = DecisionTree("Regression", min_samples_leaf=20)
+tree_reg = DecisionTree("Regression", min_samples_leaf=50)
 tree_reg.fit(X, Y)
 Yhat_reg = tree_reg.predict(X)
 
-tree_grad = DecisionTree("Gradient", min_samples_leaf=20)
+tree_grad = DecisionTree("Gradient", min_samples_leaf=50)
 tree_grad.fit(X, Y)
 Yhat_grad = tree_grad.predict(X,  order=[0, 1])
 

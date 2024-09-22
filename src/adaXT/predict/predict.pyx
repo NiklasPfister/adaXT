@@ -11,7 +11,7 @@ from adaXT.parallel import shared_numpy_array
 ctypedef cnp.float64_t DOUBLE_t
 
 
-def default_predict(tree, X, **kwargs):
+def predict_default(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
 
 
@@ -41,10 +41,10 @@ def predict_proba(tree, Y, X, unique_classes):
 
         ret_val.append(cur_array/n_samples)
 
-    return np.array(ret_val, dtype=int)
+    return np.array(ret_val)
 
 
-def quantile_predict(tree, X, n_obs):
+def predict_quantile(tree, X, n_obs):
     # Check if quantile is an array
     indices = []
 
@@ -108,7 +108,7 @@ cdef class Predict():
 
     @staticmethod
     def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
-        predictions = parallel.async_map(default_predict,
+        predictions = parallel.async_map(predict_default,
                                          trees,
                                          X=X_new,
                                          **kwargs)
@@ -175,7 +175,7 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return np.array(ret_val, dtype=int)
+        return np.array(ret_val)
 
     def predict(self, object X, **kwargs):
         if "predict_proba" in kwargs:
@@ -196,7 +196,7 @@ cdef class PredictClassification(Predict):
                                                  unique_classes=unique_classes)
                 return np.mean(predictions, axis=0, dtype=int)
 
-        predictions = parallel.async_map(default_predict, trees, X=X_new,
+        predictions = parallel.async_map(predict_default, trees, X=X_new,
                                          **kwargs)
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=DOUBLE)
 
@@ -318,7 +318,7 @@ cdef class PredictQuantile(Predict):
             )
         quantile = kwargs['quantile']
         n_obs = X_new.shape[0]
-        prediction_indices = parallel.async_map(quantile_predict,
+        prediction_indices = parallel.async_map(predict_quantile,
                                                 map_input=trees, X=X_new,
                                                 n_obs=n_obs)
         # In case the leaf nodes have multiple elements and not just one, we

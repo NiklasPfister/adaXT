@@ -65,24 +65,46 @@ method. As a simple example we the code below illustrates how to extract the
 weights evaluated at training data used during fitting.
 
 ```python
+import numpy as np
+import matplotlib.pyplot as plt
 from adaXT.decision_tree import DecisionTree
 from adaXT.random_forest import RandomForest
 
 # Create toy data set
 n = 100
-X = np.random.uniform(-1, 1, (n, 2))
-Y = 1.0 * (X[:, 0] > 0) + 2.0 * (X[:, 1] > 0) + np.random.normal(0, 0.2, n)
+X = np.random.uniform(-1, 1, n)
+Y = 1.0 * (X > 0) + 2.0 * (X > 0.5) + np.random.normal(0, 0.2, n)
 
 # Fit regression tree and random forest
-rt = DecisionTree("Regression", min_leaf_size=10)
-rf = RandomForest("Regression", min_leaf_size=10)
-rt.fit(X, Y)
+tree = DecisionTree("Regression", max_depth=2)
+rf = RandomForest("Regression", max_depth=5)
+tree.fit(X, Y)
 rf.fit(X, Y)
 
-# Extract tree-based weights given the samples saved in each leaf
-weights = rt.predict_leaf_matrix(scale=True)
-weights = rf.predict_forest_weights(scale=True)
+# Extract tree-based weights at the training data
+weights_tree = tree.predict_weights()
+weights_rf = rf.predict_weights()
+weights_rf.sum(axis=1)
+weights_tree.sum(axis=1)
 
+# Weights can be used to compute predictions
+print(weights_rf.dot(Y) - rf.predict(X))
+print(weights_tree.dot(Y) - tree.predict(X))
+
+# Compute similarity of x values in [-1,1] to test points
+grid1d = np.linspace(-1, 1, 200)
+test_points = np.array([-1, -0.25, 0.25, 1])
+similarity_tree = tree.similarity(grid1d, test_points)
+similarity_rf = rf.similarity(grid1d, test_points)
+
+# Create plot
+fig, ax = plt.subplots(1, 4)
+for i in range(4):
+    ax[i].plot(grid1d, similarity_tree[:, i], color='blue', label='tree', alpha=0.5)
+    ax[i].plot(grid1d, similarity_rf[:, i], color='red', label='random forest', alpha=0.5)
+    ax[i].set_title(f'similarity to x={test_points[i]}')
+    ax[i].legend()
+plt.show()
 ```
 
 Using the notation above, the weights computed in this example satisfy

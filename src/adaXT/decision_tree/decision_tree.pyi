@@ -158,7 +158,7 @@ class DecisionTree:
         """
         pass
 
-    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
+    def predict_weights(self, X: np.ndarray | None = None, scale: bool = True) -> np.ndarray:
         # TODO: Documentation
         pass
 
@@ -171,7 +171,7 @@ class DecisionTree:
         pass
 
     def _tree_based_weights(
-        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
     ) -> np.ndarray:
         # TODO: Documentaion
         pass

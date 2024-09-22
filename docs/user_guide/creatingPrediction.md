@@ -1,3 +1,3 @@
 # Creating a custom prediction
 
-<!-- TODO: Write this section -->
+<!-- TODO: Add section -->

@@ -23,11 +23,11 @@ def get_single_leaf(tree: DecisionTree, X: np.ndarray | None = None) -> dict:
 
 def tree_based_weights(
     tree: DecisionTree,
-    X0: np.ndarray,
-    X1: np.ndarray,
+    X0: np.ndarray | None,
+    X1: np.ndarray | None,
     size_X0: int,
     size_X1: int,
-    scale: bool,
+    scaling: str,
 ) -> np.ndarray:
     hash0 = tree.predict_leaf(X=X0)
     hash1 = tree.predict_leaf(X=X1)
@@ -36,7 +36,7 @@ def tree_based_weights(
         hash1=hash1,
         size_X0=size_X0,
         size_X1=size_X1,
-        scale=scale,
+        scaling=scaling,
     )
 
 
@@ -454,6 +454,7 @@ class RandomForest(BaseModel):
     ) -> np.ndarray:
         if X is None:
             size_0 = self.n_rows
+            X = self.X
         else:
             X, _ = self._check_input(X)
             self._check_dimensions(X)
@@ -461,7 +462,7 @@ class RandomForest(BaseModel):
             size_0 = X.shape[0]
 
         if scale:
-            scaling = "column"
+            scaling = "row"
         else:
             scaling = "none"
 
@@ -472,7 +473,7 @@ class RandomForest(BaseModel):
             X1=None,
             size_X0=size_0,
             size_X1=self.n_rows,
-            scale=scaling,
+            scaling=scaling,
         )
 
         if scale:
@@ -497,10 +498,10 @@ class RandomForest(BaseModel):
         weight_list = self.parallel.async_map(
             tree_based_weights,
             map_input=self.trees,
-            X1=X0,
-            X2=X1,
+            X0=X0,
+            X1=X1,
             size_X0=size_0,
             size_X1=size_1,
-            scale=scaling,
+            scaling=scaling,
         )
         return np.mean(weight_list, axis=0)
