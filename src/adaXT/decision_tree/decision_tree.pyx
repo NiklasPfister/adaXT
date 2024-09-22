@@ -166,7 +166,7 @@ class DecisionTree(BaseModel):
                 if scaling == "row":
                     val = 1.0/len(indices_2)
                     for ind2 in indices_2:
-                        matrix[indices_1, ind2] += val 
+                        matrix[indices_1, ind2] += val
                 elif scaling == "symmetric":
                     val = 1.0/(len(indices_1) + len(indices_2))
                     for ind1 in indices_1:
@@ -175,7 +175,7 @@ class DecisionTree(BaseModel):
                 elif scaling == "none":
                     val = 1.0
                     for ind2 in indices_2:
-                        matrix[indices_1, ind2] += val 
+                        matrix[indices_1, ind2] += val
         return matrix
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
