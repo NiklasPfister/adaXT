@@ -11,8 +11,6 @@ random forests. It takes mostly the same parameters as the
 [DecisionTree](/docs/api_docs/DecisionTree.md) class, as illustrated in the
 example below.
 
-<!--TODO: Input checks need to be improved!-->
-
 ```python
 import numpy as np
 import matplotlib.pyplot as plt
