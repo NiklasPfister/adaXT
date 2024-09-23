@@ -58,11 +58,11 @@ class DecisionTree(BaseModel):
             self.criteria_class = criteria
             self.predict_class = predict
             self.leaf_builder_class = leaf_builder
-            self.splitter = splitter
-            self.max_features = self.max_features
+            self.splitter_class = splitter
+            self.max_features = max_features
         else:
             self._check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
-            self.max_features = self._check_max_features(max_featueres)
+            self.max_features = self._check_max_features(max_features)
 
         self.skip_check_input = skip_check_input
         self.max_depth = max_depth
@@ -91,7 +91,8 @@ class DecisionTree(BaseModel):
         # so they have to be updated after checking X and Y
         self.n_rows_fit = X.shape[0]
         self.n_rows_predict = X.shape[0]
-        tree.n_features = X.shape[1]
+        self.X_n_rows = X.shape[0]
+        self.n_features = X.shape[1]
 
         if not self.skip_check_input:
             sample_weight = self._check_sample_weight(sample_weight=sample_weight)
@@ -106,7 +107,7 @@ class DecisionTree(BaseModel):
             criteria_class=self.criteria_class,
             leaf_builder_class=self.leaf_builder_class,
             predict_class=self.predict_class,
-            splitter_class=self.splitter)
+            splitter_class=self.splitter_class)
         builder.build_tree(self)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
@@ -167,7 +168,7 @@ class DecisionTree(BaseModel):
         return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
                                         scale)
 
-    def predict_weights(self, X: np.ndarray|None = None,
+    def predict_weights(self, X: ArrayLike | None = None,
                         scale: bool = True) -> np.ndarray:
         if X is None:
             size_1 = self.n_rows_predict
@@ -187,7 +188,7 @@ class DecisionTree(BaseModel):
                                         self.n_rows_predict, size_1,
                                         scale=scale)
 
-    def predict_leaf(self, X: np.ndarray|None = None) -> dict:
+    def predict_leaf(self, X: ArrayLike | None = None) -> dict:
         if X is None:
             return self.__get_leaf()
         else:
@@ -411,7 +412,7 @@ class DepthTreeBuilder:
         Y: np.ndarray,
         max_features: int | None,
         sample_weight: np.ndarray,
-        sample_indices: np.ndarray,
+        sample_indices: np.ndarray | None,
         criteria_class: Criteria,
         splitter_class: Splitter,
         leaf_builder_class: LeafBuilder,
@@ -473,14 +474,14 @@ class DepthTreeBuilder:
         if max_features is None:
             return None
         elif isinstance(max_features, int):
-            return min(max_features, num_features)
+            return min(max_features, self.num_features)
         elif isinstance(max_features, float):
-            return min(num_features, int(max_features * num_features))
+            return min(self.num_features, int(max_features * self.num_features))
         elif isinstance(max_features, str):
             if max_features == "sqrt":
-                return int(np.sqrt(num_features))
+                return int(np.sqrt(self.num_features))
             elif max_features == "log2":
-                return int(np.log2(num_features))
+                    return int(np.log2(self.num_features))
         else:
             raise ValueError("Unable to parse max_features")
 
@@ -515,7 +516,7 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = sample_indices
+        all_idx = self.sample_indices
 
         all_idx = np.array(
             [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32

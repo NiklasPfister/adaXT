@@ -11,6 +11,12 @@ class BaseModel:
     predict_class: Type[Predict]
     leaf_builder_class: Type[Criteria]
     criteria_class: Type[LeafBuilder]
+    splitter_class: Type[Splitter]
+
+    def _check_max_features(
+        self, max_features: int | str | float | None
+    ) -> int | str | float | None:
+        pass
 
     def _check_sample_weight(self, sample_weight: ArrayLike | None) -> np.ndarray:
         pass
@@ -24,7 +30,7 @@ class BaseModel:
 
     def _check_input(
         self, X: ArrayLike, Y: ArrayLike | None = None
-    ) -> tuple[np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, ...]:
         pass
 
     def _check_tree_type(
@@ -37,14 +43,13 @@ class BaseModel:
     ):
         pass
 
-    def fit(
-        self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        sample_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
-    ):
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         pass
 
-    def predict(self, X: np.ndarray, Y: np.ndarray, **kwargs):
+    def similarity(
+        self, X0: np.ndarray, X1: np.ndarray, scale: bool = True
+    ) -> np.ndarray:
+        pass
+
+    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
         pass

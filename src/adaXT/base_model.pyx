@@ -13,12 +13,15 @@ from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderPartialQuadratic)
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 class BaseModel:
-    def _check_max_features(self,
-                             max_features: int|str|float|None
-                             ) -> int|str|float|None:
+
+    def _check_max_features(
+        self, max_features: int | str | float | None
+    ) -> int | str | float | None:
+
         if max_features is None:
             return max_features
         elif isinstance(max_features, int):
@@ -41,18 +44,19 @@ class BaseModel:
 
     def _check_sample_weight(self, sample_weight: ArrayLike | None) -> np.ndarray:
         if sample_weight is None:
-            return np.ones(self.n_rows_predict, dtype=DOUBLE)
+            return np.ones(self.X_n_rows, dtype=DOUBLE)
         sample_weight = np.array(sample_weight, dtype=DOUBLE)
-        if sample_weight.shape[0] != self.n_rows_predict:
+        if sample_weight.shape[0] != self.X_n_rows:
             raise ValueError("sample_weight should have as many elements as X and Y")
         if sample_weight.ndim > 1:
             raise ValueError("sample_weight has more than one dimension")
         return sample_weight
 
     def _check_sample_indices(self,
-                              sample_indices: ArrayLike | None) -> np.ndarray:
+            sample_indices: ArrayLike | None
+        ) -> np.ndarray:
         if sample_indices is None:
-            return np.arange(0, self.n_rows_predict, dtype=np.int32)
+            return np.arange(0, self.X_n_rows, dtype=np.int32)
         return np.array(sample_indices, dtype=np.int32)
 
 
@@ -64,8 +68,10 @@ class BaseModel:
             )
 
     def _check_input(self,
-                     X: ArrayLike,
-                     Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+            X: ArrayLike,
+            Y: ArrayLike | None = None
+        ) -> tuple[np.ndarray, np.ndarray|None]:
+
         Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -167,18 +173,6 @@ class BaseModel:
             self.leaf_builder_class = leaf_builder
 
         if splitter:
-            self.splitter = splitter
+            self.splitter_class = splitter
         else:
-            self.splitter = Splitter
-
-    def fit(
-        self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        sample_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
-    ) -> None:
-        pass
-
-    def predict(self, X: np.ndarray, Y: np.ndarray, **kwargs) -> None:
-        pass
+            self.splitter_class = Splitter

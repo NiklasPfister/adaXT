@@ -2,7 +2,6 @@ import sys
 from typing import Any, Literal
 
 import numpy as np
-from numpy import float64 as DOUBLE
 from numpy.random import Generator, default_rng
 
 from adaXT.parallel import ParallelModel, shared_numpy_array
@@ -42,7 +41,7 @@ def tree_based_weights(
 
 def get_sample_indices(
     gen: Generator,
-    n_rows: int,
+    X_n_rows: int,
     sampling_parameter: Any,
     sampling: str | None,
 ) -> tuple:
@@ -51,9 +50,9 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "bootstrap":
-        return (gen.integers(low=0, high=n_rows, size=sampling_parameter), None)
+        return (gen.integers(low=0, high=X_n_rows, size=sampling_parameter), None)
     elif sampling == "honest_tree":
-        indices = np.arange(0, n_rows)
+        indices = np.arange(0, X_n_rows)
         gen.shuffle(indices)
         return (indices[:sampling_parameter], indices[sampling_parameter:])
     elif sampling == "honest_forest":
@@ -61,11 +60,11 @@ def get_sample_indices(
             low=0, high=sampling_parameter[0], size=sampling_parameter[1]
         )
         prediction_indices = gen.integers(
-            low=sampling_parameter[0], high=n_rows, size=sampling_parameter[1]
+            low=sampling_parameter[0], high=X_n_rows, size=sampling_parameter[1]
         )
         return (fitting_indices, prediction_indices)
     else:
-        return (None, None)
+        return (np.arange(0, X_n_rows), None)
 
 
 def build_single_tree(
@@ -247,7 +246,6 @@ class RandomForest(BaseModel):
 
         self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
-        self.X, self.Y = None, None
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
@@ -271,15 +269,15 @@ class RandomForest(BaseModel):
             if isinstance(sampling_parameter, int):
                 return sampling_parameter
             elif isinstance(sampling_parameter, float):
-                return max(round(self.n_rows * sampling_parameter), 1)
+                return max(round(self.X_n_rows * sampling_parameter), 1)
             elif sampling_parameter is None:
-                return self.n_rows
+                return self.X_n_rows
             raise ValueError(
                 "Provided sampling_parameter is not an integer, a float or None as required."
             )
         elif self.sampling == "honest_forest":
             if sampling_parameter is None:
-                sampling_parameter = (self.n_rows // 2, self.n_rows // 2)
+                sampling_parameter = (self.X_n_rows // 2, self.X_n_rows // 2)
             elif not isinstance(sampling_parameter, tuple):
                 raise ValueError(
                     "The provided sampling parameter is not a tuple for honest_forest."
@@ -289,16 +287,16 @@ class RandomForest(BaseModel):
                 raise ValueError(
                     "The provided splitting index (given as the first entry in sampling_parameter) is not an integer"
                 )
-            if (split_idx > self.n_rows) or (split_idx < 0):
+            if (split_idx > self.X_n_rows) or (split_idx < 0):
                 raise ValueError("The split index does not fit for the given dataset")
 
             if isinstance(number_chosen, float):
-                return (split_idx, max(round(self.n_rows * sampling_parameter), 1))
+                return (split_idx, max(round(self.X_n_rows * sampling_parameter), 1))
             elif isinstance(number_chosen, int):
                 return (split_idx, number_chosen)
 
             elif number_chosen is None:
-                return (split_idx, int(self.n_rows / 2))
+                return (split_idx, int(self.X_n_rows / 2))
 
             raise ValueError(
                 "The provided number of resamples (given as the second entry in sampling_parameter) is not an integer, float or None"
@@ -306,9 +304,9 @@ class RandomForest(BaseModel):
 
         elif self.sampling == "honest_tree":
             if sampling_parameter is None:
-                sampling_parameter = int(self.n_rows / 2)
+                sampling_parameter = int(self.X_n_rows / 2)
             if isinstance(sampling_parameter, int):
-                if sampling_parameter > self.n_rows:
+                if sampling_parameter > self.X_n_rows:
                     raise ValueError(
                         "Sample parameter can not be larger than number of rows of X"
                     )
@@ -318,7 +316,7 @@ class RandomForest(BaseModel):
                     raise ValueError(
                         "Sampling parameter must be between 0 and 1 for a float with honest_tree"
                     )
-                return max(round(self.n_rows * sampling_parameter), 1)
+                return max(round(self.X_n_rows * sampling_parameter), 1)
             else:
                 raise ValueError(
                     "Provided sampling parameter is not an integer a float of None"
@@ -339,7 +337,7 @@ class RandomForest(BaseModel):
         fitting_prediction_indices = self.parallel.async_map(
             get_sample_indices,
             map_input=self.parent_rng.spawn(self.n_estimators),
-            n_rows=self.n_rows,
+            X_n_rows=self.X_n_rows,
             sampling_parameter=self.sampling_parameter,
             sampling=self.sampling,
         )
@@ -352,7 +350,7 @@ class RandomForest(BaseModel):
             criteria=self.criteria_class,
             predict=self.predict_class,
             leaf_builder=self.leaf_builder_class,
-            splitter=self.splitter,
+            splitter=self.splitter_class,
             tree_type=self.forest_type,
             max_depth=self.max_depth,
             impurity_tol=self.impurity_tol,
@@ -384,7 +382,7 @@ class RandomForest(BaseModel):
         X, Y = self._check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
-        self.n_rows, self.n_features = self.X.shape
+        self.X_n_rows, self.n_features = self.X.shape
 
         self.sample_weight = self._check_sample_weight(sample_weight)
 
@@ -395,7 +393,7 @@ class RandomForest(BaseModel):
         # Register that the forest was succesfully fitted
         self.forest_fitted = True
 
-    def predict(self, X: ArrayLike, **kwargs) -> None:
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
         Predicts response values at X using fitted random forest.  The behavior
         of this function is determined by the Prediction class used in the
@@ -453,7 +451,7 @@ class RandomForest(BaseModel):
         self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
         if X is None:
-            size_0 = self.n_rows
+            size_0 = self.X_n_rows
         else:
             X, _ = self._check_input(X)
             self._check_dimensions(X)
@@ -471,7 +469,7 @@ class RandomForest(BaseModel):
             X0=X,
             X1=None,
             size_X0=size_0,
-            size_X1=self.n_rows,
+            size_X1=self.X_n_rows,
             scale=scaling,
         )
 
@@ -481,7 +479,9 @@ class RandomForest(BaseModel):
             ret = np.sum(weight_list, axis=0)
         return ret
 
-    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
+    def similarity(
+        self, X0: ArrayLike, X1: ArrayLike, scale: bool = True
+    ) -> np.ndarray:
         if scale:
             scaling = "symmetric"
         else:

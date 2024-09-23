@@ -4,11 +4,10 @@ import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
 from .nodes import LeafNode, Node
-from .predict import Predict
-from .leafbuilder import LeafBuilder
+from ..predict import Predict
+from ..leaf_builder import LeafBuilder
+from ..base_model import BaseModel
 import sys
-
-# TODO: Update the documentation
 
 class DecisionTree(BaseModel):
     """
@@ -74,16 +73,16 @@ class DecisionTree(BaseModel):
             The minimum number of samples in a leaf node.
         min_improvement : float
             The minimum improvement gained from performing a split.
-        criteria : Criteria | None
+        criteria : Type[Criteria] | None
             The Criteria class to use, if None it defaults to the tree_type
             default.
-        leaf_builder : LeafBuilder | None
+        leaf_builder : Type[LeafBuilder] | None
             The LeafBuilder class to use, if None it defaults to the tree_type
             default.
-        predict : Predict | None
+        predict : Type[Predict] | None
             The Predict class to use, if None it defaults to the tree_type
             default.
-        splitter : Splitter | None
+        splitter : Type[Splitter] | None
             The Splitter class to use, if None it defaults to the default
             Splitter class.
         skip_check_input : bool
@@ -97,8 +96,8 @@ class DecisionTree(BaseModel):
         self,
         X: ArrayLike,
         Y: ArrayLike,
-        sample_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
+        sample_indices: ArrayLike | None = None,
+        sample_weight: ArrayLike | None = None,
     ) -> None:
         """
         Fit the decision tree with training data (X, Y).
@@ -108,7 +107,7 @@ class DecisionTree(BaseModel):
         X : array-like object of dimension 2
             The feature values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        Y : array-like object
+        Y : array-like object of 1 or 2 dimensions
             The response values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
         sample_indices : array-like object | None, optional
@@ -157,30 +156,31 @@ class DecisionTree(BaseModel):
         """
         pass
 
-    def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
+    def predict_weights(self, X: ArrayLike | None, scale: bool = True) -> np.ndarray:
         # TODO: Documentation
         pass
 
-    def predict_leaf(self, X: np.ndarray | None):
+    def predict_leaf(self, X: ArrayLike | None) -> dict:
         # TODO: Documentation
         pass
 
-    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+    def similarity(
+        self, X0: ArrayLike, X1: ArrayLike, scale: bool = True
+    ) -> np.ndarray:
         # TODO: Documentation
         pass
 
     def _tree_based_weights(
         self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
     ) -> np.ndarray:
-        # TODO: Documentaion
         pass
 
     def refit_leaf_nodes(
         self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        sample_weight: np.ndarray | None,
-        sample_indices: np.ndarray | None,
+        X: ArrayLike,
+        Y: ArrayLike,
+        sample_weight: ArrayLike | None,
+        sample_indices: ArrayLike | None,
     ) -> None:
         """
         Refits the leaf nodes in a previously fitted decision tree.
