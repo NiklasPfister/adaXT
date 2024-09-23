@@ -194,11 +194,11 @@ cdef class PredictClassification(Predict):
                 Y_old = shared_numpy_array(Y_old)
                 predictions = parallel.async_map(predict_proba, trees, Y=Y_old,
                                                  unique_classes=unique_classes)
-                return np.mean(predictions, axis=0, dtype=int)
+                return np.mean(predictions, axis=0, dtype=DOUBLE)
 
         predictions = parallel.async_map(predict_default, trees, X=X_new,
                                          **kwargs)
-        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=DOUBLE)
+        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
 cdef class PredictRegression(Predict):
