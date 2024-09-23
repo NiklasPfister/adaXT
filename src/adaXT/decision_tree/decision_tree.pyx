@@ -469,8 +469,9 @@ class DepthTreeBuilder:
                 replace=False)
 
     def __parse_max_features(self,
-                             max_features:int|str|float|None
+                             max_features: int|str|float|None
                              ) -> int:
+
         if max_features is None:
             return None
         elif isinstance(max_features, int):
@@ -481,7 +482,7 @@ class DepthTreeBuilder:
             if max_features == "sqrt":
                 return int(np.sqrt(self.num_features))
             elif max_features == "log2":
-                    return int(np.log2(self.num_features))
+                return int(np.log2(self.num_features))
         else:
             raise ValueError("Unable to parse max_features")
 

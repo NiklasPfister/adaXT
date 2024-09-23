@@ -123,7 +123,7 @@ cdef class Predict():
 
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self, 
+    def __cinit__(self,
                   double[:, ::1] X,
                   double[:, ::1] Y,
                   object root,

@@ -41,7 +41,6 @@ class BaseModel:
         else:
             raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
 
-
     def _check_sample_weight(self, sample_weight: ArrayLike | None) -> np.ndarray:
         if sample_weight is None:
             return np.ones(self.X_n_rows, dtype=DOUBLE)
@@ -53,12 +52,12 @@ class BaseModel:
         return sample_weight
 
     def _check_sample_indices(self,
-            sample_indices: ArrayLike | None
-        ) -> np.ndarray:
+                              sample_indices: ArrayLike | None
+                              ) -> np.ndarray:
+
         if sample_indices is None:
             return np.arange(0, self.X_n_rows, dtype=np.int32)
         return np.array(sample_indices, dtype=np.int32)
-
 
     # Check whether dimension of X matches self.n_features
     def _check_dimensions(self, X: np.ndarray) -> None:
@@ -68,9 +67,9 @@ class BaseModel:
             )
 
     def _check_input(self,
-            X: ArrayLike,
-            Y: ArrayLike | None = None
-        ) -> tuple[np.ndarray, np.ndarray|None]:
+                     X: ArrayLike,
+                     Y: ArrayLike | None = None
+                     ) -> tuple[np.ndarray, np.ndarray|None]:
 
         Y_check = (Y is not None)
         # Make sure input arrays are c contigous
