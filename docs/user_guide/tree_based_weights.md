@@ -17,18 +17,17 @@ $\mathcal{L}(x,x')=0$ if $x$ and $x'$ are in different leafs. Furthermore,
 define for all $i\in\{1,\ldots,n\}$ a weight function
 $w_i:\mathcal{X}\rightarrow[0,1]$ for all $x\in\mathcal{X}$ by
 
+$$
+w_i^{\operatorname{DT}}(x):=\frac{\mathcal{L}(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}(X_{\ell}, x)}.
+$$
+
+By construction it holds for all $x\in\mathcal{X}$ that
+$\sum_{i=1}^n w_i^{\operatorname{DT}}(x)=1$. So intuitively the weights capture
+how close a new observation $x$ is to each of the training samples. Importantly,
+the predicted value of a regression tree at the $x$ is simply given by
 
 $$
-w_i(x):=\frac{\mathcal{L}(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}(X_{\ell}, x)}.
-$$
-
-By construction it holds for all $x\in\mathcal{X}$ that $\sum_{i=1}^n w_i(x)=1$.
-So intuitively the weights capture how close a new observation $x$ is to each of
-the training samples. Importantly, the predicted value of a regression tree at
-the $x$ is simply given by
-
-$$
-\sum_{i=1}^n w_i(x)Y_i,
+\sum_{i=1}^n w_i^{\operatorname{DT}}(x)Y_i,
 $$
 
 which corresponds to a weighted nearest neighbor estimator. Unlike other
@@ -43,11 +42,12 @@ $M$ trees in the forest. Then, for all $i\in\{1,\ldots,n\}$ and all
 $x\in\mathcal{X}$ define the weights by
 
 $$
-w_i(x):=\frac{1}{M}\sum_{m=1}^M\frac{\mathcal{L}_m(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}_m(X_{\ell}, x)}.
+w_i^{\operatorname{RF}}(x):=\frac{1}{M}\sum_{m=1}^M\frac{\mathcal{L}_m(X_{i}, x)}{\sum_{\ell=1}^n\mathcal{L}_m(X_{\ell}, x)}.
 $$
 
-In general $w_i(x)$ and $Y_i$ are dependent since the sample $i$ appears also in
-the definition of the weight $w_i(x)$. This can be avoided using
+In general $w_i^{\operatorname{RF}}(x)$ and $Y_i$ are dependent since the sample
+$i$ appears also in the definition of the weight $w_i^{\operatorname{RF}}(x)$.
+This can be avoided using
 [honest splitting](/docs/user_guide/honest_splitting.md), which can be seen as
 separating the estimation of the weights from the averaging of the responses.
 
@@ -59,10 +59,9 @@ on this connection
 
 ## Tree-based weights in adaXT
 
-Tree-based weights can be computed in adaXT using the `predict_leaf_matrix`
-DecisionTree class method and the `predict_forest_weights` RandomForest class
-method. As a simple example we the code below illustrates how to extract the
-weights evaluated at training data used during fitting.
+Tree-based weights can be computed in adaXT using the `predict_weights` method
+in the DecisionTree and RandomForest classes. The code below illustrates the
+usage.
 
 ```python
 import numpy as np
@@ -75,22 +74,66 @@ n = 100
 X = np.random.uniform(-1, 1, n)
 Y = 1.0 * (X > 0) + 2.0 * (X > 0.5) + np.random.normal(0, 0.2, n)
 
-# Fit regression tree and random forest
+# Fit decision tree and random forest for regression
 tree = DecisionTree("Regression", max_depth=2)
 rf = RandomForest("Regression", max_depth=5)
 tree.fit(X, Y)
 rf.fit(X, Y)
 
-# Extract tree-based weights at the training data
-weights_tree = tree.predict_weights()
-weights_rf = rf.predict_weights()
-weights_rf.sum(axis=1)
-weights_tree.sum(axis=1)
+# Extract tree-based weights at training points
+# (X==None uses the training X)
+W_tree = tree.predict_weights()
+W_rf = rf.predict_weights()
 
-# Weights can be used to compute predictions
-print(weights_rf.dot(Y) - rf.predict(X))
-print(weights_tree.dot(Y) - tree.predict(X))
+# Computing tree-based weights at a new test points
+Xtest = np.array([-1, -0.25, 0.25, 1])
+Wtest_tree = tree.predict_weights(Xtest)
+Wtest_rf = rf.predict_weights(Xtest)
 
+# Rows correspond Xtest while columns always correspond to the training samples
+print(Wtest_tree.shape)
+print(Wtest_rf.shape)
+# If scale=True the weights are scaled row-wise
+print(Wtest_rf.sum(axis=1))
+print(Wtest_tree.sum(axis=1))
+
+# In the case of regression predicted values correspond to weighted averages of the Y
+Yhat_tree = Wtest_tree.dot(Y)
+Yhat_rf = Wtest_rf.dot(Y)
+print(np.c_[Yhat_tree, tree.predict(Xtest)])
+print(np.c_[Yhat_rf, rf.predict(Xtest)])
+```
+
+Using the notation above, the weights computed in this example satisfy
+$\texttt{W_tree}[i, j]=w_j^{\operatorname{DT}}(\texttt{X}[i])$,
+$\texttt{Wtest_tree}[i, j]=w_j^{\operatorname{DT}}(\texttt{Xtest}[i])$,
+$\texttt{W_rf}[i, j]=w_j^{\operatorname{RF}}(\texttt{X}[i])$ and
+$\texttt{Wtest_rf}[i, j]=w_j^{\operatorname{RF}}(\texttt{Xtest}[i])$ for both
+the decision tree and random forest, respectively.
+
+## Tree-based weight induced similarity
+
+The tree-based weights can also be used to construct an adaptive measure of
+closeness in the predictor space. Formally, for two observations
+$x, x'\in\mathcal{X}$, we can define the similarity for decision trees
+
+$$
+S^{\operatorname{DT}}(x, x'):=\mathcal{L}(x, x'),
+$$
+
+and for random forests
+
+$$
+S^{\operatorname{RF}}(x, x'):=\frac{1}{M}\sum_{m=1}^M\mathcal{L}_m(x, x').
+$$
+
+This is implemented in adaXT via the `similarity` method that exists for both
+the DecisionTree and RandomForest class. It allows to easily compute kernel (or
+Gram) matrices for this similarity.
+
+We illustrate this by continuing the example from above.
+
+```{python}
 # Compute similarity of x values in [-1,1] to test points
 grid1d = np.linspace(-1, 1, 200)
 test_points = np.array([-1, -0.25, 0.25, 1])
@@ -100,14 +143,9 @@ similarity_rf = rf.similarity(grid1d, test_points)
 # Create plot
 fig, ax = plt.subplots(1, 4)
 for i in range(4):
-    ax[i].plot(grid1d, similarity_tree[:, i], color='blue', label='tree', alpha=0.5)
+    ax[i].plot(grid1d, similarity_tree[:, i], color='blue', label='decision tree', alpha=0.5)
     ax[i].plot(grid1d, similarity_rf[:, i], color='red', label='random forest', alpha=0.5)
     ax[i].set_title(f'similarity to x={test_points[i]}')
     ax[i].legend()
 plt.show()
 ```
-
-Using the notation above, the weights computed in this example satisfy
-$\texttt{weights}[i, j]=w_i(X_j)$.
-
-<!--TODO: Update this section-->

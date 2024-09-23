@@ -318,7 +318,55 @@ def test_random_forest_weights():
     assert np.array_equal(tree_sum, res)
 
 
-def __check_leaf_count(forest: RandomForest, expected_weight: float):
+def test_tree_based_weights():
+    random_state = np.random.RandomState(2024)
+    seed = 2024
+    n = 105
+    m = 3
+    n_estimators = 100
+    Xfull, Yfull = get_regression_data(n, m, random_state=random_state)
+    Xtrain = Xfull[:100, :]
+    Ytrain = Yfull[:100]
+    Xtest = Xfull[100:, :]
+    rf_boot = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        seed=seed,
+        sampling='bootstrap',
+    )
+    rf_boot.fit(Xtrain, Ytrain)
+    rf_honest_tree = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        seed=seed,
+        sampling='honest_tree',
+    )
+    rf_honest_tree.fit(Xtrain, Ytrain)
+    rf_honest_forest = RandomForest(
+        "Regression",
+        n_estimators=n_estimators,
+        seed=seed,
+        sampling='honest_forest',
+    )
+    rf_honest_forest.fit(Xtrain, Ytrain)
+    weights_boot = rf_boot.predict_weights(Xtest)
+    weights_honest_tree = rf_honest_tree.predict_weights(Xtest)
+    weights_honest_forest = rf_honest_forest.predict_weights(Xtest)
+    # Check shapes
+    assert np.array_equal(weights_boot.shape, [Xtest.shape[0], Xtrain.shape[0]])
+    assert np.array_equal(weights_honest_tree.shape, [Xtest.shape[0], Xtrain.shape[0]])
+    assert np.array_equal(weights_honest_forest.shape, [Xtest.shape[0], Xtrain.shape[0]])
+    # Check scaling
+    assert np.sum(weights_boot.sum(axis=1)) == Xtest.shape[0]
+    assert np.sum(weights_honest_tree.sum(axis=1)) == Xtest.shape[0]
+    assert np.sum(weights_honest_forest.sum(axis=1)) == Xtest.shape[0]
+    # Check predictions based on weights match regular predictions
+    assert np.allclose(rf_boot.predict(Xtest), weights_boot.dot(Ytrain))
+    assert np.allclose(rf_honest_tree.predict(Xtest), weights_honest_tree.dot(Ytrain))
+    assert np.allclose(rf_honest_forest.predict(Xtest), weights_honest_forest.dot(Ytrain))
+
+
+def _check_leaf_count(forest: RandomForest, expected_weight: float):
     for tree in forest.trees:
         tree_sum = np.sum([node.weighted_samples for node in tree.leaf_nodes])
         assert tree_sum == expected_weight, "The expected leaf node failed for\
@@ -348,8 +396,8 @@ def test_honest_sampling_leaf_samples():
     )
     honest_tree.fit(X_reg, Y_reg)
     honest_forest.fit(X_reg, Y_reg)
-    __check_leaf_count(honest_tree, n_fit)
-    __check_leaf_count(honest_forest, n_fit)
+    _check_leaf_count(honest_tree, n_fit)
+    _check_leaf_count(honest_forest, n_fit)
 
 
 def test_n_jobs():
@@ -390,7 +438,33 @@ def test_n_jobs_predict_forest():
     assert np.array_equal(tree_sum, res)
 
 
-# TODO: Similarity test
+def test_similarity():
+    X = np.array([-1, -1, -1, 1, 1, 1])
+    X0 = np.array([-1, -0.5, -0.1, 0.1, 0.5, 1])
+    X1 = np.array([-0.75, 0.75])
+    Y = np.array([1.5, 1.5, 1, 0, 0, 0.5])
+    dt = DecisionTree("Regression")
+    rf = RandomForest("Regression")
+    dt.fit(X, Y)
+    rf.fit(X, Y)
+    sim_dt = dt.similarity(X0, X1)
+    sim_rf = rf.similarity(X0, X1)
+    expected_sim = np.array(
+        [
+            [1, 0],
+            [1, 0],
+            [1, 0],
+            [0, 1],
+            [0, 1],
+            [0, 1],
+        ]
+    )
+    # Check that tree similarity matches exactly
+    assert np.array_equal(sim_dt, expected_sim)
+    # Check that forest similarity has correct shape and satisfies bounds
+    assert np.array_equal(sim_rf.shape, expected_sim.shape)
+    assert np.sum(sim_rf<=1) == 12 and np.sum(sim_rf>=0) == 12
+
 
 if __name__ == "__main__":
     # test_dominant_feature()

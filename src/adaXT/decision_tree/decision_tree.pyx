@@ -167,18 +167,16 @@ class DecisionTree(BaseModel):
                     val = 1.0/len(indices_2)
                     for ind2 in indices_2:
                         matrix[indices_1, ind2] += val
-                elif scaling == "symmetric":
-                    val = 1.0/(len(indices_1) + len(indices_2))
-                    for ind1 in indices_1:
-                        for ind2 in indices_2:
-                            matrix[ind1, ind2] += val
+                elif scaling == "similarity":
+                    val = 1.0
+                    matrix[np.ix_(indices_1, indices_2)] = val
                 elif scaling == "none":
                     val = 1.0
                     for ind2 in indices_2:
                         matrix[indices_1, ind2] += val
         return matrix
 
-    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
+    def similarity(self, X0: ArrayLike, X1: ArrayLike):
         if not self.skip_check_input:
             X0, _ = self._check_input(X0)
             self._check_dimensions(X0)
@@ -187,32 +185,28 @@ class DecisionTree(BaseModel):
 
         hash0 = self.predict_leaf(X0)
         hash1 = self.predict_leaf(X1)
-        if scale:
-            scaling = "symmetric"
-        else:
-            scaling = "none"
         return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
-                                        scaling=scaling)
+                                        scaling="similarity")
 
     def predict_weights(
             self, X: np.ndarray | None = None,
             scale: bool = True) -> np.ndarray:
         if X is None:
-            size_1 = self.n_rows_predict
-            new_hash = self.__get_leaf()
+            size_0 = self.n_rows_predict
+            new_hash_table = self.__get_leaf()
         else:
             if not self.skip_check_input:
                 X, _ = self._check_input(X)
                 self._check_dimensions(X)
-            size_1 = X.shape[0]
-            new_hash = self.predict_leaf(X)
+            size_0 = X.shape[0]
+            new_hash_table = self.predict_leaf(X)
         if scale:
             scaling = "row"
         else:
             scaling = "none"
         default_hash_table = self.__get_leaf()
-        return self._tree_based_weights(default_hash_table, new_hash,
-                                        self.n_rows_predict, size_1,
+        return self._tree_based_weights(new_hash_table, default_hash_table,
+                                        size_0, self.n_rows_predict,
                                         scaling=scaling)
 
     def predict_leaf(self, X: np.ndarray | None = None):

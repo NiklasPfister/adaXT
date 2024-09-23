@@ -130,26 +130,41 @@ def test_prediction():
 def test_predict_proba_probability():
     X = np.array(
         [
+            [1, 1],
             [1, -1],
-            [-0.5, -2],
             [-1, -1],
-            [-0.5, -0.5],
-            [1, 0],
             [-1, 1],
             [1, 1],
-            [-0.5, 2],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
         ]
     )
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    Xtest = np.array(
+        [
+            [1, 1],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
+        ]
+    )
+    Y_cla = np.array([0, 1, 0, 1, 0, 0, 1, 1])
+    expected_probs = [[1, 0], [0.5, 0.5], [0.5, 0.5], [0, 1]]
+    expected_class = [0, 0, 0, 1]
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     classes = np.unique(Y_cla)
-    prediction = tree.predict(X, predict_proba=True)
-    assert prediction.shape[0] == X.shape[0]
-    for i in range(len(Y_cla)):
+    pred_probs = tree.predict(Xtest, predict_proba=True)
+    pred_class = tree.predict(Xtest)
+    assert pred_probs.shape[0] == Xtest.shape[0]
+    assert pred_class.shape[0] == Xtest.shape[0]
+    for i in range(Xtest.shape[0]):
         assert (
-            Y_cla[i] == classes[np.argmax(prediction[i, :])]
-        ), f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+            expected_class[i] == classes[np.argmax(pred_probs[i, :])]
+        ), f"incorrect predicted class at {i}, expected {expected_class[i]} got {classes[np.argmax(pred_probs[i, :])]}"
+        assert (
+            expected_probs[i][0] == pred_probs[i][0] and expected_probs[i][1] == pred_probs[i][1]
+        ), f"incorrect predicted prob at {i}, expected {expected_probs[i]} got {pred_probs[i]}"
 
 
 def test_predict_proba_against_predict():

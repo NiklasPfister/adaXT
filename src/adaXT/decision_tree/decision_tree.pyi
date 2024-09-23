@@ -166,7 +166,7 @@ class DecisionTree:
         # TODO: Documentation
         pass
 
-    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+    def similarity(self, X0: np.ndarray, X1: np.ndarray):
         # TODO: Documentation
         pass
 

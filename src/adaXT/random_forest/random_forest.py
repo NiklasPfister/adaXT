@@ -17,10 +17,6 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
-def get_single_leaf(tree: DecisionTree, X: np.ndarray | None = None) -> dict:
-    return tree.predict_leaf(X=X)
-
-
 def tree_based_weights(
     tree: DecisionTree,
     X0: np.ndarray | None,
@@ -482,11 +478,7 @@ class RandomForest(BaseModel):
             ret = np.sum(weight_list, axis=0)
         return ret
 
-    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
-        if scale:
-            scaling = "symmetric"
-        else:
-            scaling = "none"
+    def similarity(self, X0: np.ndarray, X1: np.ndarray):
 
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
@@ -502,6 +494,6 @@ class RandomForest(BaseModel):
             X1=X1,
             size_X0=size_0,
             size_X1=size_1,
-            scaling=scaling,
+            scaling="similarity",
         )
         return np.mean(weight_list, axis=0)
