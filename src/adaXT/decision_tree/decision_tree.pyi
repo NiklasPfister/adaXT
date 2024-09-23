@@ -10,7 +10,7 @@ import sys
 
 # TODO: Update the documentation
 
-class DecisionTree:
+class DecisionTree(BaseModel):
     """
     Attributes
     ----------

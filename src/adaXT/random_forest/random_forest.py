@@ -1,5 +1,5 @@
 import sys
-from typing import Iterable, Literal
+from typing import Any, Literal
 
 import numpy as np
 from numpy import float64 as DOUBLE
@@ -43,9 +43,9 @@ def tree_based_weights(
 def get_sample_indices(
     gen: Generator,
     n_rows: int,
-    sampling_parameter: int | tuple[int, int],
+    sampling_parameter: Any,
     sampling: str | None,
-) -> Iterable:
+) -> tuple:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -87,7 +87,7 @@ def build_single_tree(
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
     skip_check_input: bool = True,
     sample_weight: np.ndarray | None = None,
-):
+) -> DecisionTree:
     # subset the feature indices
     tree = DecisionTree(
         tree_type=tree_type,
@@ -112,7 +112,9 @@ def build_single_tree(
     return tree
 
 
-def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
+def predict_single_tree(
+    tree: DecisionTree, predict_values: np.ndarray, **kwargs
+) -> np.ndarray:
     return tree.predict(predict_values, **kwargs)
 
 
@@ -179,7 +181,7 @@ class RandomForest(BaseModel):
         leaf_builder: type[LeafBuilder] | None = None,
         predict: type[Predict] | None = None,
         splitter: type[Splitter] | None = None,
-    ):
+    ) -> None:
         """
         Parameters
         ----------
@@ -258,13 +260,13 @@ class RandomForest(BaseModel):
         self.min_improvement = min_improvement
         self.forest_fitted = False
 
-    def __get_random_generator(self, seed):
+    def __get_random_generator(self, seed) -> Generator:
         if isinstance(seed, int) or (seed is None):
             return default_rng(seed)
         else:
             raise ValueError("Random state either has to be Integral or None")
 
-    def __get_sampling_parameter(self, sampling_parameter):
+    def __get_sampling_parameter(self, sampling_parameter: Any) -> Any:
         if self.sampling == "bootstrap":
             if isinstance(sampling_parameter, int):
                 return sampling_parameter
@@ -332,7 +334,7 @@ class RandomForest(BaseModel):
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
 
-    def __build_trees(self):
+    def __build_trees(self) -> None:
         # parent_rng.spawn() spawns random generators that children can use
         fitting_prediction_indices = self.parallel.async_map(
             get_sample_indices,
@@ -362,7 +364,9 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike, sample_weight: np.ndarray | None = None):
+    def fit(
+        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
+    ) -> None:
         """
         Fit the random forest with training data (X, Y).
 
@@ -382,10 +386,8 @@ class RandomForest(BaseModel):
         self.Y = shared_numpy_array(Y)
         self.n_rows, self.n_features = self.X.shape
 
-        if sample_weight is None:
-            self.sample_weight = np.ones(self.X.shape[0])
-        else:
-            self.sample_weight = sample_weight
+        self.sample_weight = self._check_sample_weight(sample_weight)
+
         self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
         # Fit trees
         self.__build_trees()
@@ -393,9 +395,7 @@ class RandomForest(BaseModel):
         # Register that the forest was succesfully fitted
         self.forest_fitted = True
 
-        return self
-
-    def predict(self, X: ArrayLike, **kwargs):
+    def predict(self, X: ArrayLike, **kwargs) -> None:
         """
         Predicts response values at X using fitted random forest.  The behavior
         of this function is determined by the Prediction class used in the
@@ -450,7 +450,7 @@ class RandomForest(BaseModel):
         return prediction
 
     def predict_weights(
-        self, X: np.ndarray | None = None, scale: bool = True
+        self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
         if X is None:
             size_0 = self.n_rows
@@ -481,7 +481,7 @@ class RandomForest(BaseModel):
             ret = np.sum(weight_list, axis=0)
         return ret
 
-    def similarity(self, X0: np.ndarray, X1: np.ndarray, scale: bool = True):
+    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
         if scale:
             scaling = "symmetric"
         else:
