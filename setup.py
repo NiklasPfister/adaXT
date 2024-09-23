@@ -2,7 +2,6 @@
 import numpy as np
 from setuptools import setup, Extension, find_packages
 import os
-from typing import List
 
 NAME = "adaXT"
 VERSION = "1.2.3"
@@ -53,7 +52,7 @@ modules += [
 ]
 
 
-def get_cython_extensions() -> List[Extension]:
+def get_cython_extensions() -> list[Extension]:
     source_root = os.path.abspath(os.path.dirname(__file__))
     source_root = os.path.join(source_root, "src")
     extensions = []
@@ -83,7 +82,7 @@ def get_cython_extensions() -> List[Extension]:
     return extensions
 
 
-def get_python_extensions() -> List[Extension]:
+def get_python_extensions() -> list[Extension]:
     source_root = os.path.abspath(os.path.dirname(__file__))
     source_root = os.path.join(source_root, "src")
     extensions = []
