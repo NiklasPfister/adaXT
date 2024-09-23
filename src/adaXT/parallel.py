@@ -19,7 +19,8 @@ def shared_numpy_array(array):
     elif array.ndim == 1:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(
+            shape=row, dtype=np.double, buffer=shared_array)
     else:
         raise ValueError("Array is neither 1 dimensional nor 2 dimensional")
     np.copyto(shared_array_np, array)
@@ -91,7 +92,8 @@ class ParallelModel:
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:
-                promise = [p.apply_async(partial_func) for _ in range(n_iterations)]
+                promise = [p.apply_async(partial_func)
+                           for _ in range(n_iterations)]
                 ret = [res.get() for res in promise]
         return ret
 
