@@ -13,7 +13,6 @@ from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderPartialQuadratic)
 
 import numpy as np
-from numpy.typing import ArrayLike
 
 
 class BaseModel:
@@ -57,6 +56,8 @@ class BaseModel:
 
         if sample_indices is None:
             return np.arange(0, self.X_n_rows, dtype=np.int32)
+        if sample_indices.ndim > 1:
+            raise ValueError("sample_weight has more than one dimension")
         return np.array(sample_indices, dtype=np.int32)
 
     # Check whether dimension of X matches self.n_features

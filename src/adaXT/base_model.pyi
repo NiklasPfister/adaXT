@@ -5,7 +5,6 @@ from .leaf_builder import LeafBuilder
 from typing import Type
 
 import numpy as np
-from numpy.typing import ArrayLike
 
 class BaseModel:
     predict_class: Type[Predict]
