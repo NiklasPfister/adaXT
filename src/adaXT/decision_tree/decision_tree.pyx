@@ -1,8 +1,5 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-# TODO: left_child fails sometimes:AttributeError: 'NoneType' object has no
-# attribute 'left_child'
-
 # General
 import numpy as np
 from numpy.typing import ArrayLike

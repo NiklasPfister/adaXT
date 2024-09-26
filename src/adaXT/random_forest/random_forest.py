@@ -47,12 +47,7 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "bootstrap":
-        return (
-            gen.integers(
-                low=0,
-                high=n_rows,
-                size=sampling_parameter),
-            None)
+        return (gen.integers(low=0, high=n_rows, size=sampling_parameter), None)
     elif sampling == "honest_tree":
         indices = np.arange(0, n_rows)
         gen.shuffle(indices)
@@ -104,25 +99,16 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(
-        X=X,
-        Y=Y,
-        sample_indices=fitting_indices,
-        sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X,
-            Y=Y,
-            sample_weight=sample_weight,
-            sample_indices=prediction_indices)
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
+        )
 
     return tree
 
 
-def predict_single_tree(
-        tree: DecisionTree,
-        predict_values: np.ndarray,
-        **kwargs):
+def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
     return tree.predict(predict_values, **kwargs)
 
 
@@ -253,12 +239,7 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(
-            forest_type,
-            criteria,
-            splitter,
-            leaf_builder,
-            predict)
+        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
         self.X, self.Y = None, None
         self.max_features = max_features
@@ -303,14 +284,10 @@ class RandomForest(BaseModel):
                     "The provided splitting index (given as the first entry in sampling_parameter) is not an integer"
                 )
             if (split_idx > self.n_rows) or (split_idx < 0):
-                raise ValueError(
-                    "The split index does not fit for the given dataset")
+                raise ValueError("The split index does not fit for the given dataset")
 
             if isinstance(number_chosen, float):
-                return (
-                    split_idx, max(
-                        round(
-                            self.n_rows * sampling_parameter), 1))
+                return (split_idx, max(round(self.n_rows * sampling_parameter), 1))
             elif isinstance(number_chosen, int):
                 return (split_idx, number_chosen)
 
@@ -343,8 +320,7 @@ class RandomForest(BaseModel):
         elif self.sampling is None:
             return None
         else:
-            raise ValueError(
-                f"Provided sampling ({self.sampling}) does not exist")
+            raise ValueError(f"Provided sampling ({self.sampling}) does not exist")
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -361,6 +337,7 @@ class RandomForest(BaseModel):
             sampling_parameter=self.sampling_parameter,
             sampling=self.sampling,
         )
+        self.fitting_indices, self.prediction_indices = fitting_prediction_indices
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -382,8 +359,7 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike,
-            sample_weight: np.ndarray | None = None):
+    def fit(self, X: ArrayLike, Y: ArrayLike, sample_weight: np.ndarray | None = None):
         """
         Fit the random forest with training data (X, Y).
 
@@ -407,8 +383,7 @@ class RandomForest(BaseModel):
             self.sample_weight = np.ones(self.X.shape[0])
         else:
             self.sample_weight = sample_weight
-        self.sampling_parameter = self.__get_sampling_parameter(
-            self.sampling_parameter)
+        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
         # Fit trees
         self.__build_trees()
 
@@ -505,7 +480,6 @@ class RandomForest(BaseModel):
         return ret
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray):
-
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
         X1, _ = self._check_input(X1)
