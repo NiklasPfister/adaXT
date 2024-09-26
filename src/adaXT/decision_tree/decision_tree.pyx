@@ -9,6 +9,9 @@ from numpy.typing import ArrayLike
 import sys
 from numpy.typing import ArrayLike
 
+cimport numpy as cnp
+ctypedef cnp.float64_t DOUBLE_t
+
 
 # Custom
 from .splitter import Splitter
@@ -156,6 +159,10 @@ class DecisionTree(BaseModel):
 
     def _tree_based_weights(self, hash0: dict, hash1: dict, size_X0: int,
                             size_X1: int, scaling: str) -> np.ndarray:
+        cdef:
+            int xi, ind2
+            cnp.ndarray[DOUBLE_t, ndim=2] matrix
+
         matrix = np.zeros((size_X0, size_X1))
         hash0_keys = hash0.keys()
         hash1_keys = hash1.keys()
