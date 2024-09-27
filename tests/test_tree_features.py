@@ -525,39 +525,31 @@ def test_local_polynomial_predict():
     the prediction based on PreictLocalPolynomial should perfectly align.
     """
     np.random.seed(2024)
-    X = np.random.uniform(1000, 100000, (1000, 5))  # noise
-    Y1 = np.random.uniform(1000, 100000, (1000))
-    Y2 = np.random.uniform(100000, 1000000, (1000))
-
-    X_Y_corr = np.arange(0, 50, step=1)
-    idx = np.random.randint(0, 1000, 50)
-
-    # Replace some indices with correlated data
-    X[idx, 0] = X_Y_corr
-    Y1[idx] = X_Y_corr
-    Y2[idx] = X_Y_corr**2
-
+    # Create a piecewise linear and piecewise quadratic function
+    X = np.linspace(-1, 1, 200)
+    Y1 = -0.5 * X * (X < 0) + X * (X > 0)
+    Y2 = -0.5 * X**2 * (X < 0) + X**2 * (X > 0)
+    # Using the appropriate criteria should leave to perfect
+    # trees with a single split
     tree1 = DecisionTree(
         None,
         criteria=Partial_linear,
         predict=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialLinear,
+        max_depth=1,
     )
     tree1.fit(X, Y1)
-
     tree2 = DecisionTree(
         None,
         criteria=Partial_quadratic,
         predict=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialQuadratic,
+        max_depth=1,
     )
     tree2.fit(X, Y2)
-
-    X = np.random.uniform(1, 100, (50, 5))
-    corr_data = np.arange(50, 100, step=1)
-    X[:, 0] = corr_data
-    residuals1 = tree1.predict(X, order=0)[:, 0] - corr_data
-    residuals2 = tree2.predict(X, order=0)[:, 0] - corr_data**2
+    # Check whether residuals are 0
+    residuals1 = tree1.predict(X, order=0)[:, 0] - Y1
+    residuals2 = tree2.predict(X, order=0)[:, 0] - Y2
     assert (
         np.sum(residuals1**2) == 0.0
     ), "Partial_linear criteria and PredictLocalPolynomial does not behave as expected"

@@ -450,7 +450,7 @@ cdef class Partial_linear(Criteria):
         for i in range(length):
             step_calc = self.Y[indices[i], 0] - theta0 - theta1 * self.X[indices[i], 0]
             cur_sum += step_calc * step_calc
-        return cur_sum
+        return cur_sum / length
 
 cdef class Partial_quadratic(Criteria):
 
@@ -548,4 +548,4 @@ cdef class Partial_quadratic(Criteria):
             step_calc -= theta1 * self.X[indices[i], 0]
             step_calc -= theta2 * self.X[indices[i], 0] * self.X[indices[i], 0]
             cur_sum += step_calc * step_calc
-        return cur_sum
+        return cur_sum / length

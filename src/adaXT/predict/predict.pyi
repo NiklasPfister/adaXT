@@ -151,17 +151,24 @@ class PredictLocalPolynomial(Predict):
         $$
 
         Note: This predict class requires that the decision tree/random forest
-        uses a LocalPolynomialLeafNode and either LeafBuilderPartialLinear or LeafBuilderPartialQuadratic.
+        uses a LocalPolynomialLeafNode and either LeafBuilderPartialLinear or
+        LeafBuilderPartialQuadratic.
 
         Parameters
         ----------
         X: np.ndarray
             A 2-dimensional array for which the rows are the samples at which to predict.
+        **kwargs
+            orders : list[int]
+                A list of which orders should be predicted orders 0, 1 and 2 correspond to the
+                0th, 1st and 2nd order derivative. Default is orders=[0, 1, 2]
+                if the orders are not provided.
 
         Returns
         -------
         np.ndarray
-            An array with the predicted values for each row of X.
+            A 2-dim array with the predicted values for each row of X and columns
+            corresponding to the orders.
         """
         pass
 
