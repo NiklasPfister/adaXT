@@ -56,6 +56,8 @@ class BaseModel:
 
         if sample_indices is None:
             return np.arange(0, self.X_n_rows, dtype=np.int32)
+        else:
+            sample_indices = np.array(sample_indices, dtype=np.int32)
         if sample_indices.ndim > 1:
             raise ValueError("sample_weight has more than one dimension")
         return np.array(sample_indices, dtype=np.int32)
