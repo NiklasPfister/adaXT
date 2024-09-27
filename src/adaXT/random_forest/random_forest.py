@@ -348,6 +348,7 @@ class RandomForest(BaseModel):
             sampling_args=self.sampling_args,
             sampling=self.sampling,
         )
+        self.fitting_indices, self.prediction_indices = fitting_prediction_indices
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -490,7 +491,6 @@ class RandomForest(BaseModel):
         return ret
 
     def similarity(self, X0: np.ndarray, X1: np.ndarray):
-
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
         X1, _ = self._check_input(X1)

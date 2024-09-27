@@ -39,8 +39,6 @@ class DecisionTree:
     n_nodes: int
     n_features: int
     n_rows: int
-    n_classes: int
-    classes: np.ndarray
 
     def __init__(
         self,
@@ -158,7 +156,9 @@ class DecisionTree:
         """
         pass
 
-    def predict_weights(self, X: np.ndarray | None = None, scale: bool = True) -> np.ndarray:
+    def predict_weights(
+        self, X: np.ndarray | None = None, scale: bool = True
+    ) -> np.ndarray:
         # TODO: Documentation
         pass
 
