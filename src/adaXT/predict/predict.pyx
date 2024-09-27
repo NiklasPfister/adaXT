@@ -15,7 +15,7 @@ def predict_default(tree, X, **kwargs):
     return np.array(tree.predict(X, **kwargs))
 
 
-def predict_proba(tree, Y, X, unique_classes):
+def predict_proba(tree, X):
     cdef:
         int i, cur_split_idx
         double cur_threshold
@@ -34,13 +34,7 @@ def predict_proba(tree, Y, X, unique_classes):
                 cur_node = cur_node.left_child
             else:
                 cur_node = cur_node.right_child
-        cur_array = np.zeros(unique_classes)
-        n_samples = len(cur_node.indices)
-        for idx in cur_node.indices:
-            cur_array[np.where(unique_classes == Y[idx, 0])] += 1
-
-        ret_val.append(cur_array/n_samples)
-
+        ret_val.append(cur_node.value)
     return np.array(ret_val)
 
 
@@ -190,10 +184,8 @@ cdef class PredictClassification(Predict):
         # Forest_predict_proba
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
-                unique_classes = shared_numpy_array(np.unique(Y_old))
-                Y_old = shared_numpy_array(Y_old)
-                predictions = parallel.async_map(predict_proba, trees, Y=Y_old,
-                                                 unique_classes=unique_classes)
+                predictions = parallel.async_map(predict_proba, trees,
+                                                 X=X_new)
                 return np.mean(predictions, axis=0, dtype=DOUBLE)
 
         predictions = parallel.async_map(predict_default, trees, X=X_new,

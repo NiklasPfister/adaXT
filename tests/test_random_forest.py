@@ -51,8 +51,8 @@ def run_gini_index(X, Y, n_jobs, n_estimators, seed):
         criteria=Gini_index,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        sampling="bootstrap",
-        sampling_parameter=5,
+        sampling="resampling",
+        sampling_args={'size': 5},
         seed=seed,
     )
     forest.fit(X, Y)
@@ -65,8 +65,8 @@ def run_entropy(X, Y, n_jobs, n_estimators, seed):
         criteria=Entropy,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        sampling="bootstrap",
-        sampling_parameter=5,
+        sampling="resampling",
+        sampling_args={'size': 5},
         seed=seed,
     )
     forest.fit(X, Y)
@@ -81,7 +81,7 @@ def run_squared_error(
     seed,
     max_samples: int | float = 5,
     max_depth=sys.maxsize,
-    sampling: str | None = "bootstrap",
+    sampling: str | None = "resampling",
 ):
     forest = RandomForest(
         forest_type="Regression",
@@ -89,7 +89,7 @@ def run_squared_error(
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
-        sampling_parameter=max_samples,
+        sampling_args={'size': max_samples},
         seed=seed,
         max_depth=max_depth,
     )
@@ -112,7 +112,7 @@ def test_dominant_feature():
         "Classification",
         n_estimators=100,
         criteria=Gini_index,
-        sampling="bootstrap")
+        sampling="resampling")
     forest.fit(X, Y)
 
     # Create data for predict
@@ -141,7 +141,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         seed=tree_state,
-        sampling="bootstrap",
+        sampling="resampling",
     )
     forest1.fit(X, Y)
 
@@ -150,7 +150,7 @@ def test_deterministic_seeding_regression():
         n_estimators=100,
         criteria=Squared_error,
         seed=tree_state,
-        sampling="bootstrap",
+        sampling="resampling",
     )
     forest2.fit(X, Y)
 
@@ -175,7 +175,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         seed=tree_state,
-        sampling="bootstrap",
+        sampling="resampling",
     )
     forest1.fit(X, Y)
 
@@ -184,7 +184,7 @@ def test_deterministic_seeding_classification():
         n_estimators=100,
         criteria=Gini_index,
         seed=tree_state,
-        sampling="bootstrap",
+        sampling="resampling",
     )
     forest2.fit(X, Y)
 
@@ -347,7 +347,7 @@ def test_tree_based_weights():
         "Regression",
         n_estimators=n_estimators,
         seed=seed,
-        sampling='bootstrap',
+        sampling='resampling',
     )
     rf_boot.fit(Xtrain, Ytrain)
     rf_honest_tree = RandomForest(
@@ -409,14 +409,18 @@ def test_honest_sampling_leaf_samples():
         "Regression",
         n_estimators=n_estimators,
         sampling="honest_tree",
-        sampling_parameter=n_fit,
+        sampling_args={'split': n_fit,
+                       'size': n,
+                       'replace': False},
         max_depth=4,
     )
     honest_forest = RandomForest(
         "Regression",
         n_estimators=n_estimators,
         sampling="honest_forest",
-        sampling_parameter=(n // 2, n_fit),
+        sampling_args={'split': n_fit,
+                       'size': n // 2,
+                       'replace': True},
         max_depth=4,
     )
     honest_tree.fit(X_reg, Y_reg)

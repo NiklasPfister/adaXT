@@ -58,24 +58,26 @@ print(tree.predict(np.array([[-1, 0], [1, 0]])))
 Using the `refit_leaf_nodes` function directly is tedious when fitting random
 forests. Therefore the RandomForest class has an optional parameter to perform
 honest splitting. The precise behaviour is controlled by the parameters
-`sampling` and `sampling_parameter`. Currently there are two version of honest
+`sampling` and `sampling_args`. Currently there are two version of honest
 splitting available:
 
 - **honest_tree**: In this case, for each tree in the forest, a new split into
   `fitting_indices` and `prediction_indices` is randomly drawn and used to fit
-  and refit the tree, respectively. Unlike in classical random forest that draw
-  a bootstrap sample, this approaches uses all training data for each tree,
-  however it never uses the same sample in the same tree to both create splits
-  and populate the leaf nodes. The relative sizes of the two splits are
-  controlled by `sampling_parameter`.
-- **honest_forest**: In this case, the data is split only once into
-  `fitting_indices` and `prediction_indices`. Again the relative sizes are
-  determined by the first value of the `sampling_parameter`. Then, for each tree
-  two bootstrap samples from `fitting_indices` and `prediction_indices` are
-  drawn and used to fit and refit the tree, respectively. The sizes of the
-  bootstrap samples are controlled by the second value of the
-  `sampling_parameter`. This approach ensures a total separation between the
-  data used to create the splits and the data used to populate the leafs.
+  and refit the tree, respectively. Unlike in a classical random forest that
+  draws a bootstrap sample, this approaches first for each tree randomly divides
+  the training data into two parts (controlled by `sampling_args['split']`) and
+  then from each draws a separate random sample (controlled by
+  `sampling_args['size']` and `sampling_args['replace']`). The first subsample
+  (the `fitting_indices`) is then used to create splits and the second (the
+  `prediction_indices`) to populate the leaf nodes.
+- **honest_forest**: In this case, the data is split only once into two parts
+  (controlled by `sampling_args['split']`) instead of randomly for each tree
+  (note that the split is done without permuting, which means that order in the
+  data may affect results). For each tree a random subsample is drawn for each
+  part (the `fitting_indices` and the `prediction_indices`). Again this
+  resampling is controlled by `sampling_args['size']` and
+  `sampling_args['replace']`. This approach ensures a total separation between
+  the data used to create the splits and the data used to populate the leafs.
   Importantly, this guarantees (for independent training samples) that the
-  resulting random forest weights (extracted using `predict_forest_weights`) are
-  independent of the samples corresponding to the `prediction_indices`.
+  resulting random forest weights (extracted using `predict_weights`) are
+  independent of the samples corresponding to the `fitting_indices`.

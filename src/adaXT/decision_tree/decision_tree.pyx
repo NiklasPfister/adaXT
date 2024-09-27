@@ -142,7 +142,7 @@ class DecisionTree(BaseModel):
         return self.predictor.predict(X, **kwargs)
 
     def __get_leaf(self, scale: bool = False) -> dict:
-        if not self.root:
+        if self.root is None:
             raise ValueError("The tree has not been trained before trying to predict")
 
         leaf_nodes = self.leaf_nodes
@@ -244,65 +244,79 @@ class DecisionTree(BaseModel):
             int[::1] all_idx
             int[::1] leaf_indices
 
-        refit_objs = []
-        for idx in indices:
-            cur_node = self.root
-            depth = 1
-            while isinstance(cur_node, DecisionNode) :
-                # Mark cur_node as visited
-                cur_node.visited = 1
-                cur_split_idx = cur_node.split_idx
-                cur_threshold = cur_node.threshold
+        if self.root is not None:
+            refit_objs = []
+            for idx in indices:
+                cur_node = self.root
+                depth = 1
+                while isinstance(cur_node, DecisionNode) :
+                    # Mark cur_node as visited
+                    cur_node.visited = 1
+                    cur_split_idx = cur_node.split_idx
+                    cur_threshold = cur_node.threshold
 
-                # Check if X should go to the left or right
-                if X[idx, cur_split_idx] < cur_threshold:
-                    # If the left or right is none, then there previously was a
-                    # leaf node, and we create a new refit object
-                    if cur_node.left_child is None:
-                        cur_node.left_child = refit_object(idx, depth,
-                                                           cur_node, True)
-                        refit_objs.append(cur_node.left_child)
-                    # If there already is a refit object, add this new index to
-                    # the refit object
-                    elif isinstance(cur_node.left_child, refit_object):
-                        cur_node.left_child.add_idx(idx)
+                    # Check if X should go to the left or right
+                    if X[idx, cur_split_idx] < cur_threshold:
+                        # If the left or right is none, then there previously was a
+                        # leaf node, and we create a new refit object
+                        if cur_node.left_child is None:
+                            cur_node.left_child = refit_object(idx, depth,
+                                                               cur_node, True)
+                            refit_objs.append(cur_node.left_child)
+                        # If there already is a refit object, add this new index to
+                        # the refit object
+                        elif isinstance(cur_node.left_child, refit_object):
+                            cur_node.left_child.add_idx(idx)
 
-                    cur_node = cur_node.left_child
-                else:
-                    if cur_node.right_child is None:
-                        cur_node.right_child = refit_object(idx, depth,
-                                                            cur_node, False)
-                        refit_objs.append(cur_node.right_child)
-                    elif isinstance(cur_node.right_child, refit_object):
-                        cur_node.right_child.add_idx(idx)
+                        cur_node = cur_node.left_child
+                    else:
+                        if cur_node.right_child is None:
+                            cur_node.right_child = refit_object(idx, depth,
+                                                                cur_node, False)
+                            refit_objs.append(cur_node.right_child)
+                        elif isinstance(cur_node.right_child, refit_object):
+                            cur_node.right_child.add_idx(idx)
 
-                    cur_node = cur_node.right_child
-                depth += 1
+                        cur_node = cur_node.right_child
+                    depth += 1
 
-        all_idx = np.arange(0, indices.shape[0], dtype=np.int32)
+        all_idx = np.arange(0, X.shape[0], dtype=np.int32)
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
         criteria = self.criteria_class(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
-        n_objs = len(refit_objs)
-        nodes = []
-        for i in range(n_objs):
-            obj = refit_objs[i]
-            leaf_indices = np.array(obj.indices, dtype=np.int32)
-            new_node = leaf_builder.build_leaf(
-                    i,
-                    leaf_indices,
-                    obj.depth,
-                    criteria.impurity(leaf_indices),
-                    leaf_indices.shape[0],
-                    obj.parent,
-                    )
-            new_node.visited = 1
-            nodes.append(new_node)
-            if obj.is_left:
-                obj.parent.left_child = new_node
-            else:
-                obj.parent.right_child = new_node
-        self.leaf_nodes = nodes
+        # Two cases:
+        # (1) Only a single root node (n_objs == 0)
+        # (2) At least one split (n_objs > 0)
+        if self.root is None:
+            self.root = leaf_builder.build_leaf(
+                    leaf_id=0,
+                    indices=indices,
+                    depth=1,
+                    impurity=criteria.impurity(indices),
+                    weighted_samples=indices.shape[0],
+                    parent=None)
+            self.leaf_nodes = [self.root]
+        else:
+            n_objs = len(refit_objs)
+            nodes = []
+            for i in range(n_objs):
+                obj = refit_objs[i]
+                leaf_indices = np.array(obj.indices, dtype=np.int32)
+                new_node = leaf_builder.build_leaf(
+                        i,
+                        leaf_indices,
+                        obj.depth,
+                        criteria.impurity(leaf_indices),
+                        leaf_indices.shape[0],
+                        obj.parent,
+                        )
+                new_node.visited = 1
+                nodes.append(new_node)
+                if obj.is_left:
+                    obj.parent.left_child = new_node
+                else:
+                    obj.parent.right_child = new_node
+            self.leaf_nodes = nodes
 
     # Assumes that each visited node is marked during __fit_new_leaf_nodes
     def __squash_tree(self) -> None:
@@ -366,7 +380,7 @@ class DecisionTree(BaseModel):
                          sample_weight: np.ndarray | None = None,
                          sample_indices: np.ndarray | None = None,
                          **kwargs) -> None:
-        if not self.root:
+        if self.root is None:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
         if not self.skip_check_input:
