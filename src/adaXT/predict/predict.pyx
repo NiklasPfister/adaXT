@@ -124,7 +124,7 @@ cdef class PredictClassification(Predict):
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            cnp.ndarray prediction
+            cnp.ndarray[DOUBLE_t, ndim=1] prediction
 
         # Make sure that x fits the dimensions.
         n_obs = X.shape[0]

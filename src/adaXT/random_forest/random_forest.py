@@ -46,43 +46,56 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "resampling":
-        return (gen.choice(np.arange(0, n_rows),
-                           size=sampling_args['size'],
-                           replace=sampling_args['replace']), None)
+        return (
+            gen.choice(
+                np.arange(0, n_rows),
+                size=sampling_args["size"],
+                replace=sampling_args["replace"],
+            ),
+            None,
+        )
     elif sampling == "honest_tree":
         indices = np.arange(0, n_rows)
         gen.shuffle(indices)
-        if sampling_args['replace']:
-            resample_size0 = sampling_args['size']
-            resample_size1 = sampling_args['size']
+        if sampling_args["replace"]:
+            resample_size0 = sampling_args["size"]
+            resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min([sampling_args['split'],
-                                    sampling_args['size']])
-            resample_size1 = np.min([n_rows - sampling_args['split'],
-                                    sampling_args['size']])
-        fit_indices = gen.choice(indices[:sampling_args['split']],
-                                 size=resample_size0,
-                                 replace=sampling_args['replace'])
-        pred_indices = gen.choice(indices[sampling_args['split']:],
-                                  size=resample_size1,
-                                  replace=sampling_args['replace'])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
+            resample_size1 = np.min(
+                [n_rows - sampling_args["split"], sampling_args["size"]]
+            )
+        fit_indices = gen.choice(
+            indices[: sampling_args["split"]],
+            size=resample_size0,
+            replace=sampling_args["replace"],
+        )
+        pred_indices = gen.choice(
+            indices[sampling_args["split"] :],
+            size=resample_size1,
+            replace=sampling_args["replace"],
+        )
         return (fit_indices, pred_indices)
     elif sampling == "honest_forest":
         indices = np.arange(0, n_rows)
-        if sampling_args['replace']:
-            resample_size0 = sampling_args['size']
-            resample_size1 = sampling_args['size']
+        if sampling_args["replace"]:
+            resample_size0 = sampling_args["size"]
+            resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min([sampling_args['split'],
-                                    sampling_args['size']])
-            resample_size1 = np.min([n_rows - sampling_args['split'],
-                                    sampling_args['size']])
-        fit_indices = gen.choice(indices[:sampling_args['split']],
-                                 size=resample_size0,
-                                 replace=sampling_args['replace'])
-        pred_indices = gen.choice(indices[sampling_args['split']:],
-                                  size=resample_size1,
-                                  replace=sampling_args['replace'])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
+            resample_size1 = np.min(
+                [n_rows - sampling_args["split"], sampling_args["size"]]
+            )
+        fit_indices = gen.choice(
+            indices[: sampling_args["split"]],
+            size=resample_size0,
+            replace=sampling_args["replace"],
+        )
+        pred_indices = gen.choice(
+            indices[sampling_args["split"] :],
+            size=resample_size1,
+            replace=sampling_args["replace"],
+        )
         return (fit_indices, pred_indices)
     else:
         return (None, None)
@@ -123,25 +136,16 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(
-        X=X,
-        Y=Y,
-        sample_indices=fitting_indices,
-        sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X,
-            Y=Y,
-            sample_weight=sample_weight,
-            sample_indices=prediction_indices)
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
+        )
 
     return tree
 
 
-def predict_single_tree(
-        tree: DecisionTree,
-        predict_values: np.ndarray,
-        **kwargs):
+def predict_single_tree(tree: DecisionTree, predict_values: np.ndarray, **kwargs):
     return tree.predict(predict_values, **kwargs)
 
 
@@ -272,12 +276,7 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(
-            forest_type,
-            criteria,
-            splitter,
-            leaf_builder,
-            predict)
+        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
         self.X, self.Y = None, None
         self.max_features = max_features
@@ -303,44 +302,46 @@ class RandomForest(BaseModel):
             sampling_args = {}
 
         if self.sampling == "resampling":
-            if 'size' not in sampling_args:
-                sampling_args['size'] = self.n_rows
-            elif isinstance(sampling_args['size'], float):
-                sampling_args['size'] = int(
-                    sampling_args['size'] * self.n_rows)
-            elif not isinstance(sampling_args['size'], int):
+            if "size" not in sampling_args:
+                sampling_args["size"] = self.n_rows
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["size"] = int(sampling_args["size"] * self.n_rows)
+            elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
                 )
-            if 'replace' not in sampling_args:
-                sampling_args['replace'] = True
-            elif not isinstance(sampling_args['replace'], bool):
+            if "replace" not in sampling_args:
+                sampling_args["replace"] = True
+            elif not isinstance(sampling_args["replace"], bool):
                 raise ValueError(
                     "The provided sampling_args['replace'] is not a bool as required."
                 )
         elif self.sampling in ["honest_tree", "honest_forest"]:
-            if 'split' not in sampling_args:
-                sampling_args['split'] = np.min(
-                    [int(0.5 * self.n_rows), self.n_rows - 1])
-            elif isinstance(sampling_args['size'], float):
-                sampling_args['split'] = np.min(
-                    [int(sampling_args['split'] * self.n_rows), self.n_rows - 1])
-            elif not isinstance(sampling_args['size'], int):
+            if "split" not in sampling_args:
+                sampling_args["split"] = np.min(
+                    [int(0.5 * self.n_rows), self.n_rows - 1]
+                )
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["split"] = np.min(
+                    [int(sampling_args["split"] * self.n_rows), self.n_rows - 1]
+                )
+            elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['split'] is not an integer or float as required."
                 )
-            if 'size' not in sampling_args:
-                sampling_args['size'] = sampling_args['split']
-            elif isinstance(sampling_args['size'], float):
-                sampling_args['size'] = int(
-                    sampling_args['size'] * sampling_args['split'])
-            elif not isinstance(sampling_args['size'], int):
+            if "size" not in sampling_args:
+                sampling_args["size"] = sampling_args["split"]
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["size"] = int(
+                    sampling_args["size"] * sampling_args["split"]
+                )
+            elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
                 )
-            if 'replace' not in sampling_args:
-                sampling_args['replace'] = True
-            elif not isinstance(sampling_args['replace'], bool):
+            if "replace" not in sampling_args:
+                sampling_args["replace"] = True
+            elif not isinstance(sampling_args["replace"], bool):
                 raise ValueError(
                     "The provided sampling_args['replace'] is not a bool as required."
                 )
@@ -365,7 +366,7 @@ class RandomForest(BaseModel):
             sampling_args=self.sampling_args,
             sampling=self.sampling,
         )
-        self.fitting_indices, self.prediction_indices = fitting_prediction_indices
+        self.fitting_indices, self.prediction_indices = zip(*fitting_prediction_indices)
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -387,8 +388,7 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike,
-            sample_weight: np.ndarray | None = None):
+    def fit(self, X: ArrayLike, Y: ArrayLike, sample_weight: np.ndarray | None = None):
         """
         Fit the random forest with training data (X, Y).
 
