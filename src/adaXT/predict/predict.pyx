@@ -5,7 +5,6 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
-from adaXT.parallel import shared_numpy_array
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t
