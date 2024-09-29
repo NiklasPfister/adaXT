@@ -61,7 +61,8 @@ def get_sample_indices(
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min(
+                [sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -71,7 +72,7 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"] :],
+            indices[sampling_args["split"]:],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
@@ -82,7 +83,8 @@ def get_sample_indices(
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min(
+                [sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -92,7 +94,7 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"] :],
+            indices[sampling_args["split"]:],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
@@ -136,11 +138,17 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
+    tree.fit(
+        X=X,
+        Y=Y,
+        sample_indices=fitting_indices,
+        sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
-        )
+            X=X,
+            Y=Y,
+            sample_weight=sample_weight,
+            sample_indices=prediction_indices)
 
     return tree
 
@@ -278,7 +286,12 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
+        self._check_tree_type(
+            forest_type,
+            criteria,
+            splitter,
+            leaf_builder,
+            predict)
 
         self.max_features = max_features
         self.forest_type = forest_type
@@ -306,7 +319,8 @@ class RandomForest(BaseModel):
             if "size" not in sampling_args:
                 sampling_args["size"] = self.X_n_rows
             elif isinstance(sampling_args["size"], float):
-                sampling_args["size"] = int(sampling_args["size"] * self.X_n_rows)
+                sampling_args["size"] = int(
+                    sampling_args["size"] * self.X_n_rows)
             elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
@@ -367,7 +381,8 @@ class RandomForest(BaseModel):
             X_n_rows=self.X_n_rows,
             sampling=self.sampling,
         )
-        self.fitting_indices, self.prediction_indices = zip(*fitting_prediction_indices)
+        self.fitting_indices, self.prediction_indices = zip(
+            *fitting_prediction_indices)
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -389,9 +404,8 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(
-        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
-    ) -> None:
+    def fit(self, X: ArrayLike, Y: ArrayLike,
+            sample_weight: ArrayLike | None = None) -> None:
         """
         Fit the random forest with training data (X, Y).
 
