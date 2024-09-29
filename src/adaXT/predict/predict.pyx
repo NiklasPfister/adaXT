@@ -5,7 +5,6 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
-from ..parallel import shared_numpy_array
 from ..parallel import ParallelModel
 
 # Use with cdef code instead of the imported DOUBLE
