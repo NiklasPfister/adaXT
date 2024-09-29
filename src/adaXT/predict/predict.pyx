@@ -71,8 +71,6 @@ cdef class Predict():
     def __reduce__(self) -> None:
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
-    # TODO: predict_indices
-
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         raise NotImplementedError("Function predict is not implemented for this Predict class")
 
