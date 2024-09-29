@@ -1,5 +1,16 @@
+from adaXT.decision_tree.nodes import Node
+
 class LeafBuilder:
-    pass
+    def build_leaf(
+        self,
+        leaf_id: int,
+        indices: int,
+        depth: int,
+        impurity: float,
+        weighted_samples: float,
+        parent: Node,
+    ) -> Node:
+        pass
 
 class LeafBuilderClassification(LeafBuilder):
     pass

@@ -1,5 +1,7 @@
 import numpy as np
 from ..decision_tree.nodes import DecisionNode
+from ..decision_tree import DecisionTree
+from ..parallel import ParallelModel
 
 class Predict:
     """
@@ -10,7 +12,7 @@ class Predict:
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
         pass
 
-    def predict(self, X: np.ndarray, **kwargs):
+    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         Prediction function called by the DecisionTree when it is told to
         predict. Can be customised for a different output of the DecisionTree.
@@ -22,7 +24,7 @@ class Predict:
         """
         pass
 
-    def predict_leaf(self, X: np.ndarray, scale: bool) -> dict:
+    def predict_leaf(self, X: np.ndarray) -> dict:
         """
         Function called when tree.predict_leaf_matrix is called.
 
@@ -36,7 +38,14 @@ class Predict:
         pass
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """Function called by the RandomForest class after it has gotten the
         result of predict from each tree. Thise function should then do any
         changes seen fit.
@@ -69,7 +78,14 @@ class PredictClassification(Predict):
         pass
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs) -> np.ndarray:
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """
         With the predictions it returns the most frequent element picked by all
         the individual trees. Thus, this is the majority vote.
@@ -107,7 +123,14 @@ class PredictRegression(Predict):
     pass
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs) -> np.ndarray:
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """
         Returns the mean value of all the predictions along axis 1.
 
@@ -176,7 +199,14 @@ class PredictQuantile(Predict):
         pass
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs) -> np.ndarray:
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """
         Calls quantile on the predictions
 

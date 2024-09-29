@@ -7,7 +7,7 @@ cdef class Predict():
         int n_features
         object root
 
-    cpdef dict predict_leaf(self, object X)
+    cpdef dict predict_leaf(self, cnp.ndarray X)
 
 
 cdef class PredictClassification(Predict):
@@ -16,9 +16,9 @@ cdef class PredictClassification(Predict):
 
     cdef int __find_max_index(self, double[::1] lst)
 
-    cdef cnp.ndarray __predict_proba(self, object X)
+    cdef cnp.ndarray __predict_proba(self, cnp.ndarray X)
 
-    cdef cnp.ndarray __predict(self, object X)
+    cdef cnp.ndarray __predict(self, cnp.ndarray X)
 
 
 cdef class PredictRegression(Predict):

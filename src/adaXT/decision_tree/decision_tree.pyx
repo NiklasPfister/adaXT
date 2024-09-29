@@ -1,11 +1,8 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-# TODO: left_child fails sometimes:AttributeError: 'NoneType' object has no
-# attribute 'left_child'
 
 # General
 import numpy as np
-from numpy.typing import ArrayLike
 import sys
 from numpy.typing import ArrayLike
 
@@ -27,14 +24,14 @@ class refit_object():
             idx: int,
             depth: int,
             parent: DecisionNode,
-            is_left: bool):
+            is_left: bool) -> None:
 
         self.indices = [idx]
         self.depth = depth
         self.parent = parent
         self.is_left = is_left
 
-    def add_idx(self, idx: int):
+    def add_idx(self, idx: int) -> None:
         self.indices.append(idx)
 
 
@@ -58,68 +55,45 @@ class DecisionTree(BaseModel):
             self.criteria_class = criteria
             self.predict_class = predict
             self.leaf_builder_class = leaf_builder
-            self.splitter = splitter
+            self.splitter_class = splitter
+            self.max_features = max_features
         else:
             self._check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
+            self.max_features = self._check_max_features(max_features)
 
+        self.skip_check_input = skip_check_input
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
-        self.max_features = self.__error_check_max_features(max_features)
         self.tree_type = tree_type
         self.leaf_nodes = None
         self.root = None
         self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
-        self.skip_check_input = skip_check_input
-
-    def __check_sample_weight(self, sample_weight: np.ndarray, n_samples):
-
-        if sample_weight is None:
-            return np.ones(n_samples, dtype=np.double)
-        sample_weight = np.array(sample_weight, dtype=np.double)
-        if sample_weight.shape[0] != n_samples:
-            raise ValueError("sample_weight should have as many elements as X and Y")
-        if sample_weight.ndim > 1:
-            raise ValueError("sample_weight should have dimension (n_samples,)")
-        return sample_weight
-
-    def __error_check_max_features(self, max_features):
-        if max_features is None:
-            return max_features
-        elif isinstance(max_features, int):
-            if max_features < 1:
-                raise ValueError("max_features can not be less than 1")
-            else:
-                return max_features
-        elif isinstance(max_features, float):
-            return max_features
-        elif isinstance(max_features, str):
-            if max_features == "sqrt":
-                return max_features
-            elif max_features == "log2":
-                return max_features
-            else:
-                raise ValueError("The only string options available for max_features are \"sqrt\", \"log2\"")
-        else:
-            raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
 
     def fit(self,
             X: ArrayLike,
             Y: ArrayLike,
-            sample_indices: np.ndarray | None = None,
-            sample_weight: np.ndarray | None = None) -> None:
+            sample_indices: ArrayLike | None = None,
+            sample_weight: ArrayLike | None = None) -> None:
 
         # Check inputs
         if not self.skip_check_input:
             X, Y = self._check_input(X, Y)
-            row, _ = X.shape
-            # If sample_weight is valid it is simply passed through
-            # check_sample_weight, if it is None all entries are set to 1
-            sample_weight = self.__check_sample_weight(sample_weight=sample_weight, n_samples=row)
+
+        # These values are used when checking sample_indices and sample_weight,
+        # so they have to be updated after checking X and Y
+        self.n_rows_fit = X.shape[0]
+        self.n_rows_predict = X.shape[0]
+        self.X_n_rows = X.shape[0]
+        self.n_features = X.shape[1]
+
+        if not self.skip_check_input:
+            sample_weight = self._check_sample_weight(sample_weight=sample_weight)
+            sample_indices = self._check_sample_indices(sample_indices=sample_indices)
 
         builder = DepthTreeBuilder(
             X=X,
@@ -130,7 +104,7 @@ class DecisionTree(BaseModel):
             criteria_class=self.criteria_class,
             leaf_builder_class=self.leaf_builder_class,
             predict_class=self.predict_class,
-            splitter_class=self.splitter)
+            splitter_class=self.splitter_class)
         builder.build_tree(self)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
@@ -172,7 +146,10 @@ class DecisionTree(BaseModel):
                 matrix[np.ix_(indices_1, indices_2)] = val
         return matrix
 
-    def similarity(self, X0: ArrayLike, X1: ArrayLike, scale: bool = True):
+    def similarity(self,
+                   X0: ArrayLike,
+                   X1: ArrayLike,
+                   scale: bool = True) -> np.ndarray:
         if not self.skip_check_input:
             X0, _ = self._check_input(X0)
             self._check_dimensions(X0)
@@ -188,9 +165,8 @@ class DecisionTree(BaseModel):
         return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
                                         scale)
 
-    def predict_weights(
-            self, X: np.ndarray|None = None,
-            scale: bool = True) -> np.ndarray:
+    def predict_weights(self, X: ArrayLike | None = None,
+                        scale: bool = True) -> np.ndarray:
         if X is None:
             size_1 = self.n_rows_predict
             new_hash = self.__get_leaf()
@@ -209,7 +185,7 @@ class DecisionTree(BaseModel):
                                         self.n_rows_predict, size_1,
                                         scale=scale)
 
-    def predict_leaf(self, X: np.ndarray|None = None):
+    def predict_leaf(self, X: ArrayLike | None = None) -> dict:
         if X is None:
             return self.__get_leaf()
         else:
@@ -363,8 +339,8 @@ class DecisionTree(BaseModel):
     def refit_leaf_nodes(self,
                          X: ArrayLike,
                          Y: ArrayLike,
-                         sample_weight: np.ndarray | None = None,
-                         sample_indices: np.ndarray | None = None,
+                         sample_weight: ArrayLike | None = None,
+                         sample_indices: ArrayLike | None = None,
                          **kwargs) -> None:
         if not self.root:
             raise ValueError("The tree has not been trained before trying to\
@@ -372,6 +348,8 @@ class DecisionTree(BaseModel):
         if not self.skip_check_input:
             X, Y = self._check_input(X, Y)
             self._check_dimensions(X)
+            sample_weight = self._check_sample_weight(sample_weight)
+            sample_indices = self._check_sample_indices(sample_indices)
         # Remove current leaf nodes
         indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
@@ -431,11 +409,11 @@ class DepthTreeBuilder:
         Y: np.ndarray,
         max_features: int | None,
         sample_weight: np.ndarray,
+        sample_indices: np.ndarray | None,
         criteria_class: Criteria,
         splitter_class: Splitter,
         leaf_builder_class: LeafBuilder,
         predict_class: Predict,
-        sample_indices: np.ndarray | None = None,
     ) -> None:
         """
         Parameters
@@ -465,7 +443,7 @@ class DepthTreeBuilder:
         self.sample_weight = sample_weight
 
         _, col = X.shape
-        self.int_max_features = self.__parse_max_features(max_features, col)
+        self.int_max_features = self.__parse_max_features(max_features)
 
         self.feature_indices = np.arange(col, dtype=np.int32)
         self.num_features = col
@@ -478,7 +456,7 @@ class DepthTreeBuilder:
         self.predict_class = predict_class
         self.leaf_builder_class = leaf_builder_class
 
-    def __get_feature_indices(self):
+    def __get_feature_indices(self) -> np.ndarray:
         if self.int_max_features is None:
             return self.feature_indices
         else:
@@ -487,22 +465,25 @@ class DepthTreeBuilder:
                 size=self.int_max_features,
                 replace=False)
 
-    def __parse_max_features(self, max_features, num_features):
+    def __parse_max_features(self,
+                             max_features: int|str|float|None
+                             ) -> int:
+
         if max_features is None:
             return None
         elif isinstance(max_features, int):
-            return min(max_features, num_features)
+            return min(max_features, self.num_features)
         elif isinstance(max_features, float):
-            return min(num_features, int(max_features * num_features))
+            return min(self.num_features, int(max_features * self.num_features))
         elif isinstance(max_features, str):
             if max_features == "sqrt":
-                return int(np.sqrt(num_features))
+                return int(np.sqrt(self.num_features))
             elif max_features == "log2":
-                return int(np.log2(num_features))
+                return int(np.log2(self.num_features))
         else:
             raise ValueError("Unable to parse max_features")
 
-    def build_tree(self, tree: DecisionTree) -> int:
+    def build_tree(self, tree: DecisionTree) -> None:
         """
         Builds the tree
 
@@ -533,10 +514,7 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        if self.sample_indices is not None:
-            all_idx = np.array(self.sample_indices)
-        else:
-            all_idx = np.arange(X.shape[0])
+        all_idx = self.sample_indices
 
         all_idx = np.array(
             [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32
@@ -648,12 +626,8 @@ class DepthTreeBuilder:
                 root = new_node
             n_nodes += 1  # number of nodes increase by 1
 
-        tree.n_rows_fit = X.shape[0]
-        tree.n_rows_predict = X.shape[0]
         tree.n_nodes = n_nodes
         tree.max_depth = max_depth_seen
-        tree.n_features = X.shape[1]
         tree.root = root
         tree.leaf_nodes = leaf_node_list
         tree.predictor = self.predict_class(self.X, self.Y, root)
-        return 0
