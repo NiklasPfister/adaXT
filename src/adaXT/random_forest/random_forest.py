@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from numpy.random import Generator, default_rng

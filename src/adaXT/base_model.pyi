@@ -5,6 +5,7 @@ from .leaf_builder import LeafBuilder
 from typing import Type
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 class BaseModel:
     predict_class: Type[Predict]
@@ -45,9 +46,7 @@ class BaseModel:
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         pass
 
-    def similarity(
-        self, X0: np.ndarray, X1: np.ndarray, scale: bool = True
-    ) -> np.ndarray:
+    def similarity(self, X0: np.ndarray, X1: np.ndarray) -> np.ndarray:
         pass
 
     def predict_weights(self, X: np.ndarray | None, scale: bool = True) -> np.ndarray:
