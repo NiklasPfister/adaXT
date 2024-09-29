@@ -5,16 +5,20 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
+from ..parallel import shared_numpy_array
+from ..parallel import ParallelModel
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t
 
 
-def predict_default(tree, X, **kwargs):
+def predict_default(tree, X: np.ndarray, **kwargs) -> np.ndarray:
     return np.array(tree.predict(X, **kwargs))
 
 
-def predict_proba(tree, X):
+def predict_proba(
+        tree: DecisionTree, X: np.ndarray, Y: np.ndarray, unique_classes: int
+) -> np.ndarray:
     cdef:
         int i, cur_split_idx
         double cur_threshold
@@ -37,7 +41,9 @@ def predict_proba(tree, X):
     return np.array(ret_val)
 
 
-def predict_quantile(tree, X, n_obs):
+def predict_quantile(
+    tree: DecisionTree, X: np.ndarray, n_obs: int
+) -> np.ndarray:
     # Check if quantile is an array
     indices = []
 
@@ -63,13 +69,15 @@ cdef class Predict():
         self.n_features = X.shape[1]
         self.root = root
 
-    def __reduce__(self):
+    def __reduce__(self) -> None:
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
-    def predict(self, object X, **kwargs) -> np.ndarray:
+    # TODO: predict_indices
+
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         raise NotImplementedError("Function predict is not implemented for this Predict class")
 
-    cpdef dict predict_leaf(self, object X):
+    cpdef dict predict_leaf(self, cnp.ndarray X):
         cdef:
             int i
             int row
@@ -98,7 +106,9 @@ cdef class Predict():
         return ht
 
     @staticmethod
-    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
         predictions = parallel.async_map(predict_default,
                                          trees,
                                          X=X_new,
@@ -107,7 +117,11 @@ cdef class Predict():
 
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root, **kwargs):
+    def __cinit__(self,
+                  double[:, ::1] X,
+                  double[:, ::1] Y,
+                  object root,
+                  **kwargs) -> None:
         self.classes = np.unique(Y)
 
     cdef int __find_max_index(self, double[::1] lst):
@@ -119,7 +133,7 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    cdef cnp.ndarray __predict(self, object X):
+    cdef cnp.ndarray __predict(self, cnp.ndarray X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
@@ -145,7 +159,7 @@ cdef class PredictClassification(Predict):
                 prediction[i] = self.classes[idx]
         return prediction
 
-    cdef cnp.ndarray __predict_proba(self, object X):
+    cdef cnp.ndarray __predict_proba(self, cnp.ndarray X):
         cdef:
             int i, cur_split_idx
             double cur_threshold
@@ -168,7 +182,7 @@ cdef class PredictClassification(Predict):
                 ret_val.append(cur_node.value)
         return np.array(ret_val)
 
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
                 return self.__predict_proba(X)
@@ -177,7 +191,9 @@ cdef class PredictClassification(Predict):
         return self.__predict(X)
 
     @staticmethod
-    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
         # Forest_predict_proba
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
@@ -191,7 +207,7 @@ cdef class PredictClassification(Predict):
 
 
 cdef class PredictRegression(Predict):
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs, n_col
             double cur_threshold
@@ -224,7 +240,7 @@ cdef class PredictRegression(Predict):
 
 cdef class PredictLocalPolynomial(PredictRegression):
 
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs, ind, oo
             double cur_threshold
@@ -264,7 +280,7 @@ cdef class PredictLocalPolynomial(PredictRegression):
 
 cdef class PredictQuantile(Predict):
 
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs
             double cur_threshold
@@ -297,7 +313,9 @@ cdef class PredictQuantile(Predict):
         return prediction
 
     @staticmethod
-    def forest_predict(X_old, Y_old, X_new, trees, parallel, **kwargs):
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
         cdef:
             int i, j, n_obs, n_trees
             list prediction_indices, pred_indices_combined, indices_combined

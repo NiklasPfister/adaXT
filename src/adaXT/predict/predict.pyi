@@ -1,7 +1,7 @@
 import numpy as np
 from ..decision_tree.nodes import DecisionNode
-from ..decision_tree.decision_tree import DecisionTree
-from ..base_model import ParallelModel
+from ..decision_tree import DecisionTree
+from ..parallel import ParallelModel
 
 class Predict:
     """
@@ -48,19 +48,20 @@ class Predict:
 
     @staticmethod
     def forest_predict(
-            X_old: np.ndarray,
-            Y_old: np.ndarray,
-            X_new: np.ndarray,
-            trees: list[DecisionTree],
-            parallel: ParallelModel,
-            **kwargs) -> np.ndarray:
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """
         Internal function used by the RandomForest class 'predict' method to evaluate predictions
         for each tree and aggregate them.
 
         Needs to be adjusted whenever RandomForest predictions do not simply aggregate the tree
         predictions by averaging.
-        
+
         Parameters
         ----------
         X_old: np.ndarray
@@ -103,7 +104,21 @@ class PredictClassification(Predict):
             predict_proba : bool
                 Specifies whether to compute class probabilities or not.
                 Defaults to False if not provided.
+        """
+        pass
 
+    @staticmethod
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+        With the predictions it returns the most frequent element picked by all
+        the individual trees. Thus, this is the majority vote.
 
         Returns
         -------
@@ -132,7 +147,56 @@ class PredictRegression(Predict):
         Returns
         -------
         np.ndarray
-            An array with the predicted values for each row of X.
+            An array with predictions for each row of X.
+        """
+        pass
+
+    pass
+
+    @staticmethod
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
+        """
+        Returns the mean value of all the predictions along axis 1.
+
+        Parameters
+        ----------
+        predictions
+            Predictions by the trees.
+
+        Returns
+        -------
+        np.ndarray
+            An array of predictions for each element X passed to
+            forest.predict.
+        """
+        pass
+
+class PredictLinearRegression(Predict):
+    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
+        """
+        Predicts which LeafNode each $x \in X$ would land in, and calculates the
+        $$
+        Y_i = L_{j,theta0} + L_{j,theta1}*X_{i, 0}
+        $$
+        For each $i \in X$ where $L_j$ is the LeafNode x would fall into, and
+        theta0 and theta1 are calculated for each LeafNode during training.
+
+        Parameters
+        ----------
+        X: np.ndarray
+            Array that should be carried out predictions on.
+
+        Returns
+        -------
+        np.ndarray
+            An array with predictions for each row of X.
         """
         pass
 
@@ -172,12 +236,15 @@ class PredictLocalPolynomial(Predict):
         """
         pass
 
-class PredictQuantile(Predict):
-    """
-    The default prediction class for the 'Quantile' tree type.
-    """
-
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
+    @staticmethod
+    def forest_predict(
+        X_old: np.ndarray,
+        Y_old: np.ndarray,
+        X_new: np.ndarray,
+        trees: list[DecisionTree],
+        parallel: ParallelModel,
+        **kwargs,
+    ) -> np.ndarray:
         """
         For each row in X, the method first predicts the LeafNode into which
         the row falls and then computes the quantiles of the Y values in that LeafNode.
@@ -199,4 +266,3 @@ class PredictQuantile(Predict):
             row of X.
         """
         pass
-

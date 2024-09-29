@@ -16,6 +16,52 @@ import numpy as np
 
 
 class BaseModel:
+
+    def _check_max_features(
+        self, max_features: int | str | float | None
+    ) -> int | str | float | None:
+
+        if max_features is None:
+            return max_features
+        elif isinstance(max_features, int):
+            if max_features < 1:
+                raise ValueError("max_features can not be less than 1")
+            else:
+                return max_features
+        elif isinstance(max_features, float):
+            return max_features
+        elif isinstance(max_features, str):
+            if max_features == "sqrt":
+                return max_features
+            elif max_features == "log2":
+                return max_features
+            else:
+                raise ValueError("The only string options available for max_features are \"sqrt\", \"log2\"")
+        else:
+            raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
+
+    def _check_sample_weight(self, sample_weight: ArrayLike | None) -> np.ndarray:
+        if sample_weight is None:
+            return np.ones(self.X_n_rows, dtype=DOUBLE)
+        sample_weight = np.array(sample_weight, dtype=DOUBLE)
+        if sample_weight.shape[0] != self.X_n_rows:
+            raise ValueError("sample_weight should have as many elements as X and Y")
+        if sample_weight.ndim > 1:
+            raise ValueError("sample_weight has more than one dimension")
+        return sample_weight
+
+    def _check_sample_indices(self,
+                              sample_indices: ArrayLike | None
+                              ) -> np.ndarray:
+
+        if sample_indices is None:
+            return np.arange(0, self.X_n_rows, dtype=np.int32)
+        else:
+            sample_indices = np.array(sample_indices, dtype=np.int32)
+        if sample_indices.ndim > 1:
+            raise ValueError("sample_weight has more than one dimension")
+        return np.array(sample_indices, dtype=np.int32)
+
     # Check whether dimension of X matches self.n_features
     def _check_dimensions(self, X: np.ndarray) -> None:
         if X.shape[1] != self.n_features:
@@ -25,7 +71,9 @@ class BaseModel:
 
     def _check_input(self,
                      X: ArrayLike,
-                     Y: ArrayLike | None = None) -> tuple[np.ndarray, np.ndarray]:
+                     Y: ArrayLike | None = None
+                     ) -> tuple[np.ndarray, np.ndarray|None]:
+
         Y_check = (Y is not None)
         # Make sure input arrays are c contigous
         X = np.ascontiguousarray(X, dtype=DOUBLE)
@@ -61,7 +109,7 @@ class BaseModel:
         splitter: type[Splitter] | None,
         leaf_builder: type[LeafBuilder] | None,
         predict: type[Predict] | None,
-    ):
+    ) -> None:
         tree_types = ["Classification", "Regression", "Gradient", "Quantile"]
         if tree_type in tree_types:
             if tree_type == "Classification":
@@ -127,18 +175,6 @@ class BaseModel:
             self.leaf_builder_class = leaf_builder
 
         if splitter:
-            self.splitter = splitter
+            self.splitter_class = splitter
         else:
-            self.splitter = Splitter
-
-    def fit(
-        self,
-        X: np.ndarray,
-        Y: np.ndarray,
-        sample_indices: np.ndarray | None = None,
-        sample_weight: np.ndarray | None = None,
-    ):
-        pass
-
-    def predict(self, X: np.ndarray, Y: np.ndarray, **kwargs):
-        pass
+            self.splitter_class = Splitter

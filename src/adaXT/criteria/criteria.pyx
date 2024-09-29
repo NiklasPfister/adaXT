@@ -70,10 +70,11 @@ cdef class Criteria:
 # Gini index criteria
 cdef class Gini_index(Criteria):
 
-    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1]
+                 sample_weight) -> None:
         self.first_call = True
 
-    def __del__(self):
+    def __del__(self) -> None:
         free(self.weight_in_class_left)
         free(self.weight_in_class_right)
 

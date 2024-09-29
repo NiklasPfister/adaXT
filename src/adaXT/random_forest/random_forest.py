@@ -1,5 +1,5 @@
 import sys
-from typing import Iterable, Literal
+from typing import Any, Literal
 
 import numpy as np
 from numpy.random import Generator, default_rng
@@ -37,10 +37,10 @@ def tree_based_weights(
 
 def get_sample_indices(
     gen: Generator,
-    n_rows: int,
+    X_n_rows: int,
     sampling_args: dict,
     sampling: str | None,
-) -> Iterable:
+) -> tuple | None:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -48,23 +48,22 @@ def get_sample_indices(
     if sampling == "resampling":
         return (
             gen.choice(
-                np.arange(0, n_rows),
+                np.arange(0, X_n_rows),
                 size=sampling_args["size"],
                 replace=sampling_args["replace"],
             ),
             None,
         )
     elif sampling == "honest_tree":
-        indices = np.arange(0, n_rows)
+        indices = np.arange(0, X_n_rows)
         gen.shuffle(indices)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
-                [n_rows - sampling_args["split"], sampling_args["size"]]
+                [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
         fit_indices = gen.choice(
             indices[: sampling_args["split"]],
@@ -72,21 +71,20 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
         return (fit_indices, pred_indices)
     elif sampling == "honest_forest":
-        indices = np.arange(0, n_rows)
+        indices = np.arange(0, X_n_rows)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
-                [n_rows - sampling_args["split"], sampling_args["size"]]
+                [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
         fit_indices = gen.choice(
             indices[: sampling_args["split"]],
@@ -94,13 +92,13 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
         return (fit_indices, pred_indices)
     else:
-        return (None, None)
+        return (np.arange(0, X_n_rows), None)
 
 
 def build_single_tree(
@@ -122,7 +120,7 @@ def build_single_tree(
     max_features: int | float | Literal["sqrt", "log2"] | None = None,
     skip_check_input: bool = True,
     sample_weight: np.ndarray | None = None,
-):
+) -> DecisionTree:
     # subset the feature indices
     tree = DecisionTree(
         tree_type=tree_type,
@@ -138,25 +136,18 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(
-        X=X,
-        Y=Y,
-        sample_indices=fitting_indices,
-        sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X,
-            Y=Y,
-            sample_weight=sample_weight,
-            sample_indices=prediction_indices)
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
+        )
 
     return tree
 
 
 def predict_single_tree(
-        tree: DecisionTree,
-        predict_values: np.ndarray,
-        **kwargs):
+    tree: DecisionTree, predict_values: np.ndarray, **kwargs
+) -> np.ndarray:
     return tree.predict(predict_values, **kwargs)
 
 
@@ -223,7 +214,7 @@ class RandomForest(BaseModel):
         leaf_builder: type[LeafBuilder] | None = None,
         predict: type[Predict] | None = None,
         splitter: type[Splitter] | None = None,
-    ):
+    ) -> None:
         """
         Parameters
         ----------
@@ -287,14 +278,8 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(
-            forest_type,
-            criteria,
-            splitter,
-            leaf_builder,
-            predict)
+        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
-        self.X, self.Y = None, None
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
@@ -307,7 +292,7 @@ class RandomForest(BaseModel):
         self.min_improvement = min_improvement
         self.forest_fitted = False
 
-    def __get_random_generator(self, seed):
+    def __get_random_generator(self, seed) -> Generator:
         if isinstance(seed, int) or (seed is None):
             return default_rng(seed)
         else:
@@ -319,10 +304,9 @@ class RandomForest(BaseModel):
 
         if self.sampling == "resampling":
             if "size" not in sampling_args:
-                sampling_args["size"] = self.n_rows
+                sampling_args["size"] = self.X_n_rows
             elif isinstance(sampling_args["size"], float):
-                sampling_args["size"] = int(
-                    sampling_args["size"] * self.n_rows)
+                sampling_args["size"] = int(sampling_args["size"] * self.X_n_rows)
             elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
@@ -336,11 +320,11 @@ class RandomForest(BaseModel):
         elif self.sampling in ["honest_tree", "honest_forest"]:
             if "split" not in sampling_args:
                 sampling_args["split"] = np.min(
-                    [int(0.5 * self.n_rows), self.n_rows - 1]
+                    [int(0.5 * self.X_n_rows), self.X_n_rows - 1]
                 )
             elif isinstance(sampling_args["size"], float):
                 sampling_args["split"] = np.min(
-                    [int(sampling_args["split"] * self.n_rows), self.n_rows - 1]
+                    [int(sampling_args["split"] * self.X_n_rows), self.X_n_rows - 1]
                 )
             elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
@@ -374,17 +358,16 @@ class RandomForest(BaseModel):
     # Function to build all the trees of the forest, differentiates between
     # running in parallel and sequential
 
-    def __build_trees(self):
+    def __build_trees(self) -> None:
         # parent_rng.spawn() spawns random generators that children can use
         fitting_prediction_indices = self.parallel.async_map(
             get_sample_indices,
             map_input=self.parent_rng.spawn(self.n_estimators),
-            n_rows=self.n_rows,
             sampling_args=self.sampling_args,
+            X_n_rows=self.X_n_rows,
             sampling=self.sampling,
         )
-        self.fitting_indices, self.prediction_indices = zip(
-            *fitting_prediction_indices)
+        self.fitting_indices, self.prediction_indices = zip(*fitting_prediction_indices)
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -394,7 +377,7 @@ class RandomForest(BaseModel):
             criteria=self.criteria_class,
             predict=self.predict_class,
             leaf_builder=self.leaf_builder_class,
-            splitter=self.splitter,
+            splitter=self.splitter_class,
             tree_type=self.forest_type,
             max_depth=self.max_depth,
             impurity_tol=self.impurity_tol,
@@ -406,8 +389,9 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike,
-            sample_weight: np.ndarray | None = None):
+    def fit(
+        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
+    ) -> None:
         """
         Fit the random forest with training data (X, Y).
 
@@ -425,12 +409,10 @@ class RandomForest(BaseModel):
         X, Y = self._check_input(X, Y)
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
-        self.n_rows, self.n_features = self.X.shape
+        self.X_n_rows, self.n_features = self.X.shape
 
-        if sample_weight is None:
-            self.sample_weight = np.ones(self.X.shape[0])
-        else:
-            self.sample_weight = sample_weight
+        self.sample_weight = self._check_sample_weight(sample_weight)
+
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
         # Fit trees
         self.__build_trees()
@@ -438,9 +420,7 @@ class RandomForest(BaseModel):
         # Register that the forest was succesfully fitted
         self.forest_fitted = True
 
-        return self
-
-    def predict(self, X: ArrayLike, **kwargs):
+    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
         Predicts response values at X using fitted random forest.  The behavior
         of this function is determined by the Prediction class used in the
@@ -495,10 +475,10 @@ class RandomForest(BaseModel):
         return prediction
 
     def predict_weights(
-        self, X: np.ndarray | None = None, scale: bool = True
+        self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
         if X is None:
-            size_0 = self.n_rows
+            size_0 = self.X_n_rows
             X = self.X
         else:
             X, _ = self._check_input(X)
@@ -517,7 +497,7 @@ class RandomForest(BaseModel):
             X0=X,
             X1=None,
             size_X0=size_0,
-            size_X1=self.n_rows,
+            size_X1=self.X_n_rows,
             scaling=scaling,
         )
 
@@ -527,7 +507,7 @@ class RandomForest(BaseModel):
             ret = np.sum(weight_list, axis=0)
         return ret
 
-    def similarity(self, X0: np.ndarray, X1: np.ndarray):
+    def similarity(self, X0: ArrayLike, X1: ArrayLike):
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
         X1, _ = self._check_input(X1)

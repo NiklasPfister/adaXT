@@ -9,7 +9,7 @@ import numpy as np
 import ctypes
 
 
-def shared_numpy_array(array):
+def shared_numpy_array(array) -> np.ndarray:
     if array.ndim == 2:
         row, col = array.shape
         shared_array = RawArray(ctypes.c_double, (row * col))
@@ -48,7 +48,7 @@ class ParallelModel:
         self.ctx = multiprocessing.get_context("fork")
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
 
-    def async_map(self, function: Callable, map_input: Any, **kwargs):
+    def async_map(self, function: Callable, map_input: Any, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(map(partial_func, map_input))
@@ -58,7 +58,7 @@ class ParallelModel:
                 ret = promise.get()
         return ret
 
-    def map(self, function: Callable, map_input: Any, **kwargs):
+    def map(self, function: Callable, map_input: Any, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(map(partial_func, map_input))
@@ -67,7 +67,7 @@ class ParallelModel:
                 ret = p.map(partial_func, map_input)
         return ret
 
-    def async_starmap(self, function: Callable, map_input: Iterable, **kwargs):
+    def async_starmap(self, function: Callable, map_input: Iterable, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -77,7 +77,7 @@ class ParallelModel:
                 ret = promise.get()
         return ret
 
-    def starmap(self, function: Callable, map_input: Iterable, **kwargs):
+    def starmap(self, function: Callable, map_input: Iterable, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -86,7 +86,7 @@ class ParallelModel:
                 ret = p.starmap(partial_func, map_input)
         return ret
 
-    def async_apply(self, function: Callable, n_iterations: int, **kwargs):
+    def async_apply(self, function: Callable, n_iterations: int, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = [partial_func() for _ in range(n_iterations)]
@@ -97,7 +97,7 @@ class ParallelModel:
                 ret = [res.get() for res in promise]
         return ret
 
-    def apply(self, function: Callable, n_iterations: int, **kwargs):
+    def apply(self, function: Callable, n_iterations: int, **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = [partial_func() for _ in range(n_iterations)]
