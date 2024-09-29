@@ -67,7 +67,11 @@ class ParallelModel:
                 ret = p.map(partial_func, map_input)
         return ret
 
-    def async_starmap(self, function: Callable, map_input: Iterable, **kwargs) -> Any:
+    def async_starmap(
+            self,
+            function: Callable,
+            map_input: Iterable,
+            **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -77,7 +81,11 @@ class ParallelModel:
                 ret = promise.get()
         return ret
 
-    def starmap(self, function: Callable, map_input: Iterable, **kwargs) -> Any:
+    def starmap(
+            self,
+            function: Callable,
+            map_input: Iterable,
+            **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = list(starmap(partial_func, map_input))
@@ -86,7 +94,11 @@ class ParallelModel:
                 ret = p.starmap(partial_func, map_input)
         return ret
 
-    def async_apply(self, function: Callable, n_iterations: int, **kwargs) -> Any:
+    def async_apply(
+            self,
+            function: Callable,
+            n_iterations: int,
+            **kwargs) -> Any:
         partial_func = partial(function, **kwargs)
         if self.n_jobs == 1:
             ret = [partial_func() for _ in range(n_iterations)]
