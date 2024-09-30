@@ -5,8 +5,7 @@ from ..parallel import ParallelModel
 
 class Predict:
     """
-    The Predict class which the DecisionTree depends on.
-    Other implementations must inherit from this class.
+    The base Predict class from which all other predict classes need to inhert.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -137,7 +136,7 @@ class PredictLocalPolynomial(Predict):
     """
 
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
-        """
+        r"""
         For each row in X, the method first predicts the LeafNode into which
         the row falls and then computes uses the parameters theta0, theta1 and theta2
         saved on the LeafNode to estimate the predicted value
@@ -154,10 +153,10 @@ class PredictLocalPolynomial(Predict):
         X: np.ndarray
             A 2-dimensional array for which the rows are the samples at which to predict.
         **kwargs
-            orders : list[int]
-                A list of which orders should be predicted orders 0, 1 and 2 correspond to the
-                0th, 1st and 2nd order derivative. Default is orders=[0, 1, 2]
-                if the orders are not provided.
+            orders : list[int] | int
+                A list of integers or a single integer specifying which orders should be predicted.
+                Orders 0, 1 and 2 correspond to the 0th, 1st and 2nd order derivative.
+                Default is orders=[0, 1, 2] if not provided.
 
         Returns
         -------

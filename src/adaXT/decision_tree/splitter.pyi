@@ -4,7 +4,7 @@ from ..criteria import Criteria
 
 class Splitter:
     """
-    Splitter class used to create splits of the data
+    Splitter class used to create splits of the data.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, criteria: type[Criteria]) -> None:

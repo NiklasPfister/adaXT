@@ -2,7 +2,7 @@ import numpy as np
 
 class Node:
     """
-    Base node which other Nodes must inherit from.
+    The base Node from which all other nodes must inherit.
     """
 
     indices: np.ndarray
@@ -57,11 +57,11 @@ class DecisionNode(Node):
             threshold value of a split
         split_idx : int
             feature index to split on
-        left_child : DecisionNode|LeafNode|None
+        left_child : DecisionNode | LeafNode | None
             left child
-        right_child : DecisionNode|LeafNode|None
+        right_child : DecisionNode | LeafNode | None
             right child
-        parent : DecisionNode|None
+        parent : DecisionNode | None
             parent node
         """
         pass
@@ -94,7 +94,7 @@ class LeafNode(Node):
         impurity : float
             impurity of leaf node
         weighted_samples : float
-            summed weight of all samples in the LeafNode
+            summed weight of all samples in leaf node
         value : np.ndarray
             value of leaf node (depends on LeafBuilder)
         parent : DecisionNode
@@ -127,7 +127,7 @@ class LinearPolynomialLeafNode(LeafNode):
         impurity : float
             impurity of leaf node
         weighted_samples : float
-            summed weight of all samples in the LeafNode
+            summed weight of all samples in leaf node
         value : np.ndarray
             value of leaf node (depends on LeafBuilder)
         parent : DecisionNode

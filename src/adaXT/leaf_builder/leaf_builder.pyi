@@ -3,7 +3,7 @@ from adaXT.decision_tree.nodes import Node
 
 class LeafBuilder:
     """
-    Base class from which other leaf builders must inherit.
+    The base LeafBuilder class from which all other leaf builders must inherit.
     """
 
     def __init__(

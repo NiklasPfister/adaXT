@@ -1,6 +1,6 @@
 class Criteria:
     """
-    Abstract class used as a parent for new Criteria classes.
+    The base Criteria class from which all other criteria need to inherit.
     """
 
     pass

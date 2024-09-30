@@ -178,7 +178,7 @@ class DecisionTree(BaseModel):
             If None then the training data is used as X.
 
         scale: bool
-            Whether to do row-wise scaling
+            Whether to do row-wise scaling.
 
         Returns
         -------
