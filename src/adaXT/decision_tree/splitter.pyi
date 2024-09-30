@@ -11,12 +11,12 @@ class Splitter:
         """
         Parameters
         ----------
-            x: memoryview of NDArray
-                The feature values of the dataset
-            y: memoryview of NDArray
-                The response values of the dataset
-            criteria: Criteria
-                The criteria class used to find the impurity of a split
+            X : memoryview of NDArray
+                The feature values used for splitting.
+            Y : memoryview of NDArray
+                The response values used for splitting.
+            criteria : Criteria
+                The criteria class used to find the impurity of a split.
         """
         pass
 
@@ -28,7 +28,9 @@ class Splitter:
         Parameters
         ----------
         indices : memoryview of NDArray
-            Indices constituting the dataset
+            Indices for which to find a split.
+        feature_indices : memoryview of NDArray
+            Features at which to consider splitting.
 
         Returns
         -----------

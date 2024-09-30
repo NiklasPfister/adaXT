@@ -107,28 +107,6 @@ class PredictClassification(Predict):
         """
         pass
 
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        With the predictions it returns the most frequent element picked by all
-        the individual trees. Thus, this is the majority vote.
-
-        Returns
-        -------
-        np.ndarray
-            An array with the predicted class label for each row of X. Or, if 'predict_proba' is set
-            to True, a 2-dimensional array with where each row provides an array of the occurance
-            frequency of each class label appearing in the same leaf as the corresponding row in X.
-        """
-        pass
-
 class PredictRegression(Predict):
     """
     The default prediction class for the 'Regression' tree type.
@@ -152,53 +130,6 @@ class PredictRegression(Predict):
         pass
 
     pass
-
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        Returns the mean value of all the predictions along axis 1.
-
-        Parameters
-        ----------
-        predictions
-            Predictions by the trees.
-
-        Returns
-        -------
-        np.ndarray
-            An array of predictions for each element X passed to
-            forest.predict.
-        """
-        pass
-
-class PredictLinearRegression(Predict):
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Predicts which LeafNode each $x \in X$ would land in, and calculates the
-        $$
-        Y_i = L_{j,theta0} + L_{j,theta1}*X_{i, 0}
-        $$
-        For each $i \in X$ where $L_j$ is the LeafNode x would fall into, and
-        theta0 and theta1 are calculated for each LeafNode during training.
-
-        Parameters
-        ----------
-        X: np.ndarray
-            Array that should be carried out predictions on.
-
-        Returns
-        -------
-        np.ndarray
-            An array with predictions for each row of X.
-        """
-        pass
 
 class PredictLocalPolynomial(Predict):
     """
@@ -236,18 +167,15 @@ class PredictLocalPolynomial(Predict):
         """
         pass
 
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
+class PredictQuantile(Predict):
+    """
+    The default prediction class for the 'Quantile' tree type.
+    """
+
+    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
         For each row in X, the method first predicts the LeafNode into which
-        the row falls and then computes the quantiles of the Y values in that LeafNode.
+        the row falls and then computes the quantiles in that leaf node.
 
         For random forests the quantiles across all trees are computed jointly.
 
@@ -256,13 +184,12 @@ class PredictLocalPolynomial(Predict):
         X: np.ndarray
             A 2-dimensional array for which the rows are the samples at which to predict.
         **kwargs
-            quantile : list[float]
-                A list of quantiles that are internally passed to the numpy 'quantile' function.
-
+            quantile : list[float] | float
+                A list of quantiles or a single quantile which should be predicted.
         Returns
         -------
         np.ndarray
-            An array where each row correpsonds to the predicted quantiles for the corresponding
-            row of X.
+            A 1- or 2-dim array with the predicted quantiles for each row of X and columns
+            corresponding to different quantiles (if quantiles was a list).
         """
         pass
