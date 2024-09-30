@@ -67,9 +67,8 @@ Ypred = rf.predict(Xtest)
 
 # Predict forest weight on X or Xtest
 # -- can be used a similarity measure on the predictor space
-# TODO: Update once the new tree weights are available
-weight_train = rf.predict_forest_weight()
-weight_test = rf.predict_forest_weight(Xtest)
+weight_train = rf.predict_weights()
+weight_test = rf.predict_weights(Xtest)
 
 # Task 2: Fit a quantile regression
 qf = RandomForest("Quantile")
