@@ -157,15 +157,65 @@ class DecisionTree(BaseModel):
     def predict_weights(
         self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
-        # TODO: Documentation
+        """
+        Predicts a weight matrix Z, where Z_{i,j} indicates if X_i and
+        X0_j are in the same leaf node, where X0 denotes the training data.
+        If scaling is True, then the value is divided by the number of other
+        training data in the leaf node.
+
+        Parameters
+        ----------
+        X: array-like object of shape Mxd
+            New samples to predict a weight.
+            If None then X is treated as the training and or prediction data
+            of size Nxd.
+
+        scale: bool
+            Whether to do row-wise scaling
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape MxN, wehre N denotes the number of rows of
+            the training and or prediction data.
+        """
         pass
 
     def predict_leaf(self, X: ArrayLike | None) -> dict:
-        # TODO: Documentation
+        """
+        Computes hash table indexing in which LeafNodes the rows of X fall into.
+
+        Parameters
+        ----------
+        X : np.ndarray
+            2-dimensional array for which the rows are the samples at which to
+            predict.
+
+        Returns
+        -------
+        dict
+            A hash table with keys corresponding to LeafNode ids and values lists of
+            indices specifying which rows land in a given LeafNode.
+        """
         pass
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
-        # TODO: Documentation
+        """
+        Computes a similarity Z of size NxM, where each element Z_{i,j}
+        is 1 if element X0_i and X1_j end up in the same leaf node.
+
+        Parameters
+        ----------
+        X0: array-like object of shape Nxd
+            Array corresponding to row elements of Z.
+        X1: array-like object of shape Mxd
+            Array corresponding to column elements of Z.
+
+        Returns
+        -------
+        np.ndarray
+            A NxM shaped np.ndarray.
+        """
         pass
 
     def _tree_based_weights(
