@@ -476,7 +476,30 @@ class RandomForest(BaseModel):
     def predict_weights(
         self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
-        # TODO: Documentation
+        """
+        Predicts a weight matrix Z, where Z_{i,j} indicates if X_i and
+        X0_j are in the same leaf node, where X0 denotes the training data.
+        If scaling is True, then the value is divided by the number of other
+        training data in the leaf node and averaged over all the estimators of
+        the tree. If scaling is None, it is neither row-wise scaled and is
+        instead summed up over all estimators of the forest.
+
+        Parameters
+        ----------
+        X: array-like object of shape Mxd
+            New samples to predict a weight.
+            If None then X is treated as the training and or prediction data
+            of size Nxd.
+
+        scale: bool
+            Whether to do row-wise scaling
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape MxN, wehre N denotes the number of rows of
+            the training and or prediction data.
+        """
         if X is None:
             size_0 = self.X_n_rows
             X = self.X
@@ -508,7 +531,23 @@ class RandomForest(BaseModel):
         return ret
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike):
-        # TODO: Documentation
+        """
+        Computes a similarity Z of size NxM, where each element Z_{i,j}
+        is 1 if element X0_i and X1_j end up in the same leaf node.
+        Z is the averaged over all the estimators of the forest.
+
+        Parameters
+        ----------
+        X0: array-like object of shape Nxd
+            Array corresponding to row elements of Z.
+        X1: array-like object of shape Mxd
+            Array corresponding to column elements of Z.
+
+        Returns
+        -------
+        np.ndarray
+            A NxM shaped np.ndarray.
+        """
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
         X1, _ = self._check_input(X1)
