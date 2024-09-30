@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Literal
+from typing import Literal
 
 import numpy as np
 from numpy.random import Generator, default_rng
@@ -16,17 +16,13 @@ from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
 
-def get_single_leaf(tree: DecisionTree, X: np.ndarray | None = None) -> dict:
-    return tree.predict_leaf(X=X)
-
-
 def tree_based_weights(
     tree: DecisionTree,
-    X0: np.ndarray,
-    X1: np.ndarray,
+    X0: np.ndarray | None,
+    X1: np.ndarray | None,
     size_X0: int,
     size_X1: int,
-    scale: bool,
+    scaling: str,
 ) -> np.ndarray:
     hash0 = tree.predict_leaf(X=X0)
     hash1 = tree.predict_leaf(X=X1)
@@ -35,34 +31,74 @@ def tree_based_weights(
         hash1=hash1,
         size_X0=size_X0,
         size_X1=size_X1,
-        scale=scale,
+        scaling=scaling,
     )
 
 
 def get_sample_indices(
     gen: Generator,
     X_n_rows: int,
-    sampling_parameter: Any,
+    sampling_args: dict,
     sampling: str | None,
-) -> tuple:
+) -> tuple | None:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
     """
-    if sampling == "bootstrap":
-        return (gen.integers(low=0, high=X_n_rows, size=sampling_parameter), None)
+    if sampling == "resampling":
+        return (
+            gen.choice(
+                np.arange(0, X_n_rows),
+                size=sampling_args["size"],
+                replace=sampling_args["replace"],
+            ),
+            None,
+        )
     elif sampling == "honest_tree":
         indices = np.arange(0, X_n_rows)
         gen.shuffle(indices)
-        return (indices[:sampling_parameter], indices[sampling_parameter:])
+        if sampling_args["replace"]:
+            resample_size0 = sampling_args["size"]
+            resample_size1 = sampling_args["size"]
+        else:
+            resample_size0 = np.min(
+                [sampling_args["split"], sampling_args["size"]])
+            resample_size1 = np.min(
+                [X_n_rows - sampling_args["split"], sampling_args["size"]]
+            )
+        fit_indices = gen.choice(
+            indices[: sampling_args["split"]],
+            size=resample_size0,
+            replace=sampling_args["replace"],
+        )
+        pred_indices = gen.choice(
+            indices[sampling_args["split"]:],
+            size=resample_size1,
+            replace=sampling_args["replace"],
+        )
+        return (fit_indices, pred_indices)
     elif sampling == "honest_forest":
-        fitting_indices = gen.integers(
-            low=0, high=sampling_parameter[0], size=sampling_parameter[1]
+        indices = np.arange(0, X_n_rows)
+        if sampling_args["replace"]:
+            resample_size0 = sampling_args["size"]
+            resample_size1 = sampling_args["size"]
+        else:
+            resample_size0 = np.min(
+                [sampling_args["split"], sampling_args["size"]])
+            resample_size1 = np.min(
+                [X_n_rows - sampling_args["split"], sampling_args["size"]]
+            )
+        fit_indices = gen.choice(
+            indices[: sampling_args["split"]],
+            size=resample_size0,
+            replace=sampling_args["replace"],
         )
-        prediction_indices = gen.integers(
-            low=sampling_parameter[0], high=X_n_rows, size=sampling_parameter[1]
+        pred_indices = gen.choice(
+            indices[sampling_args["split"]:],
+            size=resample_size1,
+            replace=sampling_args["replace"],
         )
-        return (fitting_indices, prediction_indices)
+        return (fit_indices, pred_indices)
     else:
         return (np.arange(0, X_n_rows), None)
 
@@ -102,11 +138,17 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
+    tree.fit(
+        X=X,
+        Y=Y,
+        sample_indices=fitting_indices,
+        sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
-        )
+            X=X,
+            Y=Y,
+            sample_weight=sample_weight,
+            sample_indices=prediction_indices)
 
     return tree
 
@@ -127,30 +169,30 @@ class RandomForest(BaseModel):
         The maximum depth of the tree.
     forest_type : str
         The type of random forest, either  a string specifying a supported type
-        (currently "Regression", "Classification" and "Quantile") or None.
+        (currently "Regression", "Classification", "Quantile" or "Gradient").
     n_estimators : int
         The number of trees in the random forest.
     n_jobs : int
         The number of processes used to fit, and predict for the forest, -1
         uses all available proccesors.
     sampling: str | None
-        Either bootstrap, honest_tree, honest_forest or None. See
-        sampling_parameter for exact behaviour.
-    sampling_parameter: int | float | tuple[int, int|float] | None
-        A parameter used to control the behavior of the sampling. For
-        bootstrap it can be an int representing the number of randomly
-        drawn indices (with replacement) to fit on or a float for a
-        percentage.
-        For honest_forest it is a tuple of two ints: The first
-        value specifies a splitting index such that the indices on the left
-        are used in the fitting of all trees and the indices on the right
-        are used for prediction (i.e., populating the leafs). The second
-        value specifies the number of randomly drawn (with replacement)
-        indices used for both fitting and prediction.
-        For honest_tree it is the number of elements to use for both fitting
-        and prediction, where there might be overlap between trees in
-        fitting and prediction data, but not for an individual tree.
-        If None, all samples are used for each tree.
+        Either resampling, honest_tree, honest_forest or None.
+    sampling_args: dict | None
+        A parameter used to control the behavior of the sampling scheme. The following arguments
+        are available:
+            'size': Either int or float used by all sampling schemes (default 1.0).
+                Specifies the number of samples drawn. If int it corresponds
+                to the number of random resamples. If float it corresponds to the relative
+                size with respect to the training sample size.
+            'replace': Bool used by all sampling schemes (default True).
+                If True resamples are drawn with replacement otherwise without replacement.
+            'split': Either int or float used by the honest splitting schemes (default 0.5).
+                Specifies how to divide the sample into fitting and prediction indices.
+                If int it corresponds to the size of the fitting indices, while the remaining indices are
+                used as prediction indices (truncated if value is too large). If float it
+                corresponds to the relative size of the fitting indices, while the remaining
+                indices are used as prediction indices (truncated if value is too large).
+        If None all parameters are set to their defaults.
     impurity_tol : float
         The tolerance of impurity in a leaf node.
     min_samples_split : int
@@ -161,14 +203,13 @@ class RandomForest(BaseModel):
         The minimum improvement gained from performing a split.
     """
 
-    # TODO: Save prediction_indicies and fitting_indicies.
     def __init__(
         self,
         forest_type: str | None,
         n_estimators: int = 100,
         n_jobs: int = -1,
-        sampling: str | None = "bootstrap",
-        sampling_parameter: int | float | tuple[int, int] | None = None,
+        sampling: str | None = "resampling",
+        sampling_args: dict | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
         max_depth: int = sys.maxsize,
         impurity_tol: float = 0,
@@ -186,30 +227,30 @@ class RandomForest(BaseModel):
         ----------
         forest_type : str
             The type of random forest, either  a string specifying a supported type
-            (currently "Regression", "Classification" and "Quantile") or None.
+            (currently "Regression", "Classification", "Quantile" or "Gradient").
         n_estimators : int
             The number of trees in the random forest.
         n_jobs : int
             The number of processes used to fit, and predict for the forest, -1
             uses all available proccesors.
         sampling: str | None
-            Either bootstrap, honest_tree, honest_forest or None. See
-            sampling_parameter for exact behaviour.
-        sampling_parameter: int | float | tuple[int, int|float] | None
-            A parameter used to control the behavior of the sampling. For
-            bootstrap it can be an int representing the number of randomly
-            drawn indices (with replacement) to fit on or a float for a
-            percentage.
-            For honest_forest it is a tuple of two ints: The first
-            value specifies a splitting index such that the indices on the left
-            are used in the fitting of all trees and the indices on the right
-            are used for prediction (i.e., populating the leafs). The second
-            value specifies the number of randomly drawn (with replacement)
-            indices used for both fitting and prediction.
-            For honest_tree it is the number of elements to use for both fitting
-            and prediction, where there might be overlap between trees in
-            fitting and prediction data, but not for an individual tree.
-            If None, all samples are used for each tree.
+            Either resampling, honest_tree, honest_forest or None.
+        sampling_args: dict | None
+            A parameter used to control the behavior of the sampling scheme. The following arguments
+            are available:
+                'size': Either int or float used by all sampling schemes (default 1.0).
+                    Specifies the number of samples drawn. If int it corresponds
+                    to the number of random resamples. If float it corresponds to the relative
+                    size with respect to the training sample size.
+                'replace': Bool used by all sampling schemes (default True).
+                    If True resamples are drawn with replacement otherwise without replacement.
+                'split': Either int or float used by the honest splitting schemes (default 0.5).
+                    Specifies how to divide the sample into fitting and prediction indices.
+                    If int it corresponds to the size of the fitting indices, while the remaining indices are
+                    used as prediction indices (truncated if value is too large). If float it
+                    corresponds to the relative size of the fitting indices, while the remaining
+                    indices are used as prediction indices (truncated if value is too large).
+            If None all parameters are set to their defaults.
         max_features: int | float | Literal["sqrt", "log2"] | None = None
             The number of features to consider when looking for a split.
         max_depth : int
@@ -233,7 +274,7 @@ class RandomForest(BaseModel):
         predict: Predict
             The Prediction class to use, if None it defaults to the forest_type
             default.
-        splitter : Splitter | None, optional
+        splitter : Splitter | None
             The Splitter class to use, if None it defaults to the default
             Splitter class.
         """
@@ -244,13 +285,18 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
+        self._check_tree_type(
+            forest_type,
+            criteria,
+            splitter,
+            leaf_builder,
+            predict)
 
         self.max_features = max_features
         self.forest_type = forest_type
         self.n_estimators = n_estimators
         self.sampling = sampling
-        self.sampling_parameter = sampling_parameter
+        self.sampling_args = sampling_args
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
@@ -264,67 +310,60 @@ class RandomForest(BaseModel):
         else:
             raise ValueError("Random state either has to be Integral or None")
 
-    def __get_sampling_parameter(self, sampling_parameter: Any) -> Any:
-        if self.sampling == "bootstrap":
-            if isinstance(sampling_parameter, int):
-                return sampling_parameter
-            elif isinstance(sampling_parameter, float):
-                return max(round(self.X_n_rows * sampling_parameter), 1)
-            elif sampling_parameter is None:
-                return self.X_n_rows
+    def __get_sampling_parameter(self, sampling_args: dict | None) -> dict:
+        if sampling_args is None:
+            sampling_args = {}
+
+        if self.sampling == "resampling":
+            if "size" not in sampling_args:
+                sampling_args["size"] = self.X_n_rows
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["size"] = int(
+                    sampling_args["size"] * self.X_n_rows)
+            elif not isinstance(sampling_args["size"], int):
+                raise ValueError(
+                    "The provided sampling_args['size'] is not an integer or float as required."
+                )
+            if "replace" not in sampling_args:
+                sampling_args["replace"] = True
+            elif not isinstance(sampling_args["replace"], bool):
+                raise ValueError(
+                    "The provided sampling_args['replace'] is not a bool as required."
+                )
+        elif self.sampling in ["honest_tree", "honest_forest"]:
+            if "split" not in sampling_args:
+                sampling_args["split"] = np.min(
+                    [int(0.5 * self.X_n_rows), self.X_n_rows - 1]
+                )
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["split"] = np.min(
+                    [int(sampling_args["split"] * self.X_n_rows), self.X_n_rows - 1]
+                )
+            elif not isinstance(sampling_args["size"], int):
+                raise ValueError(
+                    "The provided sampling_args['split'] is not an integer or float as required."
+                )
+            if "size" not in sampling_args:
+                sampling_args["size"] = sampling_args["split"]
+            elif isinstance(sampling_args["size"], float):
+                sampling_args["size"] = int(
+                    sampling_args["size"] * sampling_args["split"]
+                )
+            elif not isinstance(sampling_args["size"], int):
+                raise ValueError(
+                    "The provided sampling_args['size'] is not an integer or float as required."
+                )
+            if "replace" not in sampling_args:
+                sampling_args["replace"] = True
+            elif not isinstance(sampling_args["replace"], bool):
+                raise ValueError(
+                    "The provided sampling_args['replace'] is not a bool as required."
+                )
+        elif self.sampling is not None:
             raise ValueError(
-                "Provided sampling_parameter is not an integer, a float or None as required."
+                f"The provided sampling scheme '{self.sampling}' does not exist."
             )
-        elif self.sampling == "honest_forest":
-            if sampling_parameter is None:
-                sampling_parameter = (self.X_n_rows // 2, self.X_n_rows // 2)
-            elif not isinstance(sampling_parameter, tuple):
-                raise ValueError(
-                    "The provided sampling parameter is not a tuple for honest_forest."
-                )
-            split_idx, number_chosen = sampling_parameter
-            if not isinstance(split_idx, int):
-                raise ValueError(
-                    "The provided splitting index (given as the first entry in sampling_parameter) is not an integer"
-                )
-            if (split_idx > self.X_n_rows) or (split_idx < 0):
-                raise ValueError("The split index does not fit for the given dataset")
-
-            if isinstance(number_chosen, float):
-                return (split_idx, max(round(self.X_n_rows * sampling_parameter), 1))
-            elif isinstance(number_chosen, int):
-                return (split_idx, number_chosen)
-
-            elif number_chosen is None:
-                return (split_idx, int(self.X_n_rows / 2))
-
-            raise ValueError(
-                "The provided number of resamples (given as the second entry in sampling_parameter) is not an integer, float or None"
-            )
-
-        elif self.sampling == "honest_tree":
-            if sampling_parameter is None:
-                sampling_parameter = int(self.X_n_rows / 2)
-            if isinstance(sampling_parameter, int):
-                if sampling_parameter > self.X_n_rows:
-                    raise ValueError(
-                        "Sample parameter can not be larger than number of rows of X"
-                    )
-                return sampling_parameter
-            elif isinstance(sampling_parameter, float):
-                if (sampling_parameter < 0) or (sampling_parameter > 1):
-                    raise ValueError(
-                        "Sampling parameter must be between 0 and 1 for a float with honest_tree"
-                    )
-                return max(round(self.X_n_rows * sampling_parameter), 1)
-            else:
-                raise ValueError(
-                    "Provided sampling parameter is not an integer a float of None"
-                )
-        elif self.sampling is None:
-            return None
-        else:
-            raise ValueError(f"Provided sampling ({self.sampling}) does not exist")
+        return sampling_args
 
     def __is_honest(self) -> bool:
         return self.sampling in ["honest_tree", "honest_forest"]
@@ -337,10 +376,12 @@ class RandomForest(BaseModel):
         fitting_prediction_indices = self.parallel.async_map(
             get_sample_indices,
             map_input=self.parent_rng.spawn(self.n_estimators),
+            sampling_args=self.sampling_args,
             X_n_rows=self.X_n_rows,
-            sampling_parameter=self.sampling_parameter,
             sampling=self.sampling,
         )
+        self.fitting_indices, self.prediction_indices = zip(
+            *fitting_prediction_indices)
         self.trees = self.parallel.async_starmap(
             build_single_tree,
             map_input=fitting_prediction_indices,
@@ -362,9 +403,8 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(
-        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
-    ) -> None:
+    def fit(self, X: ArrayLike, Y: ArrayLike,
+            sample_weight: ArrayLike | None = None) -> None:
         """
         Fit the random forest with training data (X, Y).
 
@@ -386,7 +426,7 @@ class RandomForest(BaseModel):
 
         self.sample_weight = self._check_sample_weight(sample_weight)
 
-        self.sampling_parameter = self.__get_sampling_parameter(self.sampling_parameter)
+        self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
         # Fit trees
         self.__build_trees()
 
@@ -450,8 +490,33 @@ class RandomForest(BaseModel):
     def predict_weights(
         self, X: ArrayLike | None = None, scale: bool = True
     ) -> np.ndarray:
+        """
+        Predicts a weight matrix Z, where Z_{i,j} indicates if X_i and
+        X0_j are in the same leaf node, where X0 denotes the training data.
+        If scaling is True, then the value is divided by the number of other
+        training data in the leaf node and averaged over all the estimators of
+        the tree. If scaling is None, it is neither row-wise scaled and is
+        instead summed up over all estimators of the forest.
+
+        Parameters
+        ----------
+        X: array-like object of shape Mxd
+            New samples to predict a weight.
+            If None then X is treated as the training and or prediction data
+            of size Nxd.
+
+        scale: bool
+            Whether to do row-wise scaling
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape MxN, wehre N denotes the number of rows of
+            the training and or prediction data.
+        """
         if X is None:
             size_0 = self.X_n_rows
+            X = self.X
         else:
             X, _ = self._check_input(X)
             self._check_dimensions(X)
@@ -459,7 +524,7 @@ class RandomForest(BaseModel):
             size_0 = X.shape[0]
 
         if scale:
-            scaling = "column"
+            scaling = "row"
         else:
             scaling = "none"
 
@@ -470,7 +535,7 @@ class RandomForest(BaseModel):
             X1=None,
             size_X0=size_0,
             size_X1=self.X_n_rows,
-            scale=scaling,
+            scaling=scaling,
         )
 
         if scale:
@@ -479,14 +544,24 @@ class RandomForest(BaseModel):
             ret = np.sum(weight_list, axis=0)
         return ret
 
-    def similarity(
-        self, X0: ArrayLike, X1: ArrayLike, scale: bool = True
-    ) -> np.ndarray:
-        if scale:
-            scaling = "symmetric"
-        else:
-            scaling = "none"
+    def similarity(self, X0: ArrayLike, X1: ArrayLike):
+        """
+        Computes a similarity Z of size NxM, where each element Z_{i,j}
+        is 1 if element X0_i and X1_j end up in the same leaf node.
+        Z is the averaged over all the estimators of the forest.
 
+        Parameters
+        ----------
+        X0: array-like object of shape Nxd
+            Array corresponding to row elements of Z.
+        X1: array-like object of shape Mxd
+            Array corresponding to column elements of Z.
+
+        Returns
+        -------
+        np.ndarray
+            A NxM shaped np.ndarray.
+        """
         X0, _ = self._check_input(X0)
         self._check_dimensions(X0)
         X1, _ = self._check_input(X1)
@@ -497,10 +572,10 @@ class RandomForest(BaseModel):
         weight_list = self.parallel.async_map(
             tree_based_weights,
             map_input=self.trees,
-            X1=X0,
-            X2=X1,
+            X0=X0,
+            X1=X1,
             size_X0=size_0,
             size_X1=size_1,
-            scale=scaling,
+            scaling="similarity",
         )
         return np.mean(weight_list, axis=0)

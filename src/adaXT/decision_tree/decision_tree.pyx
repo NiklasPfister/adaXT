@@ -6,6 +6,9 @@ import numpy as np
 import sys
 from numpy.typing import ArrayLike
 
+cimport numpy as cnp
+ctypedef cnp.float64_t DOUBLE_t
+
 
 # Custom
 from .splitter import Splitter
@@ -116,7 +119,7 @@ class DecisionTree(BaseModel):
         return self.predictor.predict(X, **kwargs)
 
     def __get_leaf(self, scale: bool = False) -> dict:
-        if not self.root:
+        if self.root is None:
             raise ValueError("The tree has not been trained before trying to predict")
 
         leaf_nodes = self.leaf_nodes
@@ -129,7 +132,11 @@ class DecisionTree(BaseModel):
         return ht
 
     def _tree_based_weights(self, hash0: dict, hash1: dict, size_X0: int,
-                            size_X1: int, scale: bool) -> np.ndarray:
+                            size_X1: int, scaling: str) -> np.ndarray:
+        cdef:
+            int xi, ind2
+            cnp.ndarray[DOUBLE_t, ndim=2] matrix
+
         matrix = np.zeros((size_X0, size_X1))
         hash0_keys = hash0.keys()
         hash1_keys = hash1.keys()
@@ -137,19 +144,20 @@ class DecisionTree(BaseModel):
             if xi in hash1_keys:
                 indices_1 = hash0[xi]
                 indices_2 = hash1[xi]
-                if scale == "column":
-                    val = 1.0/len(indices_1)
-                elif scale == "symmetric":
-                    val = 1.0/(len(indices_1) + len(indices_2))
-                elif scale == "none":
+                if scaling == "row":
+                    val = 1.0/len(indices_2)
+                    for ind2 in indices_2:
+                        matrix[indices_1, ind2] += val
+                elif scaling == "similarity":
                     val = 1.0
-                matrix[np.ix_(indices_1, indices_2)] = val
+                    matrix[np.ix_(indices_1, indices_2)] = val
+                elif scaling == "none":
+                    val = 1.0
+                    for ind2 in indices_2:
+                        matrix[indices_1, ind2] += val
         return matrix
 
-    def similarity(self,
-                   X0: ArrayLike,
-                   X1: ArrayLike,
-                   scale: bool = True) -> np.ndarray:
+    def similarity(self, X0: ArrayLike, X1: ArrayLike):
         if not self.skip_check_input:
             X0, _ = self._check_input(X0)
             self._check_dimensions(X0)
@@ -158,32 +166,28 @@ class DecisionTree(BaseModel):
 
         hash0 = self.predict_leaf(X0)
         hash1 = self.predict_leaf(X1)
-        if scale:
-            scale = "symmetric"
-        else:
-            scale = "none"
         return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
-                                        scale)
+                                        scaling="similarity")
 
     def predict_weights(self, X: ArrayLike | None = None,
                         scale: bool = True) -> np.ndarray:
         if X is None:
-            size_1 = self.n_rows_predict
-            new_hash = self.__get_leaf()
+            size_0 = self.n_rows_predict
+            new_hash_table = self.__get_leaf()
         else:
             if not self.skip_check_input:
                 X, _ = self._check_input(X)
                 self._check_dimensions(X)
-            size_1 = X.shape[0]
-            new_hash = self.predict_leaf(X)
+            size_0 = X.shape[0]
+            new_hash_table = self.predict_leaf(X)
         if scale:
-            scale = "column"
+            scaling = "row"
         else:
-            scale = "none"
+            scaling = "none"
         default_hash_table = self.__get_leaf()
-        return self._tree_based_weights(default_hash_table, new_hash,
-                                        self.n_rows_predict, size_1,
-                                        scale=scale)
+        return self._tree_based_weights(new_hash_table, default_hash_table,
+                                        size_0, self.n_rows_predict,
+                                        scaling=scaling)
 
     def predict_leaf(self, X: ArrayLike | None = None) -> dict:
         if X is None:
@@ -212,7 +216,7 @@ class DecisionTree(BaseModel):
             self.leaf_nodes[i] = None
 
     def __fit_new_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                             np.ndarray, indices: np.ndarray) -> None:
+                             np.ndarray, sample_indices: np.ndarray) -> None:
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -220,65 +224,85 @@ class DecisionTree(BaseModel):
             int[::1] all_idx
             int[::1] leaf_indices
 
-        refit_objs = []
-        for idx in indices:
-            cur_node = self.root
-            depth = 1
-            while isinstance(cur_node, DecisionNode) :
-                # Mark cur_node as visited
-                cur_node.visited = 1
-                cur_split_idx = cur_node.split_idx
-                cur_threshold = cur_node.threshold
+        # Set all_idx to contain only sample_indices with a positive weight
+        all_idx = np.array(
+            [x for x in sample_indices if sample_weight[x] != 0], dtype=np.int32
+        )
 
-                # Check if X should go to the left or right
-                if X[idx, cur_split_idx] < cur_threshold:
-                    # If the left or right is none, then there previously was a
-                    # leaf node, and we create a new refit object
-                    if cur_node.left_child is None:
-                        cur_node.left_child = refit_object(idx, depth,
-                                                           cur_node, True)
-                        refit_objs.append(cur_node.left_child)
-                    # If there already is a refit object, add this new index to
-                    # the refit object
-                    elif isinstance(cur_node.left_child, refit_object):
-                        cur_node.left_child.add_idx(idx)
+        if self.root is not None:
+            refit_objs = []
+            for idx in all_idx:
+                cur_node = self.root
+                depth = 0
+                while isinstance(cur_node, DecisionNode) :
+                    # Mark cur_node as visited
+                    cur_node.visited = 1
+                    cur_split_idx = cur_node.split_idx
+                    cur_threshold = cur_node.threshold
 
-                    cur_node = cur_node.left_child
-                else:
-                    if cur_node.right_child is None:
-                        cur_node.right_child = refit_object(idx, depth,
-                                                            cur_node, False)
-                        refit_objs.append(cur_node.right_child)
-                    elif isinstance(cur_node.right_child, refit_object):
-                        cur_node.right_child.add_idx(idx)
+                    # Check if X should go to the left or right
+                    if X[idx, cur_split_idx] < cur_threshold:
+                        # If the left or right is none, then there previously was a
+                        # leaf node, and we create a new refit object
+                        if cur_node.left_child is None:
+                            cur_node.left_child = refit_object(idx, depth,
+                                                               cur_node, True)
+                            refit_objs.append(cur_node.left_child)
+                        # If there already is a refit object, add this new index to
+                        # the refit object
+                        elif isinstance(cur_node.left_child, refit_object):
+                            cur_node.left_child.add_idx(idx)
 
-                    cur_node = cur_node.right_child
-                depth += 1
+                        cur_node = cur_node.left_child
+                    else:
+                        if cur_node.right_child is None:
+                            cur_node.right_child = refit_object(idx, depth,
+                                                                cur_node, False)
+                            refit_objs.append(cur_node.right_child)
+                        elif isinstance(cur_node.right_child, refit_object):
+                            cur_node.right_child.add_idx(idx)
 
-        all_idx = np.arange(0, indices.shape[0], dtype=np.int32)
+                        cur_node = cur_node.right_child
+                    depth += 1
+
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
         criteria = self.criteria_class(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
-        n_objs = len(refit_objs)
-        nodes = []
-        for i in range(n_objs):
-            obj = refit_objs[i]
-            leaf_indices = np.array(obj.indices, dtype=np.int32)
-            new_node = leaf_builder.build_leaf(
-                    i,
-                    leaf_indices,
-                    obj.depth,
-                    criteria.impurity(leaf_indices),
-                    leaf_indices.shape[0],
-                    obj.parent,
-                    )
-            new_node.visited = 1
-            nodes.append(new_node)
-            if obj.is_left:
-                obj.parent.left_child = new_node
-            else:
-                obj.parent.right_child = new_node
-        self.leaf_nodes = nodes
+        # Two cases:
+        # (1) Only a single root node (n_objs == 0)
+        # (2) At least one split (n_objs > 0)
+        if self.root is None:
+            weighted_samples = np.sum([sample_weight[x] for x in all_idx])
+            self.root = leaf_builder.build_leaf(
+                    leaf_id=0,
+                    indices=all_idx,
+                    depth=0,
+                    impurity=criteria.impurity(all_idx),
+                    weighted_samples=weighted_samples,
+                    parent=None)
+            self.leaf_nodes = [self.root]
+        else:
+            n_objs = len(refit_objs)
+            nodes = []
+            for i in range(n_objs):
+                obj = refit_objs[i]
+                leaf_indices = np.array(obj.indices, dtype=np.int32)
+                weighted_samples = np.sum([sample_weight[x] for x in leaf_indices])
+                new_node = leaf_builder.build_leaf(
+                        leaf_id=i,
+                        indices=leaf_indices,
+                        depth=obj.depth,
+                        impurity=criteria.impurity(leaf_indices),
+                        weighted_samples=weighted_samples,
+                        parent=obj.parent,
+                        )
+                new_node.visited = 1
+                nodes.append(new_node)
+                if obj.is_left:
+                    obj.parent.left_child = new_node
+                else:
+                    obj.parent.right_child = new_node
+            self.leaf_nodes = nodes
 
     # Assumes that each visited node is marked during __fit_new_leaf_nodes
     def __squash_tree(self) -> None:
@@ -342,7 +366,7 @@ class DecisionTree(BaseModel):
                          sample_weight: ArrayLike | None = None,
                          sample_indices: ArrayLike | None = None,
                          **kwargs) -> None:
-        if not self.root:
+        if self.root is None:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
         if not self.skip_check_input:
@@ -350,12 +374,12 @@ class DecisionTree(BaseModel):
             self._check_dimensions(X)
             sample_weight = self._check_sample_weight(sample_weight)
             sample_indices = self._check_sample_indices(sample_indices)
+
         # Remove current leaf nodes
-        indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
 
         # Find the leaf node, all samples would have been placed in
-        self.__fit_new_leaf_nodes(X, Y, sample_weight, indices)
+        self.__fit_new_leaf_nodes(X, Y, sample_weight, sample_indices)
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
@@ -514,10 +538,8 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = self.sample_indices
-
         all_idx = np.array(
-            [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32
+            [x for x in self.sample_indices if self.sample_weight[x] != 0], dtype=np.int32
         )
 
         # Update the tree now that we have the correct samples
@@ -536,8 +558,7 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            weighted_samples = np.sum(list(map(lambda x: self.sample_weight[x],
-                                      indices)))
+            weighted_samples = np.sum([self.sample_weight[x] for x in indices])
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements

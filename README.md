@@ -13,6 +13,28 @@ help, or leave general comments.
 Website:
 [https://NiklasPfister.github.io/adaXT](https://NiklasPfister.github.io/adaXT)
 
+### Overview
+
+adaXT implements several tree types that can be used out-of-the-box, both as
+decision trees and random forests. Currently, the following tree types are
+implemented:
+
+- **Classification:** For prediction tasks in which the response is categorical.
+- **Regression:** For prediction tasks in which the response is continuous.
+- **Quantile:** For uncertainty quantification tasks in which the response is
+  continuous and the goal is to estimate one or more quantiles of the
+  conditional distribution of the response given the predictors.
+- **Gradient:** For tasks in which one aims to estimate (directional)
+  derivatives of the response given the predictors. A related tree type is used
+  in the
+  [Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
+  method.
+
+Beyond these pre-defined tree types, adaXT offers a simple interface to extend
+or modify most components of the tree models. For example, it is easy to create
+a [custom criteria](/docs/user_guide/creatingCriteria.md) function that is used
+to create splits.
+
 ### Getting started
 
 adaXT is available on [pypi](https://pypi.org/project/adaXT) and can be
@@ -22,8 +44,9 @@ installed via pip
 pip install adaXT
 ```
 
-Several pre-defined tree types including for regression, classification and
-quantile regression, are available and can be easily used as follows:
+Working with any of the default tree types uses the same class-style interface
+as other popular machine learning packages. The following code illustrates this
+for `Regression` and `Quantile` random forests:
 
 ```python
 from adaXT.random_forest import RandomForest
@@ -44,8 +67,8 @@ Ypred = rf.predict(Xtest)
 
 # Predict forest weight on X or Xtest
 # -- can be used a similarity measure on the predictor space
-weight_train = rf.predict_forest_weight()
-weight_test = rf.predict_forest_weight(Xtest)
+weight_train = rf.predict_weights()
+weight_test = rf.predict_weights(Xtest)
 
 # Task 2: Fit a quantile regression
 qf = RandomForest("Quantile")
@@ -59,7 +82,7 @@ The main advantage of adaXT over existing tree-based ML packages is its
 modularity and extendability, which is discussed in detail in the
 [documentation](https://NiklasPfister.github.io/adaXT).
 
-### Goals
+### Project goals
 
 This project aims to provide a flexible and unified code-base for various
 tree-based algorithms that strikes a balance between speed and ease with which
@@ -67,8 +90,8 @@ the code can be adapted and extended. It should provide researchers a simple
 toolkit for prototyping new tree-based algorithms.
 
 adaXT provides an intuitive user experience that is similar to the
-[scikit-learn](https://scikit-learn.org) implementations of decision trees both
-in terms model-based syntax and hyperparameters. Under the hood, however, adaXT
+[scikit-learn](https://scikit-learn.org) implementation of decision trees both
+in terms of model-based syntax and hyperparameters. Under the hood, however, adaXT
 strikes a different balance between speed and ease of adapting and extending the
 code.
 
@@ -81,26 +104,26 @@ components:
 
 - Criteria class: Used during fitting to determine splits.
 
-- LeafBuilder class: Used during fitting to specify what is saved in the leaf
+- LeafBuilder class: Used during fitting to specify what is saved on the leaf
   nodes.
 
 - Splitter class: Used during fitting to perform the splits.
 
-- Prediction class: Used after fitting to make predictions.
+- Predict class: Used after fitting to make predictions.
 
-By specifying these three components a range of different tree algorithms can be
+By specifying these four components a range of different tree algorithms can be
 created, e.g., regression trees, classification trees, quantile regression trees
-and survival trees. Additionally to this modular structure, all other operations
+and gradient trees. Additionally to this modular structure, all other operations
 are kept as vanilla as possible allowing users to easily change parts of the
 code (e.g., the splitting procedure).
 
 #### Speed
 
-As tree-based algorithms involve evaluating expensive loops over the dataset, it
+As tree-based algorithms involve expensive loops over the training dataset, it
 is important that these computations are implemented in a compiled language.
 adaXT implements all computationally expensive operations in
 [Cython](https://cython.org/). This results in speeds similar (although a few
 factors slower) than the corresponding [scikit-learn](https://scikit-learn.org)
 implementations. However, due to its modular structure and the avoidance of
-technical speed-ups adaXT is not intended to provide state-of-the-art speed and
+technical speed-ups, adaXT does not intend to provide state-of-the-art speed and
 users mainly concerned with speed should consider more targeted implementations.

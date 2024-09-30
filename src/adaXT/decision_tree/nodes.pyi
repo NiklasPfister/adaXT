@@ -2,7 +2,7 @@ import numpy as np
 
 class Node:
     """
-    Base node which other Nodes must inherit from.
+    The base Node from which all other nodes must inherit.
     """
 
     indices: np.ndarray
@@ -10,7 +10,7 @@ class Node:
     impurity: float
 
     def __init__(
-        self, indices: np.ndarray, depth: int, impurity: float, n_samples: int
+        self, indices: np.ndarray, depth: int, impurity: float
     ) -> None:
         """
         Parameters
@@ -18,7 +18,7 @@ class Node:
         indices : np.ndarray
             indices in node
         depth : int
-            depth of noe
+            depth of node
         impurity : float
             impurity of node
         """
@@ -54,15 +54,15 @@ class DecisionNode(Node):
         impurity : float
             impurity in node
         threshold : float
-            the threshold value of a split
+            threshold value of a split
         split_idx : int
-            the feature index to split on
-        left_child : DecisionNode|LeafNode|None, optional
-            the left child, by default None
-        right_child : DecisionNode|LeafNode|None, optional
-            the right child, by default None
-        parent : DecisionNode|None, optional
-            the parent node, by default None
+            feature index to split on
+        left_child : DecisionNode | LeafNode | None
+            left child
+        right_child : DecisionNode | LeafNode | None
+            right child
+        parent : DecisionNode | None
+            parent node
         """
         pass
 
@@ -78,29 +78,31 @@ class LeafNode(Node):
         indices: np.ndarray,
         depth: int,
         impurity: float,
-        n_samples: int,
-        value: list[float],
+        weighted_samples: float,
+        value: np.ndarray,
         parent: DecisionNode,
     ) -> None:
         """
         Parameters
         ----------
+        id : int
+            unique identifier of leaf node
         indices : np.ndarray
-            Indices of leaf node
+            indices in leaf node
         depth : int
-            depth the leaf node is located at
+            depth of leaf node
         impurity : float
-            Impurity of leaf node
+            impurity of leaf node
         weighted_samples : float
-            Weight of the samples in the LeafNode
-        value : list[float]
-            The mean values of classes in leaf node
+            summed weight of all samples in leaf node
+        value : np.ndarray
+            value of leaf node (depends on LeafBuilder)
         parent : DecisionNode
-            The parent node
+            parent node
         """
         pass
 
-class LinearRegressionLeafNode(LeafNode):
+class LinearPolynomialLeafNode(LeafNode):
     def __init__(
         self,
         id: int,
@@ -116,21 +118,25 @@ class LinearRegressionLeafNode(LeafNode):
         """
         Parameters
         ----------
+        id : int
+            unique identifier of leaf node
         indices : np.ndarray
-            Indices of leaf node
+            indices in leaf node
         depth : int
-            depth the leaf node is located at
+            depth of leaf node
         impurity : float
-            Impurity of leaf node
+            impurity of leaf node
         weighted_samples : float
-            Weight of the samples in the LeafNode
-        value : list[float]
-            The mean values of classes in leaf node
+            summed weight of all samples in leaf node
+        value : np.ndarray
+            value of leaf node (depends on LeafBuilder)
         parent : DecisionNode
-            The parent node
+            parent node
         theta0 : float
-            Theta0 used in Linear Regression.
+            theta0 parameter corresponding to intercept term
         theta1 : float
-            Theta1 used in Linear Regression.
+            theta1 parameter correponding to linear term
+        theta2 : float
+            theta2 parameter correponding to quadratic term
         """
         pass

@@ -4,19 +4,19 @@ from ..criteria import Criteria
 
 class Splitter:
     """
-    Splitter class used to create splits of the data
+    Splitter class used to create splits of the data.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, criteria: type[Criteria]) -> None:
         """
         Parameters
         ----------
-            x: memoryview of NDArray
-                The feature values of the dataset
-            y: memoryview of NDArray
-                The response values of the dataset
-            criteria: Criteria
-                The criteria class used to find the impurity of a split
+            X : memoryview of NDArray
+                The feature values used for splitting.
+            Y : memoryview of NDArray
+                The response values used for splitting.
+            criteria : Criteria
+                The criteria class used to find the impurity of a split.
         """
         pass
 
@@ -28,7 +28,9 @@ class Splitter:
         Parameters
         ----------
         indices : memoryview of NDArray
-            Indices constituting the dataset
+            Indices for which to find a split.
+        feature_indices : memoryview of NDArray
+            Features at which to consider splitting.
 
         Returns
         -----------

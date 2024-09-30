@@ -33,9 +33,6 @@ cdef int[::1] sort_feature(int[::1] indices):
     indices : memoryview of NDArray
         A list of the indices which are to be sorted over
 
-    feature: memoryview of NDArray
-        A list containing the feature values that are to be sorted over
-
     Returns
     -----------
     memoryview of NDArray

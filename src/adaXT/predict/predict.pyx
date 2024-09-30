@@ -5,19 +5,18 @@ from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
-from adaXT.parallel import shared_numpy_array
 from ..parallel import ParallelModel
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t
 
 
-def default_predict(tree, X: np.ndarray, **kwargs) -> np.ndarray:
+def predict_default(tree, X: np.ndarray, **kwargs) -> np.ndarray:
     return np.array(tree.predict(X, **kwargs))
 
 
 def predict_proba(
-        tree: DecisionTree, Y: np.ndarray, X: np.ndarray, unique_classes: int
+        tree: DecisionTree, X: np.ndarray, Y: np.ndarray, unique_classes: int
 ) -> np.ndarray:
     cdef:
         int i, cur_split_idx
@@ -37,17 +36,11 @@ def predict_proba(
                 cur_node = cur_node.left_child
             else:
                 cur_node = cur_node.right_child
-        cur_array = np.zeros(unique_classes)
-        n_samples = len(cur_node.indices)
-        for idx in cur_node.indices:
-            cur_array[np.where(unique_classes == Y[idx, 0])] += 1
-
-        ret_val.append(cur_array/n_samples)
-
-    return np.array(ret_val, dtype=int)
+        ret_val.append(cur_node.value)
+    return np.array(ret_val)
 
 
-def quantile_predict(
+def predict_quantile(
     tree: DecisionTree, X: np.ndarray, n_obs: int
 ) -> np.ndarray:
     # Check if quantile is an array
@@ -77,8 +70,6 @@ cdef class Predict():
 
     def __reduce__(self) -> None:
         return (self.__class__, (self.X.base, self.Y.base, self.root))
-
-    # TODO: predict_indices
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         raise NotImplementedError("Function predict is not implemented for this Predict class")
@@ -115,7 +106,7 @@ cdef class Predict():
     def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
                        trees: list[DecisionTree], parallel: ParallelModel,
                        **kwargs) -> np.ndarray:
-        predictions = parallel.async_map(default_predict,
+        predictions = parallel.async_map(predict_default,
                                          trees,
                                          X=X_new,
                                          **kwargs)
@@ -144,7 +135,7 @@ cdef class PredictClassification(Predict):
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            cnp.ndarray prediction
+            cnp.ndarray[DOUBLE_t, ndim=1] prediction
 
         # Make sure that x fits the dimensions.
         n_obs = X.shape[0]
@@ -186,7 +177,7 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return np.array(ret_val, dtype=int)
+        return np.array(ret_val)
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         if "predict_proba" in kwargs:
@@ -203,15 +194,13 @@ cdef class PredictClassification(Predict):
         # Forest_predict_proba
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
-                unique_classes = shared_numpy_array(np.unique(Y_old))
-                Y_old = shared_numpy_array(Y_old)
-                predictions = parallel.async_map(predict_proba, trees, Y=Y_old,
-                                                 unique_classes=unique_classes)
-                return np.mean(predictions, axis=0, dtype=int)
+                predictions = parallel.async_map(predict_proba, trees,
+                                                 X=X_new)
+                return np.mean(predictions, axis=0, dtype=DOUBLE)
 
-        predictions = parallel.async_map(default_predict, trees, X=X_new,
+        predictions = parallel.async_map(predict_default, trees, X=X_new,
                                          **kwargs)
-        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=DOUBLE)
+        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
 cdef class PredictRegression(Predict):
@@ -333,7 +322,7 @@ cdef class PredictQuantile(Predict):
             )
         quantile = kwargs['quantile']
         n_obs = X_new.shape[0]
-        prediction_indices = parallel.async_map(quantile_predict,
+        prediction_indices = parallel.async_map(predict_quantile,
                                                 map_input=trees, X=X_new,
                                                 n_obs=n_obs)
         # In case the leaf nodes have multiple elements and not just one, we

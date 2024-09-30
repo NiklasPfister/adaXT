@@ -5,8 +5,7 @@ from ..parallel import ParallelModel
 
 class Predict:
     """
-    The Predict class which the DecisionTree depends on.
-    Other implementations must inherit from this class.
+    The base Predict class from which all other predict classes need to inhert.
     """
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
@@ -20,20 +19,29 @@ class Predict:
         Parameters
         ----------
         X: np.ndarray
-            Array that should be carried out predictions on.
+            A 2-dimensional array for which the rows are the samples at which to predict.
+
+        Returns
+        -------
+        np.ndarray
+            An array with predictions for each row of X.
         """
         pass
 
     def predict_leaf(self, X: np.ndarray) -> dict:
         """
-        Function called when tree.predict_leaf_matrix is called.
+        Computes hash table indexing in which LeafNodes the rows of X fall into.
 
         Parameters
         ----------
         X : np.ndarray
-            Data to predict on.
-        scale
-            Whether to scale the data.
+            2-dimensional array for which the rows are the samples at which to predict.
+
+        Returns
+        -------
+        dict
+            A hash table with keys corresponding to LeafNode ids and values lists of
+            indices specifying which rows land in a given LeafNode.
         """
         pass
 
@@ -46,72 +54,72 @@ class Predict:
         parallel: ParallelModel,
         **kwargs,
     ) -> np.ndarray:
-        """Function called by the RandomForest class after it has gotten the
-        result of predict from each tree. Thise function should then do any
-        changes seen fit.
+        """
+        Internal function used by the RandomForest class 'predict' method to evaluate predictions
+        for each tree and aggregate them.
+
+        Needs to be adjusted whenever RandomForest predictions do not simply aggregate the tree
+        predictions by averaging.
 
         Parameters
         ----------
-        predictions: np.ndarray
-            An array of predictions.
+        X_old: np.ndarray
+            Array of feature values used during training.
+        Y_old: np.ndarray
+            Array of response values used during training.
+        X_new: np.ndarray
+            Array of new feature values at which to predict.
+        tree: list[DecisionTree]
+            List of fitted DecisionTrees fitted within the random forest.
+        parallel: ParallelModel
+            ParallelModel used for multiprocessing.
+
+        Returns
+        -------
+        np.ndarray
+            An array with predictions for each row of X_new.
         """
         pass
 
 class PredictClassification(Predict):
     """
-    The default prediction class for the Classification DecisionTree.
+    The default prediction class for the 'Classification' tree type.
     """
-
-    def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
-        pass
 
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Predicts the LeafNode every $x \in X$ would fall into and returns the
-        class which occurs the most amount of times within the LeafNode
+        For each row in X, the method first predicts the LeafNode into which
+        the row falls and then computes the class with the highest number of
+        occurances in that LeafNode.
+
+        If the keyword argument 'predict_proba' is set to True. This method outputs
+        class probabilities (i.e., the frequence of each label in the same LeafNode).
 
         Parameters
         ----------
         X: np.ndarray
-            Array that should be carried out predictions on.
+            A 2-dimensional array for which the rows are the samples at which to predict.
+        **kwargs
+            predict_proba : bool
+                Specifies whether to compute class probabilities or not.
+                Defaults to False if not provided.
         """
-        pass
-
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        With the predictions it returns the most frequent element picked by all
-        the individual trees. Thus, this is the majority vote.
-
-        Parameters
-        ----------
-        predictions
-            The predictions given by every tree of the forest.
-        """
-
         pass
 
 class PredictRegression(Predict):
     """
-    Default used for Regression.
+    The default prediction class for the 'Regression' tree type.
     """
 
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Predicts which LeafNode each $x \in X$ would land in, and calculates the
-        mean value of all elements in the LeafNode.
+        For each row in X, the method first predicts the LeafNode into which
+        the row falls and then computes average response value in that LeafNode.
 
         Parameters
         ----------
         X: np.ndarray
-            Array that should be carried out predictions on.
+            A 2-dimensional array for which the rows are the samples at which to predict.
 
         Returns
         -------
@@ -121,104 +129,66 @@ class PredictRegression(Predict):
         pass
 
     pass
-
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
-        """
-        Returns the mean value of all the predictions along axis 1.
-
-        Parameters
-        ----------
-        predictions
-            Predictions by the trees.
-
-        Returns
-        -------
-        np.ndarray
-            An array of predictions for each element X passed to
-            forest.predict.
-        """
-        pass
-
-class PredictLinearRegression(Predict):
-    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Predicts which LeafNode each $x \in X$ would land in, and calculates the
-        $$
-        Y_i = L_{j,theta0} + L_{j,theta1}*X_{i, 0}
-        $$
-        For each $i \in X$ where $L_j$ is the LeafNode x would fall into, and
-        theta0 and theta1 are calculated for each LeafNode during training.
-
-        Parameters
-        ----------
-        X: np.ndarray
-            Array that should be carried out predictions on.
-
-        Returns
-        -------
-        np.ndarray
-            An array with predictions for each row of X.
-        """
-        pass
 
 class PredictLocalPolynomial(Predict):
     """
-    Default used for Gradient
+    The default prediction class for the 'Gradient' tree type.
     """
 
-    pass
-
-class PredictQuantile(Predict):
     def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
-        """
-        Predicts the quantile for each $x \in X$.
+        r"""
+        For each row in X, the method first predicts the LeafNode into which
+        the row falls and then computes uses the parameters theta0, theta1 and theta2
+        saved on the LeafNode to estimate the predicted value
+        $$
+        \texttt{theta0} + \texttt{theta1} \texttt{X}[i, 0] + \texttt{theta2} \texttt{X}[i, 0]^2.
+        $$
+
+        Note: This predict class requires that the decision tree/random forest
+        uses a LocalPolynomialLeafNode and either LeafBuilderPartialLinear or
+        LeafBuilderPartialQuadratic.
 
         Parameters
         ----------
-        X : np.ndarray
-            Array that should be carried out predictions on.
+        X: np.ndarray
+            A 2-dimensional array for which the rows are the samples at which to predict.
         **kwargs
-            save_indices : bool
-                Whether to save the indices or the quantile.
-            quantile : str
-                The quantile given to numpys quantile function.
+            orders : list[int] | int
+                A list of integers or a single integer specifying which orders should be predicted.
+                Orders 0, 1 and 2 correspond to the 0th, 1st and 2nd order derivative.
+                Default is orders=[0, 1, 2] if not provided.
 
         Returns
         -------
         np.ndarray
-            An array with predicstion for each row of X.
+            A 2-dim array with the predicted values for each row of X and columns
+            corresponding to the orders.
         """
         pass
 
-    @staticmethod
-    def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
-        trees: list[DecisionTree],
-        parallel: ParallelModel,
-        **kwargs,
-    ) -> np.ndarray:
+class PredictQuantile(Predict):
+    """
+    The default prediction class for the 'Quantile' tree type.
+    """
+
+    def predict(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
-        Calls quantile on the predictions
+        For each row in X, the method first predicts the LeafNode into which
+        the row falls and then computes the quantiles in that leaf node.
+
+        For random forests the quantiles across all trees are computed jointly.
 
         Parameters
         ----------
-        predictions
-            The indices returned from predict with save_indices=True.
-
+        X: np.ndarray
+            A 2-dimensional array for which the rows are the samples at which to predict.
+        **kwargs
+            quantile : list[float] | float
+                A list of quantiles or a single quantile which should be predicted.
         Returns
         -------
         np.ndarray
-            The quantile predictions for each $x \in X$.
+            A 1- or 2-dim array with the predicted quantiles for each row of X and columns
+            corresponding to different quantiles (if quantiles was a list).
         """
-
         pass

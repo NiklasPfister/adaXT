@@ -16,8 +16,9 @@ class DecisionTree(BaseModel):
     max_depth: int
         The maximum depth of the tree.
     tree_type: str
-        The type of tree, either  a string specifying a supported type
-        (currently "Regression", "Classification" and "Quantile") or None.
+        The type of tree, either a string specifying a supported type
+        (currently "Regression", "Classification", "Quantile" or "Gradient")
+        or None.
     leaf_nodes: list[LeafNode]
         A list of all leaf nodes in the tree.
     root: Node
@@ -37,8 +38,6 @@ class DecisionTree(BaseModel):
     n_nodes: int
     n_features: int
     n_rows: int
-    n_classes: int
-    classes: np.ndarray
 
     def __init__(
         self,
@@ -59,8 +58,9 @@ class DecisionTree(BaseModel):
         Parameters
         ----------
         tree_type : str | None
-            The type of tree, either  a string specifying a supported type
-            (currently "Regression", "Classification" and "Quantile") or None.
+            The type of tree, either a string specifying a supported type
+            (currently "Regression", "Classification", "Quantile" or "Gradient")
+            or None.
         max_depth : int
             The maximum depth of the tree.
         impurity_tol : float
@@ -110,11 +110,11 @@ class DecisionTree(BaseModel):
         Y : array-like object of 1 or 2 dimensions
             The response values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        sample_indices : array-like object | None, optional
+        sample_indices : array-like object of dimension 1 | None
             A vector specifying samples of the training data that should be used
             during training. If None all samples are used.
-        sample_weight : np.ndarray | None
-            Sample weights. Currently not implemented.
+        sample_weight : array-like object of dimension 1 | None
+            Sample weights. May not be implemented for every criteria.
         """
         pass
 
@@ -141,6 +141,12 @@ class DecisionTree(BaseModel):
         Returns the conditional quantile of the response, where the quantile is
         specified by passing a list of quantiles via the `quantile` parameter.
 
+        Gradient:
+        ----------
+        Returns a matrix with columns corresponding to different orders of
+        derivatives that can be provided via the 'orders' parameter. Default
+        behavior is to compute orders 0, 1 and 2.
+
 
         Parameters
         ----------
@@ -156,22 +162,72 @@ class DecisionTree(BaseModel):
         """
         pass
 
-    def predict_weights(self, X: ArrayLike | None, scale: bool = True) -> np.ndarray:
-        # TODO: Documentation
+    def predict_weights(
+        self, X: ArrayLike | None = None, scale: bool = True
+    ) -> np.ndarray:
+        """
+        Predicts a weight matrix W, where W[i,j] indicates if X[i, :] and
+        Xtrain[j, :] are in the same leaf node, where Xtrain denotes the training data.
+        If scale is True, then the value is divided by the number of other
+        training samples in the same leaf node.
+
+        Parameters
+        ----------
+        X: array-like object of dimension 2 (shape Mxd)
+            New samples to predict a weight (corresponding to columns in the output).
+            If None then the training data is used as X.
+
+        scale: bool
+            Whether to do row-wise scaling.
+
+        Returns
+        -------
+        np.ndarray
+            A numpy array of shape MxN, where N denotes the number of rows of
+            the original training data and M the number of rows of X.
+        """
         pass
 
     def predict_leaf(self, X: ArrayLike | None) -> dict:
-        # TODO: Documentation
+        """
+        Computes a hash table indexing in which LeafNodes the rows of the provided
+        X fall into.
+
+        Parameters
+        ----------
+        X : array-like object of dimension 2
+            2-dimensional array for which the rows are the samples at which to
+            predict.
+
+        Returns
+        -------
+        dict
+            A hash table with keys corresponding to LeafNode ids and values corresponding
+            to lists of indices of the rows that land in a given LeafNode.
+        """
         pass
 
-    def similarity(
-        self, X0: ArrayLike, X1: ArrayLike, scale: bool = True
-    ) -> np.ndarray:
-        # TODO: Documentation
+    def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
+        """
+        Computes a similarity matrix W of size NxM, where each element W[i, j]
+        is 1 if and only if X0[i, :] and X1[j, :] end up in the same leaf node.
+
+        Parameters
+        ----------
+        X0: array-like object of dimension 2 (shape Nxd)
+            Array corresponding to rows of W in the output.
+        X1: array-like object of dimension 2 (shape Mxd)
+            Array corresponding to columns of W in the output.
+
+        Returns
+        -------
+        np.ndarray
+            A NxM shaped np.ndarray.
+        """
         pass
 
     def _tree_based_weights(
-        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scale: bool
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
     ) -> np.ndarray:
         pass
 
@@ -200,12 +256,12 @@ class DecisionTree(BaseModel):
         X : array-like object of dimension 2
             The feature values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        Y : array-like object
+        Y : array-like object of dimension 1 or 2
             The response values used for training. Internally it will be
             converted to np.ndarray with dtype=np.float64.
-        sample_weight : np.ndarray | None
-            Sample weights. Currently not implemented.
-        prediction_indices: np.ndarray | None
-            Values to create new leaf nodes with
+        sample_weight : array-like object of dimension 1 | None
+            Sample weights. May not be implemented for all criteria.
+        sample_indices: array-like object of dimension 1 | None
+            Indices of X which to create new leaf nodes with.
         """
         pass

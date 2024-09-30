@@ -21,7 +21,10 @@ from adaXT.predict.predict import PredictLocalPolynomial
 
 def uniform_x_y(n, m):
     np.random.seed(2024)
-    return (np.random.uniform(1, 1000, (n, m)), np.random.uniform(1, 1000, (n)))
+    return (
+        np.random.uniform(
+            1, 1000, (n, m)), np.random.uniform(
+            1, 1000, (n)))
 
 
 def test_predict_leaf_matrix_classification():
@@ -130,26 +133,41 @@ def test_prediction():
 def test_predict_proba_probability():
     X = np.array(
         [
+            [1, 1],
             [1, -1],
-            [-0.5, -2],
             [-1, -1],
-            [-0.5, -0.5],
-            [1, 0],
             [-1, 1],
             [1, 1],
-            [-0.5, 2],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
         ]
     )
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    Xtest = np.array(
+        [
+            [1, 1],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
+        ]
+    )
+    Y_cla = np.array([0, 1, 0, 1, 0, 0, 1, 1])
+    expected_probs = [[1, 0], [0.5, 0.5], [0.5, 0.5], [0, 1]]
+    expected_class = [0, 0, 0, 1]
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     classes = np.unique(Y_cla)
-    prediction = tree.predict(X, predict_proba=True)
-    assert prediction.shape[0] == X.shape[0]
-    for i in range(len(Y_cla)):
+    pred_probs = tree.predict(Xtest, predict_proba=True)
+    pred_class = tree.predict(Xtest)
+    assert pred_probs.shape[0] == Xtest.shape[0]
+    assert pred_class.shape[0] == Xtest.shape[0]
+    for i in range(Xtest.shape[0]):
         assert (
-            Y_cla[i] == classes[np.argmax(prediction[i, :])]
-        ), f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+            expected_class[i] == classes[np.argmax(pred_probs[i, :])]
+        ), f"incorrect predicted class at {i}, expected {expected_class[i]} got {classes[np.argmax(pred_probs[i, :])]}"
+        assert (
+            expected_probs[i][0] == pred_probs[i][0] and expected_probs[i][1] == pred_probs[i][1]
+        ), f"incorrect predicted prob at {i}, expected {expected_probs[i]} got {pred_probs[i]}"
 
 
 def test_predict_proba_against_predict():
@@ -229,8 +247,9 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        impurity_tol=impurity_tol_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -264,8 +283,9 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_samples_leaf=min_samples_leaf_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -281,8 +301,9 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
-    )
+        "Classification",
+        criteria=Gini_index,
+        min_improvement=min_improvement_desired)
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -343,7 +364,8 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
             assert np.array_equal(
                 node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(
+        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
@@ -503,39 +525,31 @@ def test_local_polynomial_predict():
     the prediction based on PreictLocalPolynomial should perfectly align.
     """
     np.random.seed(2024)
-    X = np.random.uniform(1000, 100000, (1000, 5))  # noise
-    Y1 = np.random.uniform(1000, 100000, (1000))
-    Y2 = np.random.uniform(100000, 1000000, (1000))
-
-    X_Y_corr = np.arange(0, 50, step=1)
-    idx = np.random.randint(0, 1000, 50)
-
-    # Replace some indices with correlated data
-    X[idx, 0] = X_Y_corr
-    Y1[idx] = X_Y_corr
-    Y2[idx] = X_Y_corr**2
-
+    # Create a piecewise linear and piecewise quadratic function
+    X = np.linspace(-1, 1, 200)
+    Y1 = -0.5 * X * (X < 0) + X * (X > 0)
+    Y2 = -0.5 * X**2 * (X < 0) + X**2 * (X > 0)
+    # Using the appropriate criteria should leave to perfect
+    # trees with a single split
     tree1 = DecisionTree(
         None,
         criteria=Partial_linear,
         predict=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialLinear,
+        max_depth=1,
     )
     tree1.fit(X, Y1)
-
     tree2 = DecisionTree(
         None,
         criteria=Partial_quadratic,
         predict=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialQuadratic,
+        max_depth=1,
     )
     tree2.fit(X, Y2)
-
-    X = np.random.uniform(1, 100, (50, 5))
-    corr_data = np.arange(50, 100, step=1)
-    X[:, 0] = corr_data
-    residuals1 = tree1.predict(X, order=0)[:, 0] - corr_data
-    residuals2 = tree2.predict(X, order=0)[:, 0] - corr_data**2
+    # Check whether residuals are 0
+    residuals1 = tree1.predict(X, order=0)[:, 0] - Y1
+    residuals2 = tree2.predict(X, order=0)[:, 0] - Y2
     assert (
         np.sum(residuals1**2) == 0.0
     ), "Partial_linear criteria and PredictLocalPolynomial does not behave as expected"
