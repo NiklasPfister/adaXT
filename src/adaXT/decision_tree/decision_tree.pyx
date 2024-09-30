@@ -216,7 +216,7 @@ class DecisionTree(BaseModel):
             self.leaf_nodes[i] = None
 
     def __fit_new_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                             np.ndarray, indices: np.ndarray) -> None:
+                             np.ndarray, sample_indices: np.ndarray) -> None:
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -224,11 +224,16 @@ class DecisionTree(BaseModel):
             int[::1] all_idx
             int[::1] leaf_indices
 
+        # Set all_idx to contain only sample_indices with a positive weight
+        all_idx = np.array(
+            [x for x in sample_indices if sample_weight[x] != 0], dtype=np.int32
+        )
+
         if self.root is not None:
             refit_objs = []
-            for idx in indices:
+            for idx in all_idx:
                 cur_node = self.root
-                depth = 1
+                depth = 0
                 while isinstance(cur_node, DecisionNode) :
                     # Mark cur_node as visited
                     cur_node.visited = 1
@@ -260,7 +265,6 @@ class DecisionTree(BaseModel):
                         cur_node = cur_node.right_child
                     depth += 1
 
-        all_idx = np.arange(0, X.shape[0], dtype=np.int32)
         leaf_builder = self.leaf_builder_class(X, Y, all_idx)
         criteria = self.criteria_class(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
@@ -268,12 +272,13 @@ class DecisionTree(BaseModel):
         # (1) Only a single root node (n_objs == 0)
         # (2) At least one split (n_objs > 0)
         if self.root is None:
+            weighted_samples = np.sum([sample_weight[x] for x in all_idx])
             self.root = leaf_builder.build_leaf(
                     leaf_id=0,
-                    indices=indices,
-                    depth=1,
-                    impurity=criteria.impurity(indices),
-                    weighted_samples=indices.shape[0],
+                    indices=all_idx,
+                    depth=0,
+                    impurity=criteria.impurity(all_idx),
+                    weighted_samples=weighted_samples,
                     parent=None)
             self.leaf_nodes = [self.root]
         else:
@@ -282,13 +287,14 @@ class DecisionTree(BaseModel):
             for i in range(n_objs):
                 obj = refit_objs[i]
                 leaf_indices = np.array(obj.indices, dtype=np.int32)
+                weighted_samples = np.sum([sample_weight[x] for x in leaf_indices])
                 new_node = leaf_builder.build_leaf(
-                        i,
-                        leaf_indices,
-                        obj.depth,
-                        criteria.impurity(leaf_indices),
-                        leaf_indices.shape[0],
-                        obj.parent,
+                        leaf_id=i,
+                        indices=leaf_indices,
+                        depth=obj.depth,
+                        impurity=criteria.impurity(leaf_indices),
+                        weighted_samples=weighted_samples,
+                        parent=obj.parent,
                         )
                 new_node.visited = 1
                 nodes.append(new_node)
@@ -368,12 +374,12 @@ class DecisionTree(BaseModel):
             self._check_dimensions(X)
             sample_weight = self._check_sample_weight(sample_weight)
             sample_indices = self._check_sample_indices(sample_indices)
+
         # Remove current leaf nodes
-        indices = np.array(sample_indices, dtype=np.int32)
         self.__remove_leaf_nodes()
 
         # Find the leaf node, all samples would have been placed in
-        self.__fit_new_leaf_nodes(X, Y, sample_weight, indices)
+        self.__fit_new_leaf_nodes(X, Y, sample_weight, sample_indices)
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
@@ -532,10 +538,8 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = self.sample_indices
-
         all_idx = np.array(
-            [x for x in all_idx if self.sample_weight[x] != 0], dtype=np.int32
+            [x for x in self.sample_indices if self.sample_weight[x] != 0], dtype=np.int32
         )
 
         # Update the tree now that we have the correct samples
@@ -554,8 +558,7 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            weighted_samples = np.sum(list(map(lambda x: self.sample_weight[x],
-                                      indices)))
+            weighted_samples = np.sum([self.sample_weight[x] for x in indices])
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
