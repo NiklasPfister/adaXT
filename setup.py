@@ -2,10 +2,9 @@
 import numpy as np
 from setuptools import setup, Extension, find_packages
 import os
-from typing import List
 
 NAME = "adaXT"
-VERSION = "1.2.3"
+VERSION = "1.3.0"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
     "Documentation": "https://NiklasPfister.github.io/adaXT/",
@@ -42,18 +41,12 @@ modules += [
     "decision_tree.splitter",
     "decision_tree.tree_utils",
 ]
-modules += [
-    "leaf_builder.leaf_builder"
-]
-modules += [
-    "predict.predict"
-]
-modules += [
-    "random_forest.random_forest"
-]
+modules += ["leaf_builder.leaf_builder"]
+modules += ["predict.predict"]
+modules += ["random_forest.random_forest"]
 
 
-def get_cython_extensions() -> List[Extension]:
+def get_cython_extensions() -> list[Extension]:
     source_root = os.path.abspath(os.path.dirname(__file__))
     source_root = os.path.join(source_root, "src")
     extensions = []
@@ -71,19 +64,22 @@ def get_cython_extensions() -> List[Extension]:
         dep_files = []
         dep_files.append(source_file + ".pxd")
 
-        extensions.append(Extension(
-            module, sources=[pyx_source_file],
-            language="c++",
-            depends=dep_files,
-            extra_compile_args=["-O3"],
-            include_dirs=[include_dir],
-        ))
+        extensions.append(
+            Extension(
+                module,
+                sources=[pyx_source_file],
+                language="c++",
+                depends=dep_files,
+                extra_compile_args=["-O3"],
+                include_dirs=[include_dir],
+            )
+        )
         # XXX hack around setuptools quirk for '*.pyx' sources
         extensions[-1].sources[0] = pyx_source_file
     return extensions
 
 
-def get_python_extensions() -> List[Extension]:
+def get_python_extensions() -> list[Extension]:
     source_root = os.path.abspath(os.path.dirname(__file__))
     source_root = os.path.join(source_root, "src")
     extensions = []
@@ -98,20 +94,25 @@ def get_python_extensions() -> List[Extension]:
         if not os.path.exists(py_source_file):
             continue
 
-        extensions.append(Extension(
-            module, sources=[py_source_file],
-            include_dirs=[include_dir],
-        ))
+        extensions.append(
+            Extension(
+                module,
+                sources=[py_source_file],
+                include_dirs=[include_dir],
+            )
+        )
     return extensions
 
 
 # If we are using cython, then compile, otherwise use the c files
+
 
 def run_build():
     extensions = get_cython_extensions()
     print(extensions)
     if USE_CYTHON:
         from Cython.Build import cythonize
+
         extensions = cythonize(
             extensions,
             gdb_debug=False,
@@ -134,7 +135,7 @@ def run_build():
         include_dirs=[include_dir],
         ext_modules=extensions,
         package_data={
-            "adaXT.criteria": ['*.pxd', "*.pyi"],
+            "adaXT.criteria": ["*.pxd", "*.pyi"],
             "adaXT.decision_tree": ["*.pxd", "*.pyi"],
             "adaXT.leaf_builder": ["*.pxd", "*.pyi"],
             "adaXT.predict": ["*.pxd", "*.pyi"],

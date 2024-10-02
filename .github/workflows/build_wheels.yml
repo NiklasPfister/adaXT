@@ -1,4 +1,4 @@
-name: Upload TestPyPi
+name: Build
 
 on:
   workflow_dispatch:
@@ -20,11 +20,10 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.5
-        env:
-          CIBW_SKIP: cp3{6,7,8,9}-* pp*
         with:
           package-dir: .
           output-dir: wheelhouse
+          config-file: "{package}/pyproject.toml"
 
       - uses: actions/upload-artifact@v4
         with:

@@ -1,13 +1,22 @@
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Gini_index, Squared_error, Entropy, Linear_regression
+from adaXT.criteria import (
+    Gini_index,
+    Squared_error,
+    Entropy,
+    Partial_linear,
+    Partial_quadratic,
+)
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
-from adaXT.predict import PredictLinearRegression, PredictQuantile
+from adaXT.predict import PredictLocalPolynomial, PredictQuantile
 from adaXT.leaf_builder import (
-    LeafBuilderLinearRegression,
+    LeafBuilderPartialLinear,
+    LeafBuilderPartialQuadratic,
     LeafBuilderRegression,
 )
 
 import numpy as np
+
+from adaXT.predict.predict import PredictLocalPolynomial
 
 
 def uniform_x_y(n, m):
@@ -35,8 +44,8 @@ def test_predict_leaf_matrix_classification():
 
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    res1 = tree.predict_leaf_matrix(X=None)
-    res2 = tree.predict_leaf_matrix(X)
+    res1 = tree.predict_weights(X, scale=False)
+    res2 = tree.predict_weights(X, scale=False)
     assert res1.shape == res2.shape
     row, col = res1.shape
     for i in range(row):
@@ -61,8 +70,8 @@ def test_predict_leaf_matrix_regression():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.predict_leaf_matrix(X=None)
-    res2 = tree.predict_leaf_matrix(X)
+    res1 = tree.predict_weights(X=None, scale=False)
+    res2 = tree.predict_weights(X, scale=False)
     assert res1.shape == res2.shape
     row, col = res1.shape
     for i in range(row):
@@ -87,10 +96,10 @@ def test_predict_leaf_matrix_regression_with_scaling():
     tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
 
-    res1 = tree.predict_leaf_matrix(X=None)
+    res1 = tree.predict_weights(X=None, scale=False)
     for i in range(res1.shape[0]):
         res1[i] = res1[i] / np.sum(res1[i])
-    res2 = tree.predict_leaf_matrix(X, scale=True)
+    res2 = tree.predict_weights(X, scale=True)
     assert res1.shape == res2.shape
     row, col = res1.shape
     for i in range(row):
@@ -124,26 +133,41 @@ def test_prediction():
 def test_predict_proba_probability():
     X = np.array(
         [
+            [1, 1],
             [1, -1],
-            [-0.5, -2],
             [-1, -1],
-            [-0.5, -0.5],
-            [1, 0],
             [-1, 1],
             [1, 1],
-            [-0.5, 2],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
         ]
     )
-    Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
+    Xtest = np.array(
+        [
+            [1, 1],
+            [1, -1],
+            [-1, -1],
+            [-1, 1]
+        ]
+    )
+    Y_cla = np.array([0, 1, 0, 1, 0, 0, 1, 1])
+    expected_probs = [[1, 0], [0.5, 0.5], [0.5, 0.5], [0, 1]]
+    expected_class = [0, 0, 0, 1]
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     classes = np.unique(Y_cla)
-    prediction = tree.predict_proba(X)
-    assert prediction.shape[0] == X.shape[0]
-    for i in range(len(Y_cla)):
+    pred_probs = tree.predict(Xtest, predict_proba=True)
+    pred_class = tree.predict(Xtest)
+    assert pred_probs.shape[0] == Xtest.shape[0]
+    assert pred_class.shape[0] == Xtest.shape[0]
+    for i in range(Xtest.shape[0]):
         assert (
-            Y_cla[i] == classes[np.argmax(prediction[i, :])]
-        ), f"incorrect prediction at {i}, expected {Y_cla[i]} got {classes[np.argmax(prediction[i, :])]}"
+            expected_class[i] == classes[np.argmax(pred_probs[i, :])]
+        ), f"incorrect predicted class at {i}, expected {expected_class[i]} got {classes[np.argmax(pred_probs[i, :])]}"
+        assert (
+            expected_probs[i][0] == pred_probs[i][0] and expected_probs[i][1] == pred_probs[i][1]
+        ), f"incorrect predicted prob at {i}, expected {expected_probs[i]} got {pred_probs[i]}"
 
 
 def test_predict_proba_against_predict():
@@ -155,7 +179,7 @@ def test_predict_proba_against_predict():
 
     predict = tree.predict(X)
     classes = np.unique(Y)
-    predict_proba = tree.predict_proba(X)
+    predict_proba = tree.predict(X, predict_proba=True)
 
     for i in range(predict.shape[0]):
         assert (
@@ -179,7 +203,7 @@ def test_NxN_matrix():
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
     tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
-    leaf_matrix = tree.predict_leaf_matrix(X=None)
+    leaf_matrix = tree.predict_weights(X=None, scale=False)
     true_weight = np.array(
         [
             [1, 0, 0, 0, 1, 0, 1, 0],
@@ -248,8 +272,7 @@ def test_min_samples_split_setting():
     tree.fit(X, Y)
     for node in tree.leaf_nodes:
         assert (
-            min_samples_split_desired <=
-            (len(node.parent.indices))
+            min_samples_split_desired <= (len(node.parent.indices))
         ), f"Failed as node had a parent with {min_samples_split_desired}, but which should have been a leaf node"
 
 
@@ -391,8 +414,8 @@ def test_sample_indices_regression():
     t2.fit(X2, Y2, sample_indices=sample_indices)
     assert_tree_equality(t1, t2)
 
-    t1 = DecisionTree("Regression", criteria=Linear_regression)
-    t2 = DecisionTree("Regression", criteria=Linear_regression)
+    t1 = DecisionTree("Regression", criteria=Partial_linear)
+    t2 = DecisionTree("Regression", criteria=Partial_linear)
 
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_indices=sample_indices)
@@ -421,7 +444,7 @@ def test_sample_weight_classification():
 
     t1 = DecisionTree("Classification", criteria=Entropy)
     t2 = DecisionTree("Classification", criteria=Entropy)
-
+    Partial_linear
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_weight=sample_weights)
 
@@ -448,8 +471,8 @@ def test_sample_weight_regression():
 
     assert_tree_equality(t1, t2)
 
-    t1 = DecisionTree("Regression", criteria=Linear_regression)
-    t2 = DecisionTree("Regression", criteria=Linear_regression)
+    t1 = DecisionTree("Regression", criteria=Partial_linear)
+    t2 = DecisionTree("Regression", criteria=Partial_linear)
 
     t1.fit(X1, Y1)
     t2.fit(X2, Y2, sample_weight=sample_weights)
@@ -468,7 +491,7 @@ def test_quantile_predict():
     )
     tree.fit(X, Y)
     pred = tree.predict(
-        X[0], quantile=0.95
+        X[0, :].reshape(1, -1), quantile=0.95
     )  # As we are never splitting, we can just check a single data point
     np_quantile = np.quantile(Y, 0.95)
     assert (
@@ -487,49 +510,52 @@ def test_quantile_predict_array():
     )
     tree.fit(X, Y)
     pred = tree.predict(
-        X[0], quantile=[0.95, 0.1]
+        X[0, :].reshape(1, -1), quantile=[0.95, 0.1]
     )  # As we are never splitting, we can just check a single data point
     np_quantile = np.quantile(Y, [0.95, 0.1])
-    assert (
-        np.array_equal(pred, [np_quantile])
+    assert np.array_equal(
+        pred, [np_quantile]
     ), f"Quantile predict failed with {pred} - should be {np_quantile}"
 
 
-def test_linear_predict():
+def test_local_polynomial_predict():
     """
-    As the Linear Regression is fitted on the index 0 of the X training data,
-    we can validate the new Prediction by first creating some "noise" data,
-    and then create some data on the same line.
-    Then with new values that should be on the same line,
-    we can make sure that the predicted Y values,
-    indeed are on the line.
+    We test both the Partial_linear and Partial_quadratic criteria by
+    consideirng a (piece-wise) linear and a quadratic example. In both cases
+    the prediction based on PreictLocalPolynomial should perfectly align.
     """
     np.random.seed(2024)
-    X = np.random.uniform(1000, 100000, (1000, 5))  # noise
-    Y = np.random.uniform(1000, 100000, (1000))
-
-    X_Y_corr = np.arange(0, 50, step=1)
-    idx = np.random.randint(0, 1000, 50)
-
-    # Replace some indices with correlated data
-    X[idx, 0] = X_Y_corr
-    Y[idx] = X_Y_corr
-
-    tree = DecisionTree(
-        "LinearRegression",
-        criteria=Linear_regression,
-        predict=PredictLinearRegression,
-        leaf_builder=LeafBuilderLinearRegression,
+    # Create a piecewise linear and piecewise quadratic function
+    X = np.linspace(-1, 1, 200)
+    Y1 = -0.5 * X * (X < 0) + X * (X > 0)
+    Y2 = -0.5 * X**2 * (X < 0) + X**2 * (X > 0)
+    # Using the appropriate criteria should leave to perfect
+    # trees with a single split
+    tree1 = DecisionTree(
+        None,
+        criteria=Partial_linear,
+        predict=PredictLocalPolynomial,
+        leaf_builder=LeafBuilderPartialLinear,
+        max_depth=1,
     )
-    tree.fit(X, Y)
-
-    X = np.random.uniform(1, 100, (50, 5))
-    corr_data = np.arange(50, 100, step=1)
-    X[:, 0] = corr_data
-    prediction = tree.predict(X)
+    tree1.fit(X, Y1)
+    tree2 = DecisionTree(
+        None,
+        criteria=Partial_quadratic,
+        predict=PredictLocalPolynomial,
+        leaf_builder=LeafBuilderPartialQuadratic,
+        max_depth=1,
+    )
+    tree2.fit(X, Y2)
+    # Check whether residuals are 0
+    residuals1 = tree1.predict(X, order=0)[:, 0] - Y1
+    residuals2 = tree2.predict(X, order=0)[:, 0] - Y2
     assert (
-        np.corrcoef(prediction) == 1.0
-    ), "Linear Prediction didn't predict with perfect correlation"
+        np.sum(residuals1**2) == 0.0
+    ), "Partial_linear criteria and PredictLocalPolynomial does not behave as expected"
+    assert (
+        np.sum(residuals2**2) == 0.0
+    ), "Partial_quadratic criteria and PredictLocalPolynomial does not behave as expected"
 
 
 if __name__ == "__main__":

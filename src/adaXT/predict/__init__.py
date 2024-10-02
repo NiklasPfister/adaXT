@@ -2,6 +2,6 @@ from .predict import (
     Predict,
     PredictClassification,
     PredictRegression,
-    PredictLinearRegression,
+    PredictLocalPolynomial,
     PredictQuantile,
 )

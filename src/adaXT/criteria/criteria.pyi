@@ -1,9 +1,9 @@
 class Criteria:
     """
-    Abstract class used as a parent for new Criteria classes.
+    The base Criteria class from which all other criteria need to inherit.
     """
-    pass
 
+    pass
 
 class Gini_index(Criteria):
     r"""
@@ -16,8 +16,8 @@ class Gini_index(Criteria):
     where $P[k]$ denotes the fraction of samples in $I$ with class
     label $k$.
     """
-    pass
 
+    pass
 
 class Entropy(Criteria):
     r"""
@@ -30,8 +30,8 @@ class Entropy(Criteria):
     where $P[k]$ denotes the fraction of samples in $I$ with class
     label $k$.
     """
-    pass
 
+    pass
 
 class Squared_error(Criteria):
     r"""
@@ -50,16 +50,16 @@ class Squared_error(Criteria):
     - \Big(\tfrac{1}{|I|}\sum_{i\in I} Y[i]\Big)^2
     $$
     """
+
     pass
 
-
-class Linear_regression(Criteria):
+class Partial_linear(Criteria):
     r"""
-    Linear regression based criteria, which adapts the Squared_error
-    criteria by fitting a linear regression in the first coordinate.
-    Formally, in a node consisting of samples $I$, it is given by
+    Criteria based on fitting a linear function in the first predictor
+    variable in each leaf. Formally, in a node consisting of samples $I$,
+    it is given by
     $$
-    \text{Linear\_regression} = \sum_{i \in I}
+    \text{Partial\_linear} = \tfrac{1}{|I|}\sum_{i \in I}
     (Y[i] - \widehat{\theta}_0 - \widehat{\theta}_1 X[i, 0])^2,
     $$
     where $Y[i]$ and $X[i, 0]$ denote the response value and
@@ -68,4 +68,23 @@ class Linear_regression(Criteria):
     least squares regression estimates when regressing
     $Y[i]$ on $X[i, 0]$ using the samples in $I$.
     """
+
+    pass
+
+class Partial_quadratic(Criteria):
+    r"""
+    Criteria based on fitting a quadratic function in the first predictor
+    variable in each leaf. Formally, in a node consisting of samples $I$,
+    it is given by
+    $$
+    \text{Partial\_quadratic} = \tfrac{1}{|I|}\sum_{i \in I}
+    (Y[i] - \widehat{\theta}_0 - \widehat{\theta}_1 X[i, 0] - \widehat{\theta}_2 X[i, 0]^2)^2,
+    $$
+    where $Y[i]$ and $X[i, 0]$ denote the response value and
+    the value of the first feature at sample $i$, respectively, and
+    $(\widehat{\theta}_0, \widehat{\theta}_1)$ are ordinary
+    least squares regression estimates when regressing
+    $Y[i]$ on $X[i, 0]$ using the samples in $I$.
+    """
+
     pass

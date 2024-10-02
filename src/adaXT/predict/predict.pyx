@@ -3,40 +3,78 @@ import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
 from collections.abc import Sequence
+from statistics import mode
 cimport numpy as cnp
+from ..parallel import ParallelModel
+
+# Use with cdef code instead of the imported DOUBLE
+ctypedef cnp.float64_t DOUBLE_t
+
+
+def predict_default(tree, X: np.ndarray, **kwargs) -> np.ndarray:
+    return np.array(tree.predict(X, **kwargs))
+
+
+def predict_proba(
+        tree: DecisionTree, X: np.ndarray, Y: np.ndarray, unique_classes: int
+) -> np.ndarray:
+    cdef:
+        int i, cur_split_idx
+        double cur_threshold
+        object cur_node
+        list ret_val
+
+    # Make sure that x fits the dimensions.
+    n_obs = X.shape[0]
+    ret_val = []
+    for i in range(n_obs):
+        cur_node = tree.root
+        while isinstance(cur_node, DecisionNode):
+            cur_split_idx = cur_node.split_idx
+            cur_threshold = cur_node.threshold
+            if X[i, cur_split_idx] < cur_threshold:
+                cur_node = cur_node.left_child
+            else:
+                cur_node = cur_node.right_child
+        ret_val.append(cur_node.value)
+    return np.array(ret_val)
+
+
+def predict_quantile(
+    tree: DecisionTree, X: np.ndarray, n_obs: int
+) -> np.ndarray:
+    # Check if quantile is an array
+    indices = []
+
+    for i in range(n_obs):
+        cur_node = tree.root
+        while isinstance(cur_node, DecisionNode):
+            cur_split_idx = cur_node.split_idx
+            cur_threshold = cur_node.threshold
+            if X[i, cur_split_idx] < cur_threshold:
+                cur_node = cur_node.left_child
+            else:
+                cur_node = cur_node.right_child
+
+        indices.append(cur_node.indices)
+    return indices
+
 
 cdef class Predict():
 
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root):
+    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
         self.root = root
 
-    def __reduce__(self):
+    def __reduce__(self) -> None:
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
-    cdef double[:, ::1] __check_dimensions(self, object X):
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
-        # If there is only a single point
-        if X.ndim == 1:
-            if (X.shape[0] != self.n_features):
-                raise ValueError(f"Number of features should be {self.n_features}, got {X.shape[0]}")
-
-            # expand the dimensions
-            X = np.expand_dims(X, axis=0)
-        else:
-            if X.shape[1] != self.n_features:
-                raise ValueError(f"Dimension should be {self.n_features}, got {X.shape[1]}")
-        return X
-
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         raise NotImplementedError("Function predict is not implemented for this Predict class")
 
-    cpdef list predict_proba(self, object X):
-        raise NotImplementedError("Function predict_proba is not implemented for this Predict class")
-
-    cpdef cnp.ndarray predict_leaf_matrix(self, object X, bint scale = False):
+    cpdef dict predict_leaf(self, cnp.ndarray X):
         cdef:
             int i
             int row
@@ -45,7 +83,6 @@ cdef class Predict():
             double cur_threshold
 
         # Make sure that x fits the dimensions.
-        X = self.__check_dimensions(X)
         row = X.shape[0]
 
         ht = {}
@@ -63,27 +100,25 @@ cdef class Predict():
                 ht[cur_node.id] = [i]
             else:
                 ht[cur_node.id] += [i]
-        matrix = np.zeros((row, row))
-        for key in ht.keys():
-            indices = ht[key]
-            val = 1
-            count = len(indices)
-            if scale:
-                val = 1/count
-            matrix[np.ix_(indices, indices)] = val
-
-        return matrix
+        return ht
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
+        predictions = parallel.async_map(predict_default,
+                                         trees,
+                                         X=X_new,
+                                         **kwargs)
+        return np.mean(predictions, axis=0, dtype=DOUBLE)
 
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        raise NotImplementedError("The forest predict function is not implemented for this Predict Class")
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self, double[:, ::1] X, double[::1] Y, object root, **kwargs):
+    def __cinit__(self,
+                  double[:, ::1] X,
+                  double[:, ::1] Y,
+                  object root,
+                  **kwargs) -> None:
         self.classes = np.unique(Y)
 
     cdef int __find_max_index(self, double[::1] lst):
@@ -95,17 +130,16 @@ cdef class PredictClassification(Predict):
                 cur_max = i
         return cur_max
 
-    def predict(self, object X, **kwargs):
+    cdef cnp.ndarray __predict(self, cnp.ndarray X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray[DOUBLE_t, ndim=1] prediction
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -119,18 +153,17 @@ cdef class PredictClassification(Predict):
 
             idx = self.__find_max_index(cur_node.value)
             if self.classes is not None:
-                Y[i] = self.classes[idx]
-        return Y
+                prediction[i] = self.classes[idx]
+        return prediction
 
-    cpdef list predict_proba(self, object X):
+    cdef cnp.ndarray __predict_proba(self, cnp.ndarray X):
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx
             double cur_threshold
             object cur_node
             list ret_val
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         ret_val = []
         for i in range(n_obs):
@@ -144,38 +177,47 @@ cdef class PredictClassification(Predict):
                     cur_node = cur_node.right_child
             if self.classes is not None:
                 ret_val.append(cur_node.value)
-        return ret_val
+        return np.array(ret_val)
+
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
+        if "predict_proba" in kwargs:
+            if kwargs["predict_proba"]:
+                return self.__predict_proba(X)
+
+        # if predict_proba = False this return is hit
+        return self.__predict(X)
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        def __most_frequent_element(arr):
-            values, counts = np.unique(arr, return_counts=True)
-            return values[np.argmax(counts)]
-        return np.apply_along_axis(
-            __most_frequent_element, 1, predictions
-        )
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
+        # Forest_predict_proba
+        if "predict_proba" in kwargs:
+            if kwargs["predict_proba"]:
+                predictions = parallel.async_map(predict_proba, trees,
+                                                 X=X_new)
+                return np.mean(predictions, axis=0, dtype=DOUBLE)
 
-    @staticmethod
-    def forest_predict_proba(predictions: np.ndarray, **kwargs):
-        # Stack the predict_probas
-        stacked_tree_predictions = np.stack(predictions, axis=0)
-
-        # Return the mean along the newly created axis
-        return np.mean(stacked_tree_predictions, axis=0)
+        predictions = parallel.async_map(predict_default, trees, X=X_new,
+                                         **kwargs)
+        return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
 cdef class PredictRegression(Predict):
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, n_col
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray prediction
 
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        n_col = self.Y.shape[1]
+        if n_col > 1:
+            prediction = np.empty((n_obs, n_col), dtype=DOUBLE)
+        else:
+            prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -186,24 +228,31 @@ cdef class PredictRegression(Predict):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = cur_node.value[0]
-        return Y
+            if cur_node.value.ndim == 1:
+                prediction[i] = cur_node.value[0]
+            else:
+                prediction[i] = cur_node.value
+        return prediction
 
-    @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
-        return np.mean(predictions, axis=1)
 
-cdef class PredictLinearRegression(PredictRegression):
-    def predict(self, object X, **kwargs):
+cdef class PredictLocalPolynomial(PredictRegression):
+
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
-            int i, cur_split_idx, n_obs
+            int i, cur_split_idx, n_obs, ind, oo
             double cur_threshold
             object cur_node
-            double[:] Y
+            cnp.ndarray[DOUBLE_t, ndim=2] deriv_mat
 
-        X = Predict.__check_dimensions(self, X)
+        if "order" not in kwargs.keys():
+            order = [0, 1, 2]
+        else:
+            order = np.array(kwargs['order'], ndmin=1, dtype=int)
+            if np.max(order) > 2 or np.min(order) < 0 or len(order) > 3:
+                raise ValueError('order needs to be convertable to an array of length at most 3 with values in 0, 1 or 2')
+
         n_obs = X.shape[0]
-        Y = np.empty(n_obs)
+        deriv_mat = np.empty((n_obs, len(order)), dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -214,31 +263,38 @@ cdef class PredictLinearRegression(PredictRegression):
                     cur_node = cur_node.left_child
                 else:
                     cur_node = cur_node.right_child
-            Y[i] = cur_node.theta0 + cur_node.theta1*X[i, 0]
-        return Y
+            ind = 0
+            for oo in order:
+                if oo == 0:
+                    deriv_mat[i, ind] = cur_node.theta0 + cur_node.theta1*X[i, 0] + cur_node.theta2*X[i, 0]*X[i, 0]
+                elif oo == 1:
+                    deriv_mat[i, ind] = cur_node.theta1 + 2.0 * cur_node.theta2*X[i, 0]
+                elif oo == 2:
+                    deriv_mat[i, ind] = 2.0 * cur_node.theta2
+                ind += 1
+        return deriv_mat
 
 
 cdef class PredictQuantile(Predict):
 
-    def predict(self, object X, **kwargs):
+    def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs
             double cur_threshold
             object cur_node
-            bint save_indices
+            cnp.ndarray prediction
+        if "quantile" not in kwargs.keys():
+            raise ValueError(
+                        "quantile called without quantile passed as argument"
+                    )
         quantile = kwargs['quantile']
-        if "save_indices" in kwargs.keys():
-            save_indices = <bint> kwargs['save_indices']
-        else:
-            save_indices = False
         # Make sure that x fits the dimensions.
-        X = Predict.__check_dimensions(self, X)
         n_obs = X.shape[0]
         # Check if quantile is an array
         if isinstance(quantile, Sequence):
-            Y = np.empty((n_obs, len(quantile)))
+            prediction = np.empty((n_obs, len(quantile)), dtype=DOUBLE)
         else:
-            Y = np.empty(n_obs)
+            prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -250,13 +306,34 @@ cdef class PredictQuantile(Predict):
                 else:
                     cur_node = cur_node.right_child
 
-            if save_indices:
-                Y[i] = self.Y.base[cur_node.indices]
-            else:
-                Y[i] = np.quantile(self.Y.base[cur_node.indices], quantile)
-        return Y
+            prediction[i] = np.quantile(self.Y.base[cur_node.indices, 0], quantile)
+        return prediction
 
     @staticmethod
-    def forest_predict(predictions: np.ndarray, **kwargs):
+    def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+                       trees: list[DecisionTree], parallel: ParallelModel,
+                       **kwargs) -> np.ndarray:
+        cdef:
+            int i, j, n_obs, n_trees
+            list prediction_indices, pred_indices_combined, indices_combined
+        if "quantile" not in kwargs.keys():
+            raise ValueError(
+                "quantile called without quantile passed as argument"
+            )
         quantile = kwargs['quantile']
-        return np.quantile(predictions, quantile, axis=1)
+        n_obs = X_new.shape[0]
+        prediction_indices = parallel.async_map(predict_quantile,
+                                                map_input=trees, X=X_new,
+                                                n_obs=n_obs)
+        # In case the leaf nodes have multiple elements and not just one, we
+        # have to combine them together
+        n_trees = len(prediction_indices)
+        pred_indices_combined = []
+        for i in range(n_obs):
+            indices_combined = []
+            for j in range(n_trees):
+                indices_combined.extend(prediction_indices[j][i])
+            pred_indices_combined.append(indices_combined)
+        ret = [np.quantile(Y_old[pred_indices_combined[i]], quantile) for i in
+               range(n_obs)]
+        return np.array(ret, dtype=DOUBLE)

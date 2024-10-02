@@ -1,114 +1,225 @@
-# Getting started with adaXT
+# Decision Trees
 
-A [decision tree](https://en.wikipedia.org/wiki/Decision_tree) is a
-machine learning model, which can trained or fitted to data in order
-to perform prediction or data analysis. Decisions trees have a tree
-structure, where each internal node splits the dataset based on some
-threshold value for a given feature index.
+A [decision tree](https://en.wikipedia.org/wiki/Decision_tree) is a machine
+learning model, which is fitted to data and then used for prediction or data
+analysis. Decisions trees have a tree structure, where each internal node splits
+the dataset based on a threshold value for a given feature index.
 
-The [DecisionTree](../api_docs/DecisionTree.md) class is used when
-creating both a regression and classification tree.
+The [DecisionTree](../api_docs/DecisionTree.md) class is used to create decision
+trees in adaXT. On an abstract level a decision tree defines two procedures:
 
-## Classification trees
+1. **Fit**: Given training data, create a list of nodes arranged in a tree
+   structure consisting of three types of nodes: (i) A root node, (ii) decision
+   nodes and (iii) leaf nodes. In adaXT the fit procedure is determined by the
+   `criteria`, `leaf_builder` and `splitter` parameters, as well as several
+   other hyperparameters that are common across all decision trees.
+2. **Predict**: Given test data, create predictions for all test samples by
+   propagating them through the tree structure and using the leaf node they land
+   in to create a prediction. In adaXT the predict procedure is determined by
+   the `predict` parameter.
+
+For a given application, one needs to fully specify these two procedures. In
+adaXT, this can either be done by specifying an existing default `tree_type` or
+by directly specifying all components manually.
+
+## Tree types
+
+There are several default tree types implemented in adaXT.
+
+- `Classification`: For prediction tasks in which the response is categorical.
+- `Regression`: For prediction tasks in which the response is continuous.
+- `Quantile`: For uncertainty quantification tasks in which the response is
+  continuous and the goal is to estimate one or more quantiles of the
+  conditional distribution of the response given the predictors.
+- `Gradient`: For tasks in which one aims to estimate (directional) derivatives
+  of the response given the predictors. A related tree type is used in the
+  [Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
+  method.
+
+The defaults for each of these tree types is set in the `BaseModel` class, which
+is extended by both the `DecisionTree` and `RandomForest` classes. Moreover, if
+you want to create a custom tree type, this can be done by setting the tree type
+to `None` and providing all components manually. Each of these options is
+discussed in the following sections.
+
+### Classification trees
+
+For the `Classification` tree type, the following default components are used:
+
+- Criteria class:
+  [Entropy](../api_docs/Criteria.md#adaXT.criteria.criteria.Entropy)
+- Predict class:
+  [PredictClassification](../api_docs/#adaXT.predict.predict.PredictClassification)
+- LeafBuilder class:
+  [LeafBuilderClassification](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
+
+Below is a short example that illustrates how to use a classification tree.
+
 ```py
+import numpy as np
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import Gini_index
-X = [[0, 0], [1, 0]]
-Y = [0, 1]
+
+X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1],
+              [1, 1], [1, -1], [-1, -1], [-1, 1]])
+Xtest = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
+Y = [0, 1, 0, 1, 0, 0, 1, 1]
+
 tree = DecisionTree("Classification", criteria=Gini_index)
 tree.fit(X, Y)
+print(tree.predict(Xtest))
+print(tree.predict(Xtest, predict_proba=True))
 ```
-In the example above we are creating and fitting a classification tree
-with the [Gini
-Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index)
-criteria function using the X and Y data specified as training data.
 
-## Regression trees
+In this example we created and fit a classification tree using training data and
+then used the fitted tree to predict the response at the training data. When
+initializing the tree we changed the default criteria to the
+[Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index); it is
+always possible to overwrite any of the default components of a specific tree
+type. Classification trees use a majority vote in each of the leaf nodes to
+decide which class to predict and ties are broken by selecting the smaller
+class. To predict the class probabilities instead of the class labels, one can
+add `predict_proba=True` as a keyword argument.
 
-Regression trees work similar to classification trees, with one small
-difference demonstrated by the following example:
+For classification trees it is also possible, using the `predict_proba` method,
+to output the proportions of each class instead of only the majority class. That
+method returns an array with the probability of an element being either of the
+classes. To get the list of classes (in the correct order), one can use
+`.classes` attribute of a fitted decision tree.
+
+Note that in this example, the decision tree was too constrained to fit the
+data, if one chooses the `max_depth` parameter larger the tree can perfectly fit
+the data.
+
+### Regression trees
+
+For the `Regression` tree type, the following default components are used:
+
+- Criteria class:
+  [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+- Predict class:
+  [PredictRegression](../api_docs/#adaXT.predict.predict.PredictRegression)
+- LeafBuilder class:
+  [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+
+Regression trees work similar to classification trees as illustrated in the
+following example:
+
 ```py
+import numpy as np
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Squared_error
-X = [[0, 0], [1, 0]]
-Y = [0, 1]
-tree = DecisionTree("Regression", criteria=Squared_error)
+
+n = 100
+X = np.random.normal(0, 1, (n, 2))
+Y = 2.0 * (X[:, 0] > 0) + np.random.normal(0, 0.25, n)
+Xnew = np.array([[1, 0], [-1, 0]])
+
+tree = DecisionTree("Regression", min_samples_leaf=20)
 tree.fit(X, Y)
+print(tree.predict(Xnew))
 ```
-You have to specify that you are now using a regression tree instead
-of a classification tree, and adaXT takes care of the rest. The reason
-for this specification is that regression and classification trees
-need to have some small differences in saved objects. This is for
-example relevant when making predictions as shown next.
 
-## Using the fitted tree
+### Quantile trees
 
-### Prediction
+For the `Quantile` tree type, the following default components are used:
 
-After the fitting we can predict new values using the
-[predict](../api_docs/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict)
-method of the tree.
+- Criteria class:
+  [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+- Predict class:
+  [PredictQuantile](../api_docs/#adaXT.predict.predict.PredictQuantile)
+- LeafBuilder class:
+  [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+
+Quantile trees are the building block for quantile random forests that were
+proposed by
+[Meinshausen, 2006](https://jmlr.csail.mit.edu/papers/v7/meinshausen06a.html).
+They have the same interface as regression and classification trees, but the
+predict method takes the additional mandatory keyword `quantile` which specifies
+which quantiles to estimate. The following example illustrates this:
 
 ```py
-result = tree.predict(np.array([5, 0]))
-print(result) # prints [1.]
+import numpy as np
+from adaXT.decision_tree import DecisionTree
+
+n = 100
+X = np.random.normal(0, 1, (n, 2))
+Y = 10.0 * (X[:, 0] > 0) + np.random.normal(0, 1, n)
+Xnew = np.array([[1, 0], [-1, 0]])
+
+tree = DecisionTree("Quantile", min_samples_leaf=20)
+tree.fit(X, Y)
+print(tree.predict(Xnew, quantile=[0.1, 0.5, 0.9]))
 ```
 
-This works for both regression and classification trees, but the
-output is different. Both tree types first locate the nodes in which
-the new samples fall based on their fitted structure. The
-classification tree then calculates the proportion of each class
-within those nodes, chooses the class with the highest proportion and
-returns that value as the prediction. In contrast the regression tree
-only calculates the mean value of all samples within each of those
-node and returns that as the prediction.
+As seen from this example, the quantiles do not need to be specified prior to
+prediction and it is possible to predict several quantiles simultaneously.
 
-### Prediction probability
+### Gradient trees
 
-For classification it can useful to get a notion of classification
-probability for each of the possible classes instead of the predicted
-class label. With classification trees a commonly used option is to
-output the frequency each class has in the leaf nodes. In adaXT this
-can be done using the
-[predict_proba](../api_docs/DecisionTree.md#adaXT.decision_tree.DecisionTree.DecisionTree.predict_proba)
-function.
+For the `Gradient` tree type, the following default components are used:
 
-It works in much the same fashion as the prediction function, but
-importantly only applies to classification trees. Given the above
-fitted classification tree, we have the following:
-```py
-result = tree.predict_proba([5, 0])
-print(result) # prints  array([[0., 1.]]
-```
-Here the function returns a [numpy
-arrays](https://numpy.org/doc/stable/reference/generated/numpy.array.html)
-with the probability of an element being either of the classes. To get
-the list of classes (in the correct order) use .classes on the
-[DecisionTree](../api_docs/DecisionTree.md).
+- Criteria class:
+  [Partial_quadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.Partial_quadratic)
+- Predict class:
+  [PredictLocalPolynomial](../api_docs/#adaXT.predict.predict.PredictLocalPolynomial)
+- LeafBuilder class:
+  [LeafBuilderLocalPolynomial](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderLocalPolynomial)
 
+Gradient trees are a non-standard type of trees that allow estimation of
+derivates (in the first coordinate) of the conditional expectation function. The
+provided implementation is a slight modification of the procedure used in the
+[Xtrapolation](https://github.com/NiklasPfister/ExtrapolationAware-Inference)
+method. Instead of using the raw response values, we generally recommend to
+first use your favorite regression procedure (e.g., a regular random forest or a
+neural network) and use the resulting fitted values instead of the raw response.
+This has the advantage of first removing noise and then using the gradient tree
+as an additional step to estimate the gradients.
 
-## RandomForest
-The RandomForest algorithm operates similarly to the DecisionTree,
-yet it has currently been designed exclusively for use with both Classification and Regression DecisionTrees.
-As such, you can create a [RandomForest](../api_docs/RandomForest.md) as shown:
-```python
-from adaXT.random_forest import RandomForest
-from adaXT.criteria import Gini_index
-X = [[0, 0], [1, 0]]
-Y = [0, 1]
-forest = RandomForest("Classification", criteria=Gini_index)
-forest.fit(X, Y)
-```
-
-Once the RandomForest has been fitted, it can be used to predict in the same manner as the [DecisionTree](../api_docs/DecisionTree.md).
+Gradient trees are similar to regression trees but instead of fitting a constant
+in each leaf they fit a quadratic function in the first predictor variable
+$X[:, 0]$. This allows them to fit quadratic functions in the first coordinate
+without splitting, as illustrated in the following example:
 
 ```python
-forest.predict(X)  # results in [0, 1]
+import numpy as np
+import matplotlib.pyplot as plt
+from adaXT.decision_tree import DecisionTree
+
+n = 200
+X = np.random.normal(0, 1, (n, 1))
+Y = X[:, 0] ** 2 + np.random.normal(0, 0.5, n)
+
+tree_reg = DecisionTree("Regression", min_samples_leaf=50)
+tree_reg.fit(X, Y)
+Yhat_reg = tree_reg.predict(X)
+
+tree_grad = DecisionTree("Gradient", min_samples_leaf=50)
+tree_grad.fit(X, Y)
+Yhat_grad = tree_grad.predict(X,  order=[0, 1])
+
+plt.scatter(X, Y, label='raw data')
+plt.scatter(X, Yhat_reg, label='Regression tree')
+plt.scatter(X, Yhat_grad[:, 0], label='Gradient tree (order 0)')
+plt.scatter(X, Yhat_grad[:, 1], label='Gradient tree (order 1)')
+plt.legend()
+plt.show()
 ```
 
+### Custom tree types
 
-### How to chose the n_jobs parameter of RandomForest
-When constructing a random forest model, you can adjust the 'n_jobs' parameter. As indicated in the documentation, this setting determines the quantity of parallel processes employed during both training and prediction stages of the random forest algorithm. To allow users to define their own criteria functions without requiring the Global Interpreter Lock (GIL) to be released, we chose multiprocessing over multithreading. We implemented this using Python's built-in [multiprocessing library](https://docs.python.org/3/library/multiprocessing.html).
+It is also possible to manually specify the tree type. This is particularly
+useful when you have custom components for the tree and do not want to use any
+of the default classes. To do this simply set `tree_type` to None and provide
+the `criteria`, `predict` and `leaf_builder` classes when initializing the tree.
 
-Bear in mind that initializing each new process comes with a substantial overhead cost. Consequently, there is an inherent trade-off between the setup time for additional processes and the workload allocated to each individual process. For smaller datasets or models with fewer trees, this often leads to diminishing returns as more processors are utilized. Given that 'n_jobs' governs the number of processors employed, it's recommended to explore the performance gains when training and predicting using various values for the parameter 'n_jobs'. Although a general rule of thumb is to never set n_jobs larger
-than the number of cores available on your CPU.
+## Further functionality
+
+adaXT provides various additional functionality, each of which is discussed in
+other sections of the user guide.
+
+- [Tree-based weights](/docs/user_guide/tree_based_weights.md): A fitted
+  decision tree provides a similarity notion on the predictor space that has
+  some useful properties. Check out this section to see how this can be used.
+- [Visualizations and debugging](/docs/user_guide/vis_and_debug.md): There are
+  several function available that can help with analyzing a fitted decision
+  tree.
