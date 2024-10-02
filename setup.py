@@ -109,7 +109,6 @@ def get_python_extensions() -> list[Extension]:
 
 def run_build():
     extensions = get_cython_extensions()
-    print(extensions)
     if USE_CYTHON:
         from Cython.Build import cythonize
 
