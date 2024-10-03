@@ -235,8 +235,8 @@ class DecisionTree(BaseModel):
         self,
         X: ArrayLike,
         Y: ArrayLike,
-        sample_weight: ArrayLike | None,
-        sample_indices: ArrayLike | None,
+        sample_weight: ArrayLike | None = None,
+        sample_indices: ArrayLike | None = None,
     ) -> None:
         """
         Refits the leaf nodes in a previously fitted decision tree.
