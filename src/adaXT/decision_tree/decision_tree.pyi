@@ -237,6 +237,7 @@ class DecisionTree(BaseModel):
         Y: ArrayLike,
         sample_weight: ArrayLike | None = None,
         sample_indices: ArrayLike | None = None,
+        **kwargs
     ) -> None:
         """
         Refits the leaf nodes in a previously fitted decision tree.
