@@ -9,15 +9,6 @@ def plot_tree(
     precision=3,
     ax=None,
 ) -> None:
-    """
-    Generates the tree in a subplot of plt. To show the plot,
-    the user needs to call matplotlib.pyplot.show().
-
-    Parameters
-    ----------
-    tree : DecisionTree
-        the tree to plot
-    """
     plotter = DecisionTreePlotter(
         impurity=impurity,
         node_ids=node_ids,
@@ -26,8 +17,7 @@ def plot_tree(
     plotter.plot(tree=tree, ax=ax)
 
 
-class DecisionTreePlotter():
-
+class DecisionTreePlotter:
     def __init__(
         self,
         impurity=True,
@@ -75,10 +65,8 @@ class DecisionTreePlotter():
         )
 
     def calculate_node_positions(
-            self,
-            node: DecisionNode | LeafNode | None,
-            x: float,
-            y: float):
+        self, node: DecisionNode | LeafNode | None, x: float, y: float
+    ):
         if node is None:
             return {}
 
@@ -86,14 +74,14 @@ class DecisionTreePlotter():
         dy = 1
         if isinstance(node, DecisionNode):
             left_positions = self.calculate_node_positions(
-                node.left_child, 2 * x - dx, y - dy)
+                node.left_child, 2 * x - dx, y - dy
+            )
             right_positions = self.calculate_node_positions(
-                node.right_child, 2 * x + dx, y - dy)
+                node.right_child, 2 * x + dx, y - dy
+            )
         else:
-            left_positions = self.calculate_node_positions(
-                None, 2 * x - dx, y - dy)
-            right_positions = self.calculate_node_positions(
-                None, 2 * x + dx, y - dy)
+            left_positions = self.calculate_node_positions(None, 2 * x - dx, y - dy)
+            right_positions = self.calculate_node_positions(None, 2 * x + dx, y - dy)
 
         position = (x, y)
         node_positions = {**left_positions, **right_positions, node: position}
@@ -105,12 +93,8 @@ class DecisionTreePlotter():
 
         Parameters
         ----------
-        ax : matplotlib.axes.Axes
-            axes to plot on
         node : Node
             node type of a tree
-        node_positions : tuple
-            (left_child position, right_child position, nodes own position)
         """
         if node is None:
             return
@@ -119,13 +103,9 @@ class DecisionTreePlotter():
 
         # Draw the node box
         if isinstance(node, LeafNode):
-            self.plot_leaf_node(
-                node, position
-            )
+            self.plot_leaf_node(node, position)
         else:
-            self.plot_decision_node(
-                node, position
-            )
+            self.plot_decision_node(node, position)
 
         # Draw edges and child nodes recursively
         if isinstance(node, DecisionNode):
@@ -146,6 +126,7 @@ class DecisionTreePlotter():
 
     def plot(self, tree: DecisionTree, ax=None) -> None:
         import matplotlib.pyplot as plt
+
         if ax is None:
             ax = plt.gca()
         ax.clear()

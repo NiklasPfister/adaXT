@@ -25,8 +25,8 @@ pip install git+https://github.com/NiklasPfister/adaXT.git@Development#egg=adaXT
 
 Simple extensions such as adding a custom criteria or predict class can be
 easily done without any modifications to the base package, as described
-[here](/docs/user_guide/creatingCriteria.md) and
-[here](/docs/user_guide/creatingCriteria.md). However, more involved changes may
+[here](creatingCriteria.md) and
+[here](creatingPredict.md). However, more involved changes may
 require changing some of the inner workings of the package. As it is one of the
 main goals of adaXT to provide an adaptable and extendable package, we have
 tried to make such changes as easy as possible by keeping the code as simple as
@@ -41,9 +41,11 @@ download the project and then build it locally.
 2. **Modify code**: Modify or extend the code as you please.
 3. **Build and install package**: From the project root directory you can then
    build and install the package with the command:
+
    ```bash
    pip install .
    ```
+
    This will require the
    [setuptools](https://setuptools.pypa.io/en/latest/index.html) package to be
    installed. Note that if you added new files or directories you will also need

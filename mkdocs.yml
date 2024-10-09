@@ -3,7 +3,6 @@ site_url: https://niklaspfister.github.io/adaXT/
 
 repo_url: https://github.com/NiklasPfister/adaXT
 repo_name: "adaXT"
-edit_uri: "?query=root/path/docs/"
 watch: [mkdocs.yml, README.md, src/adaXT]
 site_description: Adaptable and Extendable Decision Trees
 
@@ -71,16 +70,17 @@ nav:
       - Modifying and extending:
           - Overview of components: user_guide/overview_components.md
           - Creating custom criteria: user_guide/creatingCriteria.md
-          - Creating custom prediction: user_guide/creatingPrediction.md
+          - Creating custom prediction: user_guide/creatingPredict.md
   - API reference:
       - DecisionTree: api_docs/DecisionTree.md
       - RandomForest: api_docs/RandomForest.md
       - Criteria: api_docs/Criteria.md
-      - Prediction: api_docs/Prediction.md
+      - Predict: api_docs/Predict.md
       - Nodes: api_docs/Nodes.md
       - LeafBuilder: api_docs/LeafBuilder.md
       - Splitter: api_docs/Splitter.md
       - Tree utilities: api_docs/tree_utils.md
+      - Parallel: api_docs/Parallel.md
 
 # For setting up math and code blocks
 markdown_extensions:

@@ -32,7 +32,8 @@ implemented:
 
 Beyond these pre-defined tree types, adaXT offers a simple interface to extend
 or modify most components of the tree models. For example, it is easy to create
-a [custom criteria](/docs/user_guide/creatingCriteria.md) function that is used
+a [custom criteria](https://NiklasPfister.github.io/adaXT/user_guide/creatingCriteria/)
+function that is used
 to create splits.
 
 ### Getting started

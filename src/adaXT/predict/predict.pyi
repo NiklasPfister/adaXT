@@ -69,7 +69,7 @@ class Predict:
             Array of response values used during training.
         X_new: np.ndarray
             Array of new feature values at which to predict.
-        tree: list[DecisionTree]
+        trees: list[DecisionTree]
             List of fitted DecisionTrees fitted within the random forest.
         parallel: ParallelModel
             ParallelModel used for multiprocessing.
