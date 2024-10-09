@@ -1,8 +1,7 @@
 from .predict cimport (
-        Precict,
-        PrecictClassification,
-        PredictRegression,
-        PredictLocalPolynomial,
-        PredictQuantile
-        )
-
+    Precict,
+    PrecictClassification,
+    PredictRegression,
+    PredictLocalPolynomial,
+    PredictQuantile
+)
