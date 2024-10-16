@@ -5,7 +5,6 @@ from adaXT.criteria import (
     Entropy,
     Partial_quadratic,
 )
-from adaXT.leaf_builder.leaf_builder import LeafBuilderPartialQuadratic
 from adaXT.predict import PredictLocalPolynomial
 from adaXT.leaf_builder import LeafBuilderPartialQuadratic
 from adaXT.random_forest import RandomForest
@@ -13,7 +12,6 @@ import numpy as np
 import json
 from multiprocessing import cpu_count
 import sys
-import time
 
 # We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forest
 # on this data, we should have predictions that are always equal to the
@@ -510,7 +508,7 @@ def check_OOB(X, Y, forest):
 
 def test_OOB_squared_error():
     seed = 2024
-    n = 1000
+    n = 10000
     m = 5
     n_estimators = 100
     variance = 1
@@ -530,20 +528,19 @@ def test_OOB_squared_error():
         seed=seed,
         max_depth=2,
         max_samples=n,
-        oob=False,
+        oob=True,
     )
-    return
     check_OOB(X, Y, squared_forest)
 
     # Check that out of bag error is close to variance
     assert np.isclose(
-        variance, squared_forest.oob, atol=0.2
+        variance, squared_forest.oob, atol=0.01
     ), f"Squared error OOB is {squared_forest.oob}, should be closer to {variance}"
 
 
 def test_OOB_entropy():
     seed = 2024
-    n = 1000
+    n = 10000
     m = 5
     n_estimators = 100
     half = n // 2
@@ -589,10 +586,7 @@ if __name__ == "__main__":
     # test_honest_sampling_leaf_samples()
     # test_n_jobs_predict_forest()
     # test_random_forest()
-    st = time.time()
     test_OOB_squared_error()
-    et = time.time()
     test_OOB_entropy()
-    print("OOB Test time: ", et - st)
 
     print("Done")
