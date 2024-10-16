@@ -14,8 +14,10 @@ from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
 
 import numpy as np
 
+import inspect
 
-class BaseModel:
+
+class BaseModel():
 
     def _check_max_features(
         self, max_features: int | str | float | None
@@ -122,67 +124,122 @@ class BaseModel:
         if tree_type in tree_types:
             if tree_type == "Classification":
                 if predict:
-                    self.predict_class = predict
+                    self.predict = predict
                 else:
-                    self.predict_class = PredictClassification
+                    self.predict = PredictClassification
                 if criteria:
-                    self.criteria_class = criteria
+                    self.criteria = criteria
                 else:
-                    self.criteria_class = Entropy
+                    self.criteria = Entropy
                 if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
+                    self.leaf_builder = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderClassification
+                    self.leaf_builder = LeafBuilderClassification
             elif tree_type == "Regression":
                 if predict:
-                    self.predict_class = predict
+                    self.predict = predict
                 else:
-                    self.predict_class = PredictRegression
+                    self.predict = PredictRegression
                 if criteria:
-                    self.criteria_class = criteria
+                    self.criteria = criteria
                 else:
-                    self.criteria_class = Squared_error
+                    self.criteria = Squared_error
                 if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
+                    self.leaf_builder = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderRegression
+                    self.leaf_builder = LeafBuilderRegression
             elif tree_type == "Quantile":
                 if predict:
-                    self.predict_class = predict
+                    self.predict = predict
                 else:
-                    self.predict_class = PredictQuantile
+                    self.predict = PredictQuantile
                 if criteria:
-                    self.criteria_class = criteria
+                    self.criteria = criteria
                 else:
-                    self.criteria_class = Squared_error
+                    self.criteria = Squared_error
                 if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
+                    self.leaf_builder = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderRegression
+                    self.leaf_builder = LeafBuilderRegression
             elif tree_type == "Gradient":
                 if predict:
-                    self.predict_class = predict
+                    self.predict = predict
                 else:
-                    self.predict_class = PredictLocalPolynomial
+                    self.predict = PredictLocalPolynomial
                 if criteria:
-                    self.criteria_class = criteria
+                    self.criteria = criteria
                 else:
-                    self.criteria_class = Partial_quadratic
+                    self.criteria = Partial_quadratic
                 if leaf_builder:
-                    self.leaf_builder_class = leaf_builder
+                    self.leaf_builder = leaf_builder
                 else:
-                    self.leaf_builder_class = LeafBuilderPartialQuadratic
+                    self.leaf_builder = LeafBuilderPartialQuadratic
 
         else:
             if (not criteria) or (not predict) or (not leaf_builder):
                 raise ValueError(
                     "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
                 )
-            self.criteria_class = criteria
-            self.predict_class = predict
-            self.leaf_builder_class = leaf_builder
+            self.criteria = criteria
+            self.predict = predict
+            self.leaf_builder = leaf_builder
 
         if splitter:
-            self.splitter_class = splitter
+            self.splitter = splitter
         else:
-            self.splitter_class = Splitter
+            self.splitter = Splitter
+
+    @classmethod
+    def _get_param_names(cls):
+        """Get parameter names for the estimator"""
+        # fetch the constructor or the original constructor before
+        # deprecation wrapping if any
+        init = getattr(cls.__init__, "deprecated_original", cls.__init__)
+        if init is object.__init__:
+            # No explicit constructor to introspect
+            return []
+
+        # introspect the constructor arguments to find the model parameters
+        # to represent
+        init_signature = inspect.signature(init)
+        # Consider the constructor parameters excluding 'self'
+        parameters = [
+            p
+            for p in init_signature.parameters.values()
+            if p.name != "self" and p.kind != p.VAR_KEYWORD
+        ]
+        for p in parameters:
+            if p.kind == p.VAR_POSITIONAL:
+                raise RuntimeError(
+                    "scikit-learn estimators should always "
+                    "specify their parameters in the signature"
+                    " of their __init__ (no varargs)."
+                    " %s with constructor %s doesn't "
+                    " follow this convention." % (cls, init_signature)
+                )
+        # Extract and sort argument names excluding 'self'
+        return sorted([p.name for p in parameters])
+
+    def get_params(self, deep=True):
+        """
+        Get parameters for this estimator.
+
+        Parameters
+        ----------
+        deep : bool, default=True
+            If True, will return the parameters for this estimator and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
+        out = dict()
+        for key in self._get_param_names():
+            value = getattr(self, key)
+            if deep and hasattr(value, "get_params") and not isinstance(value, type):
+                deep_items = value.get_params().items()
+                out.update((key + "__" + k, val) for k, val in deep_items)
+            out[key] = value
+        return out
