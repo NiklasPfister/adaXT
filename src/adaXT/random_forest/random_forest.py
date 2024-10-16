@@ -15,6 +15,9 @@ from ..base_model import BaseModel
 from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 
+from functools import reduce
+from textwrap import dedent
+
 
 def tree_based_weights(
     tree: DecisionTree,
@@ -46,7 +49,7 @@ def get_sample_indices(
     RandomForest.
     """
     if sampling == "resampling":
-        return (
+        ret = (
             gen.choice(
                 np.arange(0, X_n_rows),
                 size=sampling_args["size"],
@@ -61,8 +64,7 @@ def get_sample_indices(
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -72,19 +74,18 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
-        return (fit_indices, pred_indices)
+        ret = (fit_indices, pred_indices)
     elif sampling == "honest_forest":
         indices = np.arange(0, X_n_rows)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -94,13 +95,25 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
-        return (fit_indices, pred_indices)
+        ret = (fit_indices, pred_indices)
     else:
-        return (np.arange(0, X_n_rows), None)
+        ret = (np.arange(0, X_n_rows), None)
+
+    if sampling_args["OOB"]:
+        # Only fitting indices
+        if ret[1] is None:
+            picked = ret[0]
+        else:
+            picked = np.concatenate(ret[0], ret[1])
+        out_of_bag = np.setdiff1d(np.arange(0, X_n_rows), picked)
+    else:
+        out_of_bag = None
+
+    return (*ret, out_of_bag)
 
 
 def build_single_tree(
@@ -138,17 +151,11 @@ def build_single_tree(
         predict=predict,
         splitter=splitter,
     )
-    tree.fit(
-        X=X,
-        Y=Y,
-        sample_indices=fitting_indices,
-        sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X,
-            Y=Y,
-            sample_weight=sample_weight,
-            sample_indices=prediction_indices)
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
+        )
 
     return tree
 
@@ -192,6 +199,11 @@ class RandomForest(BaseModel):
                 used as prediction indices (truncated if value is too large). If float it
                 corresponds to the relative size of the fitting indices, while the remaining
                 indices are used as prediction indices (truncated if value is too large).
+            'OOB': Bool used by all sampling schemes (default False).
+                Computes the out of bag error given the data set.
+                If set to True, an attribute called oob will be defined after
+                fitting, which will have the out of bag error given by the
+                Criteria loss function.
         If None all parameters are set to their defaults.
     impurity_tol : float
         The tolerance of impurity in a leaf node.
@@ -285,12 +297,7 @@ class RandomForest(BaseModel):
         # parallelModel
         self.parallel = ParallelModel(n_jobs=n_jobs)
 
-        self._check_tree_type(
-            forest_type,
-            criteria,
-            splitter,
-            leaf_builder,
-            predict)
+        self._check_tree_type(forest_type, criteria, splitter, leaf_builder, predict)
 
         self.max_features = max_features
         self.forest_type = forest_type
@@ -318,8 +325,7 @@ class RandomForest(BaseModel):
             if "size" not in sampling_args:
                 sampling_args["size"] = self.X_n_rows
             elif isinstance(sampling_args["size"], float):
-                sampling_args["size"] = int(
-                    sampling_args["size"] * self.X_n_rows)
+                sampling_args["size"] = int(sampling_args["size"] * self.X_n_rows)
             elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
@@ -363,6 +369,14 @@ class RandomForest(BaseModel):
             raise ValueError(
                 f"The provided sampling scheme '{self.sampling}' does not exist."
             )
+
+        if "OOB" not in sampling_args:
+            sampling_args["OOB"] = False
+        elif not isinstance(sampling_args["OOB"], bool):
+            raise ValueError(
+                "The provided sampling_args['OOB'] is not a bool as required."
+            )
+
         return sampling_args
 
     def __is_honest(self) -> bool:
@@ -373,18 +387,19 @@ class RandomForest(BaseModel):
 
     def __build_trees(self) -> None:
         # parent_rng.spawn() spawns random generators that children can use
-        fitting_prediction_indices = self.parallel.async_map(
+        indices = self.parallel.async_map(
             get_sample_indices,
             map_input=self.parent_rng.spawn(self.n_estimators),
             sampling_args=self.sampling_args,
             X_n_rows=self.X_n_rows,
             sampling=self.sampling,
         )
-        self.fitting_indices, self.prediction_indices = zip(
-            *fitting_prediction_indices)
+        self.fitting_indices, self.prediction_indices, self.out_of_bag_indices = zip(
+            *indices
+        )
         self.trees = self.parallel.async_starmap(
             build_single_tree,
-            map_input=fitting_prediction_indices,
+            map_input=zip(self.fitting_indices, self.prediction_indices),
             X=self.X,
             Y=self.Y,
             honest_tree=self.__is_honest(),
@@ -403,8 +418,9 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike,
-            sample_weight: ArrayLike | None = None) -> None:
+    def fit(
+        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
+    ) -> None:
         """
         Fit the random forest with training data (X, Y).
 
@@ -429,9 +445,30 @@ class RandomForest(BaseModel):
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
         # Fit trees
         self.__build_trees()
-
-        # Register that the forest was succesfully fitted
         self.forest_fitted = True
+
+        # previous __get_sampling_parameter makes sure OOB is set
+        if self.sampling_args["OOB"]:
+            # Converts a list of arrays for each tree, where each array
+            # contains out_of_bag_indices for the given tree, to a single
+            # list which contains the indices that are present in all the lists.
+            # This is the true OOB for the forest.
+            self.out_of_bag_indices = reduce(np.intersect1d, self.out_of_bag_indices)
+            if len(self.out_of_bag_indices) == 0:
+                # Allow
+                print(
+                    dedent(
+                        """No indices are out of bag, for OOB error. Default oob
+                        attrubute to 0 as a result"""
+                    )
+                )
+                self.oob = 0.0
+                return
+
+            Y_pred = self.predict(self.X[self.out_of_bag_indices])
+            _, Y_pred = self._check_input(None, Y_pred)
+            Y_true = self.Y[self.out_of_bag_indices]
+            self.oob = self.criteria_class.loss(Y_pred, Y_true)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
