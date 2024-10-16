@@ -231,4 +231,3 @@ cdef class Partial_quadratic(RegressionCriteria):
     double
         evaluated impurity
     """
-
