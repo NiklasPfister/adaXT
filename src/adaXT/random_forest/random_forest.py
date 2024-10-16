@@ -164,6 +164,29 @@ def build_single_tree(
     return tree
 
 
+def oob_calculation(
+    idx: np.int64,
+    trees: list,
+    X_old: np.ndarray,
+    Y_old: np.ndarray,
+    parallel: ParallelModel,
+    predict_class: type[Predict],
+    criteria_class: type[Criteria],
+):
+    X_pred = np.expand_dims(X_old[idx], axis=0)
+    Y_pred = predict_class.forest_predict(
+        X_old=X_old,
+        Y_old=Y_old,
+        X_new=X_pred,
+        trees=trees,
+        parallel=parallel,
+        __no_parallel=True,
+    ).astype(np.float64)
+    Y_pred = np.expand_dims(Y_pred, axis=1)
+    Y_true = np.expand_dims(Y_old[idx], axis=1)
+    return criteria_class.loss(Y_pred, Y_true)
+
+
 def predict_single_tree(
     tree: DecisionTree, predict_values: np.ndarray, **kwargs
 ) -> np.ndarray:
@@ -462,20 +485,15 @@ class RandomForest(BaseModel):
                 for num in array:
                     tree_dict[num].append(self.trees[idx])
 
-            oobs = []
-            for idx, trees in tree_dict.items():
-                X_pred = np.expand_dims(self.X[idx], axis=0)
-                predict_value = shared_numpy_array(X_pred)
-                Y_pred = self.predict_class.forest_predict(
-                    X_old=self.X,
-                    Y_old=self.Y,
-                    X_new=predict_value,
-                    trees=trees,
-                    parallel=self.parallel,
-                )
-                _, Y_pred = self._check_input(None, Y_pred)
-                Y_true = np.expand_dims(self.Y[idx], axis=1)
-                oobs.append(self.criteria_class.loss(Y_pred, Y_true))
+            oobs = self.parallel.async_starmap(
+                oob_calculation,
+                map_input=tree_dict.items(),
+                X_old=self.X,
+                Y_old=self.Y,
+                parallel=self.parallel,
+                predict_class=self.predict_class,
+                criteria_class=self.criteria_class,
+            )
             self.oob = np.mean(oobs)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
