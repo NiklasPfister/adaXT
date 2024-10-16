@@ -1,7 +1,7 @@
 # Creating a custom criteria
 
 In this section we explain how to create a custom criteria function by walking
-through the required steps. The [Criteria](/docs/api_docs/Criteria.md) class is
+through the required steps. The [Criteria](../api_docs/Criteria.md) class is
 implemented as a Cython
 [extension types](https://cython.readthedocs.io/en/latest/src/tutorial/cdef_classes.html)
 -- also known as a cdef class. While this ensures that the criteria evaluations
@@ -43,7 +43,7 @@ which is as follows:
 
 The variable `indices` refers to the sample indices for which the impurity value
 should be computed. To access the feature and response you can make use of
-`self.x` and `self.y`, respectively. More specifically, `self.x[indices] ` and
+`self.x` and `self.y`, respectively. More specifically, `self.x[indices]` and
 `self.y[indices]` are the feature and response samples for which the impurity
 needs to be computed. With this in place you should be able to implement almost
 any criteria function you can imagine. Keep in mind that the `impurity` method
