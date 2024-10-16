@@ -6,7 +6,6 @@ from libc.string cimport memset
 import numpy as np
 from .crit_helpers cimport weighted_mean
 
-
 # Abstract Criteria class
 cdef class Criteria:
     def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
@@ -67,9 +66,12 @@ cdef class Criteria:
 
         return (crit, mean_thresh)
 
-# Gini index criteria
-cdef class Gini_index(Criteria):
+    @staticmethod
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+        raise ValueError("Loss is not implemented for the given Criteria")
 
+
+cdef class ClassificationCriteria(Criteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1]
                  sample_weight) -> None:
         self.first_call = True
@@ -81,6 +83,27 @@ cdef class Gini_index(Criteria):
     cdef void reset_weight_list(self, double* class_occurences):
         # Use memset to set the entire malloc to 0
         memset(class_occurences, 0, self.num_classes*sizeof(double))
+
+    @staticmethod
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+        """ Zero one loss function """
+        cdef:
+            int i
+            int n_samples = Y_pred.shape[0]
+            double tot_sum = 0.0
+
+        if Y_true.shape[0] != n_samples:
+            raise ValueError(
+                    "Y_pred and Y_true have different number of samples in loss"
+                    )
+        for i in range(n_samples):
+            if Y_pred[i, 0] == Y_true[i, 0]:
+                tot_sum += 1.0
+
+        return tot_sum / n_samples
+
+# Gini index criteria
+cdef class Gini_index(ClassificationCriteria):
 
     cpdef double impurity(self, int[::1] indices):
         if self.first_call:
@@ -198,13 +221,7 @@ cdef class Gini_index(Criteria):
 
 
 # Entropy criteria
-cdef class Entropy(Criteria):
-    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
-        self.first_call = True
-
-    def __del__(self):  # Called by garbage collector.
-        free(self.weight_in_class_left)
-        free(self.weight_in_class_right)
+cdef class Entropy(ClassificationCriteria):
 
     cpdef double impurity(self, int[::1] indices):
         if self.first_call:
@@ -218,10 +235,6 @@ cdef class Entropy(Criteria):
 
         # weight_in_class_left can be use as the int pointer as it will be cleared before and after this use
         return self.__entropy(indices, self.weight_in_class_left)
-
-    cdef void reset_weight_list(self, double* class_occurences):
-        # Use memset to set the entire malloc to 0
-        memset(class_occurences, 0, self.num_classes*sizeof(double))
 
     cdef double __entropy(self, int[:] indices, double* class_occurences):
         self.reset_weight_list(class_occurences)  # Reset the counter such that no previous values influence the new ones
@@ -331,9 +344,29 @@ cdef class Entropy(Criteria):
 
         return sum_left*self.weight_left + sum_right*self.weight_right
 
+cdef class RegressionCriteria(Criteria):
+    @staticmethod
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+        """ Mean square error loss """
+        cdef:
+            int i
+            int n_samples = Y_pred.shape[0]
+            double temp
+            double tot_sum = 0.0
+
+        if Y_true.shape[0] != n_samples:
+            raise ValueError(
+                    "Y_pred and Y_true have different number of samples in loss"
+                    )
+        for i in range(n_samples):
+            temp = Y_true[i, 0] - Y_pred[i, 0]
+            tot_sum += temp*temp
+
+        return tot_sum / n_samples
+
 
 # Squared error criteria
-cdef class Squared_error(Criteria):
+cdef class Squared_error(RegressionCriteria):
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
@@ -402,7 +435,7 @@ cdef class Squared_error(Criteria):
 
 
 # Partial linear criteria
-cdef class Partial_linear(Criteria):
+cdef class Partial_linear(RegressionCriteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) __custom_mean(self, int[:] indices):
@@ -453,7 +486,7 @@ cdef class Partial_linear(Criteria):
             cur_sum += step_calc * step_calc
         return cur_sum / length
 
-cdef class Partial_quadratic(Criteria):
+cdef class Partial_quadratic(RegressionCriteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double, double) __custom_mean(self, int[:] indices):

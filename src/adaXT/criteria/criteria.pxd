@@ -48,8 +48,7 @@ cdef class Criteria:
         split index and the closest neighbour outside.
     """
 
-
-cdef class Gini_index(Criteria):
+cdef class ClassificationCriteria(Criteria):
     cdef:
         double[::1] class_labels
         double* weight_in_class_left
@@ -58,6 +57,11 @@ cdef class Gini_index(Criteria):
         double weight_right
         int num_classes
         bint first_call
+
+    cdef void reset_weight_list(self, double* class_occurences)
+
+
+cdef class Gini_index(ClassificationCriteria):
 
     cdef void reset_weight_list(self, double* class_occurences)
 
@@ -87,15 +91,7 @@ cdef class Gini_index(Criteria):
     cdef double proxy_improvement(self, int[::1] indices, int split_idx)
 
 
-cdef class Entropy(Criteria):
-    cdef:
-        double[::1] class_labels
-        double* weight_in_class_left
-        double* weight_in_class_right
-        double weight_left
-        double weight_right
-        int num_classes
-        bint first_call
+cdef class Entropy(ClassificationCriteria):
 
     cpdef double impurity(self, int[::1] indices)
 
@@ -124,8 +120,10 @@ cdef class Entropy(Criteria):
 
     cdef double update_proxy(self, int[::1] indices, int new_split)
 
+cdef class RegressionCriteria(Criteria):
+    pass
 
-cdef class Squared_error(Criteria):
+cdef class Squared_error(RegressionCriteria):
     cdef:
         double left_sum
         double right_sum
@@ -154,7 +152,7 @@ cdef class Squared_error(Criteria):
     """
 
 
-cdef class Partial_linear(Criteria):
+cdef class Partial_linear(RegressionCriteria):
 
     cdef (double, double) __custom_mean(self, int[:] indices)
 
@@ -194,7 +192,7 @@ cdef class Partial_linear(Criteria):
     """
 
 
-cdef class Partial_quadratic(Criteria):
+cdef class Partial_quadratic(RegressionCriteria):
 
     cdef (double, double, double) __custom_mean(self, int[:] indices)
 
@@ -233,3 +231,4 @@ cdef class Partial_quadratic(Criteria):
     double
         evaluated impurity
     """
+
