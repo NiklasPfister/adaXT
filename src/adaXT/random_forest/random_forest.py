@@ -476,7 +476,7 @@ class RandomForest(BaseModel):
                 _, Y_pred = self._check_input(None, Y_pred)
                 Y_true = np.expand_dims(self.Y[idx], axis=1)
                 oobs.append(self.criteria_class.loss(Y_pred, Y_true))
-        self.oob = np.mean(oobs)
+            self.oob = np.mean(oobs)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """

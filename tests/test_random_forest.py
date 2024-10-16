@@ -13,6 +13,7 @@ import numpy as np
 import json
 from multiprocessing import cpu_count
 import sys
+import time
 
 # We define the last feature of X to be equal to Y such that there is a perfect correlation. Thus when we train a Random Forest
 # on this data, we should have predictions that are always equal to the
@@ -35,29 +36,51 @@ def get_classification_data(
     return (X, Y)
 
 
-def run_gini_index(X, Y, n_jobs, n_estimators, seed):
+def run_gini_index(
+    X,
+    Y,
+    n_jobs,
+    n_estimators,
+    seed,
+    max_samples: int | float = 5,
+    max_depth=sys.maxsize,
+    sampling: str | None = "resampling",
+    oob: bool = False,
+):
     forest = RandomForest(
         forest_type="Classification",
         criteria=Gini_index,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        sampling="resampling",
-        sampling_args={"size": 5},
+        sampling=sampling,
+        sampling_args={"size": max_samples, "OOB": oob},
         seed=seed,
+        max_depth=max_depth,
     )
     forest.fit(X, Y)
     return forest
 
 
-def run_entropy(X, Y, n_jobs, n_estimators, seed):
+def run_entropy(
+    X,
+    Y,
+    n_jobs,
+    n_estimators,
+    seed,
+    max_samples: int | float = 5,
+    max_depth=sys.maxsize,
+    sampling: str | None = "resampling",
+    oob: bool = False,
+):
     forest = RandomForest(
         forest_type="Classification",
         criteria=Entropy,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
-        sampling="resampling",
-        sampling_args={"size": 5},
+        sampling=sampling,
+        sampling_args={"size": max_samples, "OOB": oob},
         seed=seed,
+        max_depth=max_depth,
     )
     forest.fit(X, Y)
     return forest
@@ -471,26 +494,91 @@ def test_similarity():
     assert np.sum(sim_rf <= 1) == 12 and np.sum(sim_rf >= 0) == 12
 
 
+def check_OOB(X, Y, forest):
+    assert hasattr(forest, "oob")
+
+    for i in range(forest.n_estimators):
+        if forest.prediction_indices[i] is None:
+            picked_indices = forest.fitting_indices[i]
+        else:
+            picked_indices = np.concatenate(
+                (forest.fitting_indices[i], forest.prediction_indices[i])
+            )
+        out_of_bag = np.setdiff1d(np.arange(0, forest.X.shape[0]), picked_indices)
+        assert np.array_equal(out_of_bag, forest.out_of_bag_indices[i])
+
+
 def test_OOB_squared_error():
-    random_state = np.random.RandomState(2024)
     seed = 2024
-    n = 10000
+    n = 1000
     m = 5
     n_estimators = 100
-    X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
+    variance = 1
+    half = n // 2
+    X = np.zeros((n, m))
+    # create a perfect split for half the dataset
+    X[half:, 1] = 1
+    # Create random distribution for the two different LeafNodes
+    # Both with standard deviation 1.
+    Y = np.random.normal(0, np.sqrt(variance), half)
+    Y = np.concatenate((Y, np.random.normal(5, np.sqrt(variance), size=half)))
     squared_forest = run_squared_error(
-        X_reg,
-        Y_reg,
+        X,
+        Y,
         n_jobs=cpu_count(),
         n_estimators=n_estimators,
         seed=seed,
         max_depth=2,
-        max_samples=500,
+        max_samples=n,
+        oob=False,
+    )
+    return
+    check_OOB(X, Y, squared_forest)
+
+    # Check that out of bag error is close to variance
+    assert np.isclose(
+        variance, squared_forest.oob, atol=0.2
+    ), f"Squared error OOB is {squared_forest.oob}, should be closer to {variance}"
+
+
+def test_OOB_entropy():
+    seed = 2024
+    n = 1000
+    m = 5
+    n_estimators = 100
+    half = n // 2
+    X = np.zeros((n, m))
+    # create a perfect split for half the dataset
+    X[half:, 1] = 1
+    # Create random distribution for the two different LeafNodes
+    # Both with standard deviation 1.
+    Y = np.ones(half)
+    # Change 0.05 procent of the values in this half of Y to some other value
+    inds = np.random.choice(Y.shape[0], size=int(half * 0.05))
+    Y[inds] = -1
+
+    temp = np.full(half, 5)
+    # Change 0.05 procent of the values in temp to some other value
+    inds = np.random.choice(temp.shape[0], size=int(half * 0.05))
+    temp[inds] = 10
+
+    Y = np.concatenate((Y, temp))
+    forest = run_entropy(
+        X,
+        Y,
+        n_jobs=cpu_count(),
+        n_estimators=n_estimators,
+        seed=seed,
+        max_depth=2,
+        max_samples=n,
         oob=True,
     )
-    assert hasattr(squared_forest, "oob"), "Squared error forest has no attribute oob"
+    check_OOB(X, Y, forest)
 
-    # TODO: Find some way to check the oob is correct.
+    # Check that out of bag error is close to variance
+    assert np.isclose(
+        0.05, forest.oob, atol=0.01
+    ), f"Entropy OOB is {forest.oob} should be closer to 0.05"
 
 
 if __name__ == "__main__":
@@ -501,6 +589,10 @@ if __name__ == "__main__":
     # test_honest_sampling_leaf_samples()
     # test_n_jobs_predict_forest()
     # test_random_forest()
+    st = time.time()
     test_OOB_squared_error()
+    et = time.time()
+    test_OOB_entropy()
+    print("OOB Test time: ", et - st)
 
     print("Done")
