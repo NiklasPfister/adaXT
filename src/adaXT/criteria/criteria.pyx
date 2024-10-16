@@ -97,7 +97,7 @@ cdef class ClassificationCriteria(Criteria):
                     "Y_pred and Y_true have different number of samples in loss"
                     )
         for i in range(n_samples):
-            if Y_pred[i, 0] == Y_true[i, 0]:
+            if Y_pred[i, 0] != Y_true[i, 0]:
                 tot_sum += 1.0
 
         return tot_sum / n_samples
@@ -343,6 +343,7 @@ cdef class Entropy(ClassificationCriteria):
                 sum_right -= (pp) * log2(pp)
 
         return sum_left*self.weight_left + sum_right*self.weight_right
+
 
 cdef class RegressionCriteria(Criteria):
     @staticmethod
