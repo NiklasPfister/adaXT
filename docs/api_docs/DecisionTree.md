@@ -6,12 +6,12 @@ then be applied to data.
 
 - [Criteria](Criteria.md)
 - [LeafBuilder](LeafBuilder.md)
-- [Prediction](Prediction.md)
+- [Predict](Predict.md)
 
 Instead of the user specifying all three components individually, it is also
 possible to only specify the `tree_type`, which then internally selects the
 corresponding default components for several established tree-algorithms, see
-[user guide](/docs/user_guide/decision_tree.md).
+[user guide](../user_guide/decision_tree.md).
 
 For more advanced modifications, it might be necessary to change how the
 splitting is performed. This can be done by passing a custom

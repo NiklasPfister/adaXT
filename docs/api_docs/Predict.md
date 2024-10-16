@@ -9,4 +9,5 @@ defaults can be seen below.
         - Predict
         - PredictClassification
         - PredictRegression
-        - PredictLinearRegression
+        - PredictLocalPolynomial
+        - PredictQuantile

@@ -48,7 +48,7 @@ $$
 In general $w_i^{\operatorname{RF}}(x)$ and $Y_i$ are dependent since the sample
 $i$ appears also in the definition of the weight $w_i^{\operatorname{RF}}(x)$.
 This can be avoided using
-[honest splitting](/docs/user_guide/honest_splitting.md), which can be seen as
+[honest splitting](honest_splitting.md), which can be seen as
 separating the estimation of the weights from the averaging of the responses.
 
 Interpreting decision trees and random forests as adaptive nearest neighbor
