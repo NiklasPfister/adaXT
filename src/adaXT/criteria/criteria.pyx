@@ -348,7 +348,7 @@ cdef class Entropy(ClassificationCriteria):
 cdef class RegressionCriteria(Criteria):
     @staticmethod
     def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
-        """ Mean square error loss """
+        """ Mean squared error loss """
         cdef:
             int i
             int n_samples = Y_pred.shape[0]
