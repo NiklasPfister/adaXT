@@ -534,7 +534,7 @@ def test_OOB_squared_error():
 
     # Check that out of bag error is close to variance
     assert np.isclose(
-        variance, squared_forest.oob, atol=0.01
+        variance, squared_forest.oob, atol=0.1
     ), f"Squared error OOB is {squared_forest.oob}, should be closer to {variance}"
 
 

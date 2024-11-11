@@ -47,7 +47,7 @@ def get_sample_indices(
     X_n_rows: int,
     sampling_args: dict,
     sampling: str | None,
-) -> tuple | None:
+) -> tuple:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -172,7 +172,7 @@ def oob_calculation(
     parallel: ParallelModel,
     predict_class: type[Predict],
     criteria_class: type[Criteria],
-):
+) -> tuple:
     X_pred = np.expand_dims(X_old[idx], axis=0)
     Y_pred = predict_class.forest_predict(
         X_old=X_old,
@@ -182,9 +182,10 @@ def oob_calculation(
         parallel=parallel,
         __no_parallel=True,
     ).astype(np.float64)
-    Y_pred = np.expand_dims(Y_pred, axis=1)
-    Y_true = np.expand_dims(Y_old[idx], axis=1)
-    return criteria_class.loss(Y_pred, Y_true)
+    Y_true = Y_old[idx]
+    # We return the true indices to save on space. Y might be a double, where as
+    # the idx is always integers.
+    return (Y_pred, Y_true)
 
 
 def predict_single_tree(
@@ -485,16 +486,30 @@ class RandomForest(BaseModel):
                 for num in array:
                     tree_dict[num].append(self.trees[idx])
 
-            oobs = self.parallel.async_starmap(
-                oob_calculation,
-                map_input=tree_dict.items(),
-                X_old=self.X,
-                Y_old=self.Y,
-                parallel=self.parallel,
-                predict_class=self.predict_class,
-                criteria_class=self.criteria_class,
+            # Expand dimensions as Y will always only be predicted on a single
+            # value. Thus when we combine them in this list, we will be missing
+            # a dimension
+            Y_pred, Y_true = (
+                np.expand_dims(np.array(x).flatten(), axis=-1)
+                for x in zip(
+                    *self.parallel.async_starmap(
+                        oob_calculation,
+                        map_input=tree_dict.items(),
+                        X_old=self.X,
+                        Y_old=self.Y,
+                        parallel=self.parallel,
+                        predict_class=self.predict_class,
+                        criteria_class=self.criteria_class,
+                    )
+                )
             )
-            self.oob = np.mean(oobs)
+
+            # sanity check
+            if Y_pred.shape != Y_true.shape:
+                raise ValueError(
+                    "Shape of predicted Y and true Y in oob oob_calculation does not match up!"
+                )
+            self.oob = self.criteria_class.loss(Y_pred, Y_true)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
