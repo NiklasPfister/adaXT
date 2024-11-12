@@ -1,5 +1,7 @@
 import sys
 from typing import Literal
+import math
+import warnings
 
 import numpy as np
 from numpy.random import Generator, default_rng
@@ -17,6 +19,8 @@ from ..leaf_builder import LeafBuilder
 
 from functools import reduce
 from textwrap import dedent
+
+from collections import defaultdict
 
 
 def tree_based_weights(
@@ -43,7 +47,7 @@ def get_sample_indices(
     X_n_rows: int,
     sampling_args: dict,
     sampling: str | None,
-) -> tuple | None:
+) -> tuple:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
@@ -158,6 +162,30 @@ def build_single_tree(
         )
 
     return tree
+
+
+def oob_calculation(
+    idx: np.int64,
+    trees: list,
+    X_old: np.ndarray,
+    Y_old: np.ndarray,
+    parallel: ParallelModel,
+    predict_class: type[Predict],
+    criteria_class: type[Criteria],
+) -> tuple:
+    X_pred = np.expand_dims(X_old[idx], axis=0)
+    Y_pred = predict_class.forest_predict(
+        X_old=X_old,
+        Y_old=Y_old,
+        X_new=X_pred,
+        trees=trees,
+        parallel=parallel,
+        __no_parallel=True,
+    ).astype(np.float64)
+    Y_true = Y_old[idx]
+    # We return the true indices to save on space. Y might be a double, where as
+    # the idx is always integers.
+    return (Y_pred, Y_true)
 
 
 def predict_single_tree(
@@ -397,7 +425,7 @@ class RandomForest(BaseModel):
         self.fitting_indices, self.prediction_indices, self.out_of_bag_indices = zip(
             *indices
         )
-        self.trees = self.parallel.async_starmap(
+        self.trees = self.parallel.starmap(
             build_single_tree,
             map_input=zip(self.fitting_indices, self.prediction_indices),
             X=self.X,
@@ -460,33 +488,41 @@ class RandomForest(BaseModel):
         self.__build_trees()
         self.forest_fitted = True
 
-        # previous __get_sampling_parameter makes sure OOB is set
         if self.sampling_args["OOB"]:
-            # Converts a list of arrays for each tree, where each array
-            # contains out_of_bag_indices for the given tree, to a single
-            # list which contains the indices that are present in all the lists.
-            # This is the true OOB for the forest.
-            self.out_of_bag_indices = reduce(np.intersect1d, self.out_of_bag_indices)
-            if len(self.out_of_bag_indices) == 0:
-                # Allow
-                print(
-                    dedent(
-                        """No indices are out of bag, for OOB error. Default oob
-                        attrubute to 0 as a result"""
+            # Dict, but creates empty list instead of keyerror
+            tree_dict = defaultdict(list)
+
+            # Compute a dictionary, where every key is an index, which is out of
+            # bag for atleast one tree. Each value is a list of the indices for
+            # trees, which said value is out of bag for.
+            for idx, array in enumerate(self.out_of_bag_indices):
+                for num in array:
+                    tree_dict[num].append(self.trees[idx])
+
+            # Expand dimensions as Y will always only be predicted on a single
+            # value. Thus when we combine them in this list, we will be missing
+            # a dimension
+            Y_pred, Y_true = (
+                np.expand_dims(np.array(x).flatten(), axis=-1)
+                for x in zip(
+                    *self.parallel.async_starmap(
+                        oob_calculation,
+                        map_input=tree_dict.items(),
+                        X_old=self.X,
+                        Y_old=self.Y,
+                        parallel=self.parallel,
+                        predict_class=self.predict_class,
+                        criteria_class=self.criteria_class,
                     )
                 )
-                self.oob = 0.0
-                return
+            )
 
-            Y_pred = self.predict(self.X[self.out_of_bag_indices])
-            _, Y_pred = self._check_input(None, Y_pred)
-            Y_true = self.Y[self.out_of_bag_indices]
-            self.oob = self.criteria.loss(Y_pred, Y_true)
-
-    def score(self, X: ArrayLike, Y: ArrayLike):
-        Y_pred = self.predict(self.X[self.out_of_bag_indices])
-        _, Y_pred = self._check_input(None, Y_pred)
-        return self.criteria_class.loss(Y_pred, Y)
+            # sanity check
+            if Y_pred.shape != Y_true.shape:
+                raise ValueError(
+                    "Shape of predicted Y and true Y in oob oob_calculation does not match up!"
+                )
+            self.oob = self.criteria_class.loss(Y_pred, Y_true)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
