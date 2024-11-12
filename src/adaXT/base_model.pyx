@@ -13,6 +13,8 @@ from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderPartialQuadratic)
 
 import numpy as np
+from collections import defaultdict
+from numpy.typing import ArrayLike
 
 import inspect
 
@@ -42,11 +44,13 @@ class BaseModel():
         else:
             raise ValueError("max_features can only be int, float, or in {\"sqrt\", \"log2\"}")
 
-    def _check_sample_weight(self, sample_weight: ArrayLike | None) -> np.ndarray:
+    def _check_sample_weight(self, sample_weight: ArrayLike | None, X_n_rows : int |None = None) -> np.ndarray:
+        if X_n_rows is None:
+            X_n_rows = self.X_n_rows
         if sample_weight is None:
-            return np.ones(self.X_n_rows, dtype=DOUBLE)
+            return np.ones(X_n_rows, dtype=DOUBLE)
         sample_weight = np.array(sample_weight, dtype=DOUBLE)
-        if sample_weight.shape[0] != self.X_n_rows:
+        if sample_weight.shape[0] != X_n_rows:
             raise ValueError("sample_weight should have as many elements as X and Y")
         if sample_weight.ndim > 1:
             raise ValueError("sample_weight has more than one dimension")
@@ -118,74 +122,43 @@ class BaseModel():
         leaf_builder: type[LeafBuilder] | None,
         predict: type[Predict] | None,
     ) -> None:
-        tree_types = ["Classification", "Regression", "Gradient", "Quantile"]
-        if tree_type in tree_types:
-            if tree_type == "Classification":
-                if predict:
-                    self.predict = predict
-                else:
-                    self.predict = PredictClassification
-                if criteria:
-                    self.criteria = criteria
-                else:
-                    self.criteria = Entropy
-                if leaf_builder:
-                    self.leaf_builder = leaf_builder
-                else:
-                    self.leaf_builder = LeafBuilderClassification
-            elif tree_type == "Regression":
-                if predict:
-                    self.predict = predict
-                else:
-                    self.predict = PredictRegression
-                if criteria:
-                    self.criteria = criteria
-                else:
-                    self.criteria = Squared_error
-                if leaf_builder:
-                    self.leaf_builder = leaf_builder
-                else:
-                    self.leaf_builder = LeafBuilderRegression
-            elif tree_type == "Quantile":
-                if predict:
-                    self.predict = predict
-                else:
-                    self.predict = PredictQuantile
-                if criteria:
-                    self.criteria = criteria
-                else:
-                    self.criteria = Squared_error
-                if leaf_builder:
-                    self.leaf_builder = leaf_builder
-                else:
-                    self.leaf_builder = LeafBuilderRegression
-            elif tree_type == "Gradient":
-                if predict:
-                    self.predict = predict
-                else:
-                    self.predict = PredictLocalPolynomial
-                if criteria:
-                    self.criteria = criteria
-                else:
-                    self.criteria = Partial_quadratic
-                if leaf_builder:
-                    self.leaf_builder = leaf_builder
-                else:
-                    self.leaf_builder = LeafBuilderPartialQuadratic
+        # tree_types. To add a new one add an entry in the following dictionary,
+        # where the key is the name, and the value is a list of a criteria,
+        # predict and leaf_builder class in that order.
+        tree_types = {
+                "Classification": [Entropy, PredictClassification,
+                                   LeafBuilderClassification],
+                "Regression": [Squared_error, PredictRegression, LeafBuilderRegression], 
+                "Gradient": [Partial_quadratic, PredictLocalPolynomial, LeafBuilderPartialQuadratic], 
+                "Quantile": [Squared_error, PredictQuantile, LeafBuilderRegression]
+            }
+        if tree_type in tree_types.keys():
+            # Set the defaults
+            self.criteria_class, self.predict_class, self.leaf_builder_class = \
+                tree_types[tree_type]
 
+            # Update any that are specifically given
+            if criteria is not None:
+                self.criteria_class = criteria
+            if splitter is not None:
+                self.splitter_class = splitter
+            if leaf_builder is not None:
+                self.leaf_builder_class = leaf_builder
+            if predict is not None:
+                self.predict_class = predict
         else:
             if (not criteria) or (not predict) or (not leaf_builder):
                 raise ValueError(
                     "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
                 )
-            self.criteria = criteria
-            self.predict = predict
-            self.leaf_builder = leaf_builder
+            self.criteria_class = criteria
+            self.predict_class = predict
+            self.leaf_builder_class = leaf_builder
 
-        if splitter:
-            self.splitter = splitter
+        if splitter is None:
+            self.splitter_class = Splitter
         else:
-            self.splitter = Splitter
+            self.splitter_class = splitter
 
     @classmethod
     def _get_param_names(cls):
@@ -241,3 +214,59 @@ class BaseModel():
                 out.update((key + "__" + k, val) for k, val in deep_items)
             out[key] = value
         return out
+
+    def set_params(self, **params):
+        """Set the parameters of this estimator.
+
+        The method works on simple estimators as well as on nested objects
+        (such as :class:`~sklearn.pipeline.Pipeline`). The latter have
+        parameters of the form ``<component>__<parameter>`` so that it's
+        possible to update each component of a nested object.
+
+        Parameters
+        ----------
+        **params : dict
+            Estimator parameters.
+
+        Returns
+        -------
+        self : estimator instance
+            Estimator instance.
+        """
+        if not params:
+            # Simple optimization to gain speed (inspect is slow)
+            return self
+        valid_params = self.get_params(deep=True)
+
+        nested_params = defaultdict(dict)  # grouped by prefix
+        for key, value in params.items():
+            key, delim, sub_key = key.partition("__")
+            if key not in valid_params:
+                local_valid_params = self._get_param_names()
+                raise ValueError(
+                    f"Invalid parameter {key!r} for estimator {self}. "
+                    f"Valid parameters are: {local_valid_params!r}."
+                )
+
+            if delim:
+                nested_params[key][sub_key] = value
+            else:
+                setattr(self, key, value)
+                valid_params[key] = value
+
+        for key, sub_params in nested_params.items():
+            valid_params[key].set_params(**sub_params)
+
+        return self
+    
+    def score(self, X: ArrayLike, y: ArrayLike, sample_weight: ArrayLike|None = None):
+        X, Y = self._check_input(X, y) 
+        _, Y_pred = self._check_input(None, self.predict(X))
+        _, Y_true = self._check_input(None, Y)
+        sample_weight = self._check_sample_weight(sample_weight, X.shape[0])
+        return -self.criteria_class.loss(Y_pred, Y_true, sample_weight)
+        
+
+
+
+

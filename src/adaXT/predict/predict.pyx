@@ -62,7 +62,7 @@ def predict_quantile(
 
 cdef class Predict():
 
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, object root, **kwargs):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
@@ -114,11 +114,11 @@ cdef class Predict():
 
 
 cdef class PredictClassification(Predict):
-    def __cinit__(self,
+    def __init__(self,
                   double[:, ::1] X,
                   double[:, ::1] Y,
-                  object root,
-                  **kwargs) -> None:
+                  object root, **kwargs) -> None:
+        super().__init__(X, Y, root, **kwargs)
         self.classes = np.unique(Y)
 
     cdef int __find_max_index(self, double[::1] lst):

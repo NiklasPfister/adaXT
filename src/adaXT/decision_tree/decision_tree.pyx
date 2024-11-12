@@ -49,20 +49,19 @@ class DecisionTree(BaseModel):
             min_samples_leaf: int = 1,
             min_improvement: float = 0.0,
             max_features: int | float | Literal["sqrt", "log2"] | None = None,
-            criteria: Criteria | None = None,
-            leaf_builder: LeafBuilder | None = None,
-            predict: Predict | None = None,
-            splitter: Splitter | None = None) -> None:
+            criteria_class: type[Criteria] | None = None,
+            leaf_builder_class: type[LeafBuilder] | None = None,
+            predict_class: type[Predict] | None = None,
+            splitter_class: type[Splitter] | None = None) -> None:
+        self.skip_check_input = skip_check_input
 
-        if skip_check_input:
-            self.criteria_class = criteria
-            self.predict_class = predict
-            self.leaf_builder_class = leaf_builder
-            self.splitter_class = splitter
-            self.max_features = max_features
-        else:
-            self._check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
-            self.max_features = self._check_max_features(max_features)
+        # Input only checked on fitting.
+        self.criteria_class = criteria_class
+        self.predict_class = predict_class
+        self.leaf_builder_class = leaf_builder_class
+        self.splitter_class = splitter_class
+        self.max_features = max_features
+        self.tree_type = tree_type
 
         self.skip_check_input = skip_check_input
         self.max_depth = max_depth
@@ -86,6 +85,10 @@ class DecisionTree(BaseModel):
         # Check inputs
         if not self.skip_check_input:
             X, Y = self._check_input(X, Y)
+            self._check_tree_type(self.tree_type, self.criteria_class,
+                                  self.splitter_class, self.leaf_builder_class,
+                                  self.predict_class)
+            self.max_features = self._check_max_features(self.max_features)
 
         # These values are used when checking sample_indices and sample_weight,
         # so they have to be updated after checking X and Y
@@ -465,22 +468,15 @@ class DepthTreeBuilder:
         self.Y = Y
         self.sample_indices = sample_indices
         self.sample_weight = sample_weight
+        self.max_features = max_features
 
-        _, col = X.shape
-        self.int_max_features = self.__parse_max_features(max_features)
-
-        self.feature_indices = np.arange(col, dtype=np.int32)
-        self.num_features = col
-
-        self.criteria = criteria_class(self.X, self.Y, self.sample_weight)
-        self.splitter = splitter_class(self.X, self.Y, self.criteria)
-
-        # These can not yet be initialized, as they depend on the all_idx
-        # parameter calculated in build_tree
+        self.splitter_class = splitter_class
+        self.criteria_class = criteria_class
         self.predict_class = predict_class
         self.leaf_builder_class = leaf_builder_class
 
     def __get_feature_indices(self) -> np.ndarray:
+        #TODO: Do we want this function still?
         if self.int_max_features is None:
             return self.feature_indices
         else:
@@ -490,20 +486,20 @@ class DepthTreeBuilder:
                 replace=False)
 
     def __parse_max_features(self,
-                             max_features: int|str|float|None
+                             max_features: int|str|float|None, tot_features: int
                              ) -> int:
 
         if max_features is None:
             return None
         elif isinstance(max_features, int):
-            return min(max_features, self.num_features)
+            return min(max_features, tot_features)
         elif isinstance(max_features, float):
-            return min(self.num_features, int(max_features * self.num_features))
+            return min(tot_features, int(max_features * tot_features))
         elif isinstance(max_features, str):
             if max_features == "sqrt":
-                return int(np.sqrt(self.num_features))
+                return int(np.sqrt(tot_features))
             elif max_features == "log2":
-                return int(np.log2(self.num_features))
+                return int(np.log2(tot_features))
         else:
             raise ValueError("Unable to parse max_features")
 
@@ -520,10 +516,18 @@ class DepthTreeBuilder:
         int :
             returns 0 on succes
         """
+        # initialization
         X = self.X
         Y = self.Y
-        splitter = self.splitter
-        criteria = self.criteria
+        _, col = X.shape
+        self.int_max_features = self.__parse_max_features(self.max_features,
+                                                          col)
+
+        self.feature_indices = np.arange(col, dtype=np.int32)
+
+        criteria = self.criteria_class(self.X, self.Y, self.sample_weight)
+        splitter = self.splitter_class(self.X, self.Y, criteria)
+
 
         min_samples_split = tree.min_samples_split
         min_samples_leaf = tree.min_samples_leaf
