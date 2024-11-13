@@ -92,6 +92,7 @@ cdef class ClassificationCriteria(Criteria):
         cdef:
             int i
             int n_samples = Y_pred.shape[0]
+            double weighted_samples = 0.0
             double tot_sum = 0.0
 
         if Y_true.shape[0] != n_samples:
@@ -101,6 +102,8 @@ cdef class ClassificationCriteria(Criteria):
         for i in range(n_samples):
             if Y_pred[i, 0] != Y_true[i, 0]:
                 tot_sum += sample_weight[i]
+
+            weighted_samples += sample_weight[i]
 
         return tot_sum / n_samples
 
@@ -349,13 +352,15 @@ cdef class Entropy(ClassificationCriteria):
 
 cdef class RegressionCriteria(Criteria):
     @staticmethod
-    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true, double[::1] sample_weight) -> float:
+    def loss(double[:,  ::1] Y_pred, double[:, ::1] Y_true, double[::1] sample_weight) -> float:
         """ Mean squared error loss """
         cdef:
             int i
             int n_samples = Y_pred.shape[0]
+            double weighted_samples = 0.0
             double temp
             double tot_sum = 0.0
+
 
         if Y_true.shape[0] != n_samples:
             raise ValueError(
@@ -364,9 +369,10 @@ cdef class RegressionCriteria(Criteria):
         for i in range(n_samples):
             #TODO: Do we want the sample weight before we square the result
             temp = (Y_true[i, 0] - Y_pred[i, 0])*sample_weight[i]
+            weighted_samples += sample_weight[i]
             tot_sum += temp*temp
 
-        return tot_sum / n_samples
+        return tot_sum / weighted_samples
 
 
 # Squared error criteria
@@ -431,7 +437,6 @@ cdef class Squared_error(RegressionCriteria):
         # Calculate the variance using: variance = sum((y_i - mu)^2)/y_len
         for i in range(n_indices):
             p = indices[i]
-            #TODO: Do we want this sample weight before we square the result?
             tmp = Y[p, 0] * self.sample_weight[p]
             cur_sum += tmp*tmp
             obs_weight += self.sample_weight[p]

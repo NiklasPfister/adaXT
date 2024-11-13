@@ -1,6 +1,5 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 
-
 # General
 import numpy as np
 import sys
@@ -39,6 +38,8 @@ class refit_object():
 
 
 class DecisionTree(BaseModel):
+    # TODO: Change criteria_class to criteria and criteria to criteria_instance
+    # TODO: Make a wrapper classe for the DecisionTree
     def __init__(
             self,
             tree_type: str | None = None,

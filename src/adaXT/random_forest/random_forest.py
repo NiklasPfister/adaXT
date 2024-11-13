@@ -190,6 +190,7 @@ def predict_single_tree(
 
 
 class RandomForest(BaseModel):
+    # TODO: Change criteria_class to criteria and criteria to criteria_instance
     """
     Attributes
     ----------
@@ -300,16 +301,16 @@ class RandomForest(BaseModel):
             The minimum improvement gained from performing a split.
         seed: int | None
             Seed used to reproduce a RandomForest
-        criteria : Criteria
+        criteria_class : Criteria
             The Criteria class to use, if None it defaults to the forest_type
             default.
-        leaf_builder : LeafBuilder
+        leaf_builder_class : LeafBuilder
             The LeafBuilder class to use, if None it defaults to the forest_type
             default.
-        predict: Predict
+        predict_class: Predict
             The Prediction class to use, if None it defaults to the forest_type
             default.
-        splitter : Splitter | None
+        splitter_class: Splitter | None
             The Splitter class to use, if None it defaults to the default
             Splitter class.
         """
