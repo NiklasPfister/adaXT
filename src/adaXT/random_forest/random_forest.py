@@ -480,7 +480,7 @@ class RandomForest(BaseModel):
             tree_dict = defaultdict(list)
 
             # Compute a dictionary, where every key is an index, which is out of
-            # bag for atleast one tree. Each value is a list of the indices for
+            # bag for at least one tree. Each value is a list of the indices for
             # trees, which said value is out of bag for.
             for idx, array in enumerate(self.out_of_bag_indices):
                 for num in array:
