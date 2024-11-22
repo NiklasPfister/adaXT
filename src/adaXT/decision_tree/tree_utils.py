@@ -34,30 +34,31 @@ def plot_tree(
     max_x, max_y = dt.max_extents() + 1
     ax_width = ax.get_window_extent().width
     ax_height = ax.get_window_extent().height
-    print(ax_width, ax_height)
 
     scale_x = ax_width / max_x
     scale_y = ax_height / max_y
     recursive_draw(dt, ax, max_x, max_y, fontsize, max_depth)
 
-    # anns = [ann for ann in ax.get_children() if isinstance(ann, Annotation)]
-    #
-    # renderer = ax.figure.canvas.get_renderer()
-    #
-    # for ann in anns:
-    #     ann.update_bbox_position_size(renderer)
-    #
-    # if fontsize is None:
-    #     # get figure to data transform
-    #     # adjust fontsize to avoid overlap
-    #     # get max box width and height
-    #     extents = [ann.get_bbox_patch().get_window_extent() for ann in anns]
-    #     max_width = max([extent.width for extent in extents])
-    #     max_height = max([extent.height for extent in extents])
-    #     # width should be around scale_x in axis coordinates
-    #     size = anns[0].get_fontsize() * min(scale_x / max_width, scale_y / max_height)
-    #     for ann in anns:
-    #         ann.set_fontsize(size)
+    anns = [ann for ann in ax.get_children() if isinstance(ann, Annotation)]
+
+    renderer = ax.figure.canvas.get_renderer()
+
+    for ann in anns:
+        ann.update_bbox_position_size(renderer)
+
+    if fontsize is None:
+        # get figure to data transform
+        # adjust fontsize to avoid overlap
+        # get max box width and height
+        extents = [ann.get_bbox_patch().get_window_extent() for ann in anns]
+        max_width = max([extent.width for extent in extents])
+        max_height = max([extent.height for extent in extents])
+        # width should be around scale_x in axis coordinates
+        size = anns[0].get_fontsize() * min(scale_x / max_width, scale_y / max_height)
+        for ann in anns:
+            ann.set_fontsize(size)
+
+    return anns
 
 
 def recursive_draw(node, ax, max_x, max_y, fontsize, max_depth, depth=0):
@@ -101,7 +102,7 @@ def get_label(**kwargs):
     node_string = ""
 
     if type(node) is DecisionNode:
-        node_string += "DecisionNode\\n"
+        node_string += "DecisionNode" + new_line
         node_string += f"X{node.split_idx} <= "
         node_string += str(round(node.threshold, precision)) + new_line
         if kwargs["impurity"]:
@@ -109,14 +110,18 @@ def get_label(**kwargs):
             node_string += str(round(node.impurity, precision)) + new_line
 
     elif type(node) is LeafNode:
-        node_string += "LeafNode\\n"
+        node_string += "LeafNode" + new_line
         if kwargs["impurity"]:
             node_string += "Impurity: "
             node_string += str(round(node.impurity, precision)) + new_line
-        node_string += "Weighted Samples: "
+        node_string += "Samples: "
         node_string += str(round(node.weighted_samples, precision)) + new_line
         node_string += "Value: "
-        node_string += ", ".join([str(round(x, precision) for x in node.value)])
+        if len(node.value) == 1:
+            node_value_list = [round(node.value[0], precision)]
+        else:
+            node_value_list = [round(x, 2) for x in node.value]
+        node_string += ", ".join(map(str, node_value_list))
     return node_string
 
 
