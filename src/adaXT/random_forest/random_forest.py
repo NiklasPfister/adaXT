@@ -183,8 +183,6 @@ def oob_calculation(
         __no_parallel=True,
     ).astype(np.float64)
     Y_true = Y_old[idx]
-    # We return the true indices to save on space. Y might be a double, where as
-    # the idx is always integers.
     return (Y_pred, Y_true)
 
 
