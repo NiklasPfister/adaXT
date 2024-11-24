@@ -30,7 +30,7 @@ class BaseModel:
 
     def _check_input(
         self, X: ArrayLike, Y: ArrayLike | None = None
-    ) -> tuple[np.ndarray, ...]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         pass
 
     def _check_tree_type(

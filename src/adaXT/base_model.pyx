@@ -78,7 +78,7 @@ class BaseModel():
     def _check_input(self,
                      X: ArrayLike | None = None,
                      Y: ArrayLike | None = None
-                     ) -> tuple[np.ndarray, np.ndarray|None]:
+                     ) -> tuple[np.ndarray|None, np.ndarray|None]:
 
         if (X is None) and (Y is None):
             raise ValueError(
