@@ -2,7 +2,8 @@
 # py-mag by Bill Mill.
 # (https://github.com/scikit-learn/scikit-learn/blob/main/sklearn/tree/_export.py
 # and https://github.com/llimllib/pymag-trees respectively).
-from . import DecisionTree, LeafNode, DecisionNode
+from .nodes import LeafNode, DecisionNode
+from .decision_tree import DecisionTree
 import numpy as np
 # Plot an entire tree
 
