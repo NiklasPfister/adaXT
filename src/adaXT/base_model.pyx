@@ -120,7 +120,7 @@ class BaseModel():
         criteria: type[Criteria] | None,
         splitter: type[Splitter] | None,
         leaf_builder: type[LeafBuilder] | None,
-        predict: type[Predict] | None,
+        predictor: type[Predict] | None,
     ) -> None:
         # tree_types. To add a new one add an entry in the following dictionary,
         # where the key is the name, and the value is a list of a criteria,
@@ -134,31 +134,32 @@ class BaseModel():
             }
         if tree_type in tree_types.keys():
             # Set the defaults
-            self.criteria_class, self.predict_class, self.leaf_builder_class = \
+            self.criteria, self.predictor, self.leaf_builder = \
                 tree_types[tree_type]
 
             # Update any that are specifically given
             if criteria is not None:
-                self.criteria_class = criteria
+                self.criteria = criteria
             if splitter is not None:
-                self.splitter_class = splitter
+                self.splitter = splitter
             if leaf_builder is not None:
-                self.leaf_builder_class = leaf_builder
-            if predict is not None:
-                self.predict_class = predict
+                self.leaf_builder = leaf_builder
+            if predictor is not None:
+                self.predictor = predictor
         else:
-            if (not criteria) or (not predict) or (not leaf_builder):
+            if (criteria is None) or (predictor is None) or (leaf_builder is
+                                                             None):
                 raise ValueError(
-                    "tree_type was not a default tree_type, so criteria, predict and leaf_builder must be supplied"
+                    "tree_type was not a default tree_type, so criteria, predictor and leaf_builder must be supplied"
                 )
-            self.criteria_class = criteria
-            self.predict_class = predict
-            self.leaf_builder_class = leaf_builder
+            self.criteria = criteria
+            self.predictor = predictor
+            self.leaf_builder = leaf_builder
 
         if splitter is None:
-            self.splitter_class = Splitter
+            self.splitter = Splitter
         else:
-            self.splitter_class = splitter
+            self.splitter = splitter
 
     @classmethod
     def _get_param_names(cls):
@@ -264,7 +265,7 @@ class BaseModel():
         _, Y_pred = self._check_input(None, self.predict(X))
         _, Y_true = self._check_input(None, Y)
         sample_weight = self._check_sample_weight(sample_weight, X.shape[0])
-        return -self.criteria_class.loss(Y_pred, Y_true, sample_weight)
+        return -self.criteria.loss(Y_pred, Y_true, sample_weight)
         
 
 

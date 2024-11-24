@@ -7,7 +7,9 @@ from .nodes import LeafNode, Node
 from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 from ..base_model import BaseModel
+from ._decision_tree import _DecisionTree
 import sys
+
 
 class DecisionTree(BaseModel):
     """
@@ -32,12 +34,13 @@ class DecisionTree(BaseModel):
     """
 
     max_depth: int
-    tree_type: str
+    tree_type: str | None
     leaf_nodes: list[LeafNode]
-    root: Node
+    root: Node | None
     n_nodes: int
     n_features: int
     n_rows: int
+    _tree: _DecisionTree
 
     def __init__(
         self,
@@ -50,7 +53,7 @@ class DecisionTree(BaseModel):
         min_improvement: float = 0,
         criteria: Type[Criteria] | None = None,
         leaf_builder: Type[LeafBuilder] | None = None,
-        predict: Type[Predict] | None = None,
+        predictor: Type[Predict] | None = None,
         splitter: Type[Splitter] | None = None,
         skip_check_input: bool = False,
     ) -> None:
@@ -90,7 +93,33 @@ class DecisionTree(BaseModel):
             function of a tree, should only be used if you know what you are
             doing, by default false.
         """
-        pass
+
+        self.skip_check_input = skip_check_input
+
+        # Input only checked on fitting.
+        self.criteria = criteria
+        self.predictor = predictor
+        self.leaf_builder = leaf_builder
+        self.splitter = splitter
+        self.max_features = max_features
+        self.tree_type = tree_type
+
+        self.skip_check_input = skip_check_input
+        self.max_depth = max_depth
+        self.impurity_tol = impurity_tol
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.min_improvement = min_improvement
+        self.tree_type = tree_type
+
+    # In python this function is called if the attribute does not exist on the
+    # actual instance. Thus we check the wrapped tree instance.
+    def __getattr__(self, name):
+        if name == "_tree":
+            # This is called, if _tree is not already defined.
+            return None
+        else:
+            return getattr(self._tree, name)
 
     def fit(
         self,
@@ -116,7 +145,23 @@ class DecisionTree(BaseModel):
         sample_weight : array-like object of dimension 1 | None
             Sample weights. May not be implemented for every criteria.
         """
-        pass
+        self._tree = _DecisionTree(
+            tree_type=self.tree_type,
+            skip_check_input=self.skip_check_input,
+            max_depth=self.max_depth,
+            impurity_tol=self.impurity_tol,
+            min_samples_split=self.min_samples_split,
+            min_samples_leaf=self.min_samples_leaf,
+            min_improvement=self.min_improvement,
+            max_features=self.max_features,
+            criteria=self.criteria,
+            leaf_builder=self.leaf_builder,
+            predictor=self.predictor,
+            splitter=self.splitter,
+        )
+        self._tree.fit(
+            X=X, Y=Y, sample_indices=sample_indices, sample_weight=sample_weight
+        )
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
@@ -160,7 +205,7 @@ class DecisionTree(BaseModel):
             (N, K) numpy array with the prediction, where K depends on the
             Prediction class and is generally 1
         """
-        pass
+        return self._tree.predict(X=X, **kwargs)
 
     def predict_weights(
         self, X: ArrayLike | None = None, scale: bool = True
@@ -186,7 +231,7 @@ class DecisionTree(BaseModel):
             A numpy array of shape MxN, where N denotes the number of rows of
             the original training data and M the number of rows of X.
         """
-        pass
+        return self._tree.predict_weights(X=X, scale=scale)
 
     def predict_leaf(self, X: ArrayLike | None) -> dict:
         """
@@ -205,7 +250,7 @@ class DecisionTree(BaseModel):
             A hash table with keys corresponding to LeafNode ids and values corresponding
             to lists of indices of the rows that land in a given LeafNode.
         """
-        pass
+        return self._tree.predict_leaf(X=X)
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
         """
@@ -224,12 +269,14 @@ class DecisionTree(BaseModel):
         np.ndarray
             A NxM shaped np.ndarray.
         """
-        pass
+        return self._tree.similarity(X0=X0, X1=X1)
 
     def _tree_based_weights(
         self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
     ) -> np.ndarray:
-        pass
+        return self._tree._tree_based_weights(
+            hash0=hash0, hash1=hash1, size_X0=size_X0, size_X1=size_X1, scaling=scaling
+        )
 
     def refit_leaf_nodes(
         self,
@@ -237,7 +284,7 @@ class DecisionTree(BaseModel):
         Y: ArrayLike,
         sample_weight: ArrayLike | None = None,
         sample_indices: ArrayLike | None = None,
-        **kwargs
+        **kwargs,
     ) -> None:
         """
         Refits the leaf nodes in a previously fitted decision tree.
@@ -265,4 +312,10 @@ class DecisionTree(BaseModel):
         sample_indices: array-like object of dimension 1 | None
             Indices of X which to create new leaf nodes with.
         """
-        pass
+        return self._tree.refit_leaf_nodes(
+            X=X,
+            Y=Y,
+            sample_weight=sample_weight,
+            sample_indices=sample_indices,
+            **kwargs,
+        )

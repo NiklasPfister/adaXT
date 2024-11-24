@@ -485,7 +485,7 @@ def test_quantile_predict():
     tree = DecisionTree(
         "Quantile",
         criteria=Squared_error,
-        predict=PredictQuantile,
+        predictor=PredictQuantile,
         leaf_builder=LeafBuilderRegression,
         max_depth=0,
     )
@@ -504,7 +504,7 @@ def test_quantile_predict_array():
     tree = DecisionTree(
         "Quantile",
         criteria=Squared_error,
-        predict=PredictQuantile,
+        predictor=PredictQuantile,
         leaf_builder=LeafBuilderRegression,
         max_depth=0,
     )
@@ -534,7 +534,7 @@ def test_local_polynomial_predict():
     tree1 = DecisionTree(
         None,
         criteria=Partial_linear,
-        predict=PredictLocalPolynomial,
+        predictor=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialLinear,
         max_depth=1,
     )
@@ -542,7 +542,7 @@ def test_local_polynomial_predict():
     tree2 = DecisionTree(
         None,
         criteria=Partial_quadratic,
-        predict=PredictLocalPolynomial,
+        predictor=PredictLocalPolynomial,
         leaf_builder=LeafBuilderPartialQuadratic,
         max_depth=1,
     )

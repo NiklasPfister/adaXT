@@ -47,7 +47,7 @@ def run_gini_index(
 ):
     forest = RandomForest(
         forest_type="Classification",
-        criteria_class=Gini_index,
+        criteria=Gini_index,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
@@ -72,7 +72,7 @@ def run_entropy(
 ):
     forest = RandomForest(
         forest_type="Classification",
-        criteria_class=Entropy,
+        criteria=Entropy,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
@@ -97,7 +97,7 @@ def run_squared_error(
 ):
     forest = RandomForest(
         forest_type="Regression",
-        criteria_class=Squared_error,
+        criteria=Squared_error,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
@@ -123,7 +123,7 @@ def test_dominant_feature():
     forest = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria_class=Gini_index,
+        criteria=Gini_index,
         sampling="resampling",
     )
     forest.fit(X, Y)
@@ -151,7 +151,7 @@ def test_deterministic_seeding_regression():
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
-        criteria_class=Squared_error,
+        criteria=Squared_error,
         seed=tree_state,
         sampling="resampling",
     )
@@ -160,7 +160,7 @@ def test_deterministic_seeding_regression():
     forest2 = RandomForest(
         "Regression",
         n_estimators=100,
-        criteria_class=Squared_error,
+        criteria=Squared_error,
         seed=tree_state,
         sampling="resampling",
     )
@@ -184,7 +184,7 @@ def test_deterministic_seeding_classification():
     forest1 = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria_class=Gini_index,
+        criteria=Gini_index,
         seed=tree_state,
         sampling="resampling",
     )
@@ -193,7 +193,7 @@ def test_deterministic_seeding_classification():
     forest2 = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria_class=Gini_index,
+        criteria=Gini_index,
         seed=tree_state,
         sampling="resampling",
     )
@@ -277,15 +277,15 @@ def test_gradient_forest():
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
     tree = DecisionTree(
         "Gradient",
-        leaf_builder_class=LeafBuilderPartialQuadratic,
-        predict_class=PredictLocalPolynomial,
-        criteria_class=Partial_quadratic,
+        leaf_builder=LeafBuilderPartialQuadratic,
+        predictor=PredictLocalPolynomial,
+        criteria=Partial_quadratic,
     )
     forest = RandomForest(
         "Gradient",
-        leaf_builder_class=LeafBuilderPartialQuadratic,
-        predict_class=PredictLocalPolynomial,
-        criteria_class=Partial_quadratic,
+        leaf_builder=LeafBuilderPartialQuadratic,
+        predictor=PredictLocalPolynomial,
+        criteria=Partial_quadratic,
         sampling=None,
     )
     tree.fit(X_reg, Y_reg)
@@ -583,15 +583,14 @@ def test_OOB_entropy():
 
 
 if __name__ == "__main__":
-    # test_dominant_feature()
+    test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
     # test_honest_sampling_leaf_samples()
     # test_n_jobs_predict_forest()
-    test_random_forest()
+    # test_random_forest()
     # test_gradient_forest()
     # test_OOB_squared_error()
     # test_OOB_entropy()
-    #
     print("Done")

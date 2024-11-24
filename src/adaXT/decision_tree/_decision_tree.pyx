@@ -38,7 +38,7 @@ class refit_object():
 
 
 class _DecisionTree(BaseModel):
-    # TODO: Change criteria_class to criteria and criteria to criteria_instance
+    # TODO: Change criteria to criteria and criteria to criteria_instance
     # TODO: Make a wrapper classe for the DecisionTree
     def __init__(
             self,
@@ -58,7 +58,7 @@ class _DecisionTree(BaseModel):
 
         # Input only checked on fitting.
         self.criteria = criteria
-        self.predictor = predict
+        self.predictor = predictor
         self.leaf_builder = leaf_builder
         self.splitter = splitter
         self.max_features = max_features
@@ -72,8 +72,8 @@ class _DecisionTree(BaseModel):
         self.min_improvement = min_improvement
         self.tree_type = tree_type
         self.leaf_nodes = None
+        self.predictor_instance = None
         self.root = None
-        self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
 
@@ -86,9 +86,9 @@ class _DecisionTree(BaseModel):
         # Check inputs
         if not self.skip_check_input:
             X, Y = self._check_input(X, Y)
-            self._check_tree_type(self.tree_type, self.criteria_class,
-                                  self.splitter_class, self.leaf_builder_class,
-                                  self.predict_class)
+            self._check_tree_type(self.tree_type, self.criteria,
+                                  self.splitter, self.leaf_builder,
+                                  self.predictor)
             self.max_features = self._check_max_features(self.max_features)
 
         # These values are used when checking sample_indices and sample_weight,
@@ -108,19 +108,19 @@ class _DecisionTree(BaseModel):
             sample_indices=sample_indices,
             max_features=self.max_features,
             sample_weight=sample_weight,
-            criteria_class=self.criteria_class,
-            leaf_builder_class=self.leaf_builder_class,
-            predict_class=self.predict_class,
-            splitter_class=self.splitter_class)
+            criteria=self.criteria,
+            leaf_builder=self.leaf_builder,
+            predictor=self.predictor,
+            splitter=self.splitter)
         builder.build_tree(self)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
-        if not self.predictor:
+        if self.predictor_instance is None:
             raise AttributeError("The tree has not been fitted before trying to call predict")
         if not self.skip_check_input:
             X, _ = self._check_input(X)
             self._check_dimensions(X)
-        return self.predictor.predict(X, **kwargs)
+        return self.predictor_instance.predict(X, **kwargs)
 
     def __get_leaf(self, scale: bool = False) -> dict:
         if self.root is None:
@@ -200,9 +200,9 @@ class _DecisionTree(BaseModel):
             if not self.skip_check_input:
                 X, _ = self._check_input(X)
                 self._check_dimensions(X)
-        if not self.predictor:
+        if self.predictor_instance is None:
             raise ValueError("The tree has not been trained before trying to predict")
-        return self.predictor.predict_leaf(X)
+        return self.predictor_instance.predict_leaf(X)
 
     def __remove_leaf_nodes(self) -> None:
         cdef:
@@ -269,8 +269,8 @@ class _DecisionTree(BaseModel):
                         cur_node = cur_node.right_child
                     depth += 1
 
-        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
-        criteria = self.criteria_class(X, Y, sample_weight)
+        leaf_builder = self.leaf_builder(X, Y, all_idx)
+        criteria = self.criteria(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
         # Two cases:
         # (1) Only a single root node (n_objs == 0)
@@ -438,10 +438,10 @@ class DepthTreeBuilder:
         max_features: int | None,
         sample_weight: np.ndarray,
         sample_indices: np.ndarray | None,
-        criteria_class: Criteria,
-        splitter_class: Splitter,
-        leaf_builder_class: LeafBuilder,
-        predict_class: Predict,
+        criteria: Criteria,
+        splitter: Splitter,
+        leaf_builder: LeafBuilder,
+        predictor: Predict,
     ) -> None:
         """
         Parameters
@@ -456,13 +456,13 @@ class DepthTreeBuilder:
             The weight of all samples
         sample_indices : np.ndarray
             The sample indices to use of the total data
-        criteria_class : Criteria
+        criteria : Criteria
             Criteria class used for impurity calculations
-        splitter_class : Splitter | None, optional
+        splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        leaf_builder_class : LeafBuilder
+        leaf_builder : LeafBuilder
             The LeafBuilder class to use
-        predict_class
+        predictor
             The Predict class to use
         """
         self.X = X
@@ -471,13 +471,12 @@ class DepthTreeBuilder:
         self.sample_weight = sample_weight
         self.max_features = max_features
 
-        self.splitter_class = splitter_class
-        self.criteria_class = criteria_class
-        self.predict_class = predict_class
-        self.leaf_builder_class = leaf_builder_class
+        self.splitter = splitter
+        self.criteria = criteria
+        self.predictor = predictor
+        self.leaf_builder = leaf_builder
 
     def __get_feature_indices(self) -> np.ndarray:
-        #TODO: Do we want this function still?
         if self.int_max_features is None:
             return self.feature_indices
         else:
@@ -504,7 +503,7 @@ class DepthTreeBuilder:
         else:
             raise ValueError("Unable to parse max_features")
 
-    def build_tree(self, tree: DecisionTree) -> None:
+    def build_tree(self, tree: _DecisionTree) -> None:
         """
         Builds the tree
 
@@ -526,8 +525,8 @@ class DepthTreeBuilder:
 
         self.feature_indices = np.arange(col, dtype=np.int32)
 
-        criteria = self.criteria_class(self.X, self.Y, self.sample_weight)
-        splitter = self.splitter_class(self.X, self.Y, criteria)
+        criteria_instance = self.criteria(self.X, self.Y, self.sample_weight)
+        splitter_instance = self.splitter(self.X, self.Y, criteria_instance)
 
 
         min_samples_split = tree.min_samples_split
@@ -548,10 +547,10 @@ class DepthTreeBuilder:
         )
 
         # Update the tree now that we have the correct samples
-        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
+        leaf_builder = self.leaf_builder(X, Y, all_idx)
         weighted_total = np.sum(self.sample_weight)
 
-        queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
+        queue.append(queue_obj(all_idx, 0, criteria_instance.impurity(all_idx)))
         n_nodes = 0
         leaf_count = 0  # Number of leaf nodes
         while len(queue) > 0:
@@ -578,7 +577,7 @@ class DepthTreeBuilder:
 
             # If it is not a leaf, find the best split
             if not is_leaf:
-                split, best_threshold, best_index, _, child_imp = splitter.get_split(
+                split, best_threshold, best_index, _, child_imp = splitter_instance.get_split(
                     indices, self.__get_feature_indices()
                 )
                 # If we were unable to find a split, this must be a leaf.
@@ -656,4 +655,4 @@ class DepthTreeBuilder:
         tree.max_depth = max_depth_seen
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.predictor = self.predict_class(self.X, self.Y, root)
+        tree.predictor_instance = self.predictor(self.X, self.Y, root)
