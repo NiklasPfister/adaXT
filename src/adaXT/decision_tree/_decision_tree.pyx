@@ -37,7 +37,7 @@ class refit_object():
         self.indices.append(idx)
 
 
-class DecisionTree(BaseModel):
+class _DecisionTree(BaseModel):
     # TODO: Change criteria_class to criteria and criteria to criteria_instance
     # TODO: Make a wrapper classe for the DecisionTree
     def __init__(
@@ -50,17 +50,17 @@ class DecisionTree(BaseModel):
             min_samples_leaf: int = 1,
             min_improvement: float = 0.0,
             max_features: int | float | Literal["sqrt", "log2"] | None = None,
-            criteria_class: type[Criteria] | None = None,
-            leaf_builder_class: type[LeafBuilder] | None = None,
-            predict_class: type[Predict] | None = None,
-            splitter_class: type[Splitter] | None = None) -> None:
+            criteria: type[Criteria] | None = None,
+            leaf_builder: type[LeafBuilder] | None = None,
+            predictor: type[Predict] | None = None,
+            splitter: type[Splitter] | None = None) -> None:
         self.skip_check_input = skip_check_input
 
         # Input only checked on fitting.
-        self.criteria_class = criteria_class
-        self.predict_class = predict_class
-        self.leaf_builder_class = leaf_builder_class
-        self.splitter_class = splitter_class
+        self.criteria = criteria
+        self.predictor = predict
+        self.leaf_builder = leaf_builder
+        self.splitter = splitter
         self.max_features = max_features
         self.tree_type = tree_type
 
