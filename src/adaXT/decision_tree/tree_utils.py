@@ -10,7 +10,8 @@ import numpy as np
 def plot_tree(
     tree: DecisionTree,
     impurity=True,
-    precision=3,
+    node_precision=2,
+    impurity_precision=3,
     ax=None,
     fontsize=None,
     max_depth=None,
@@ -26,7 +27,8 @@ def plot_tree(
     my_tree = DrawTree(
         tree.root,
         impurity=impurity,
-        precision=precision,
+        node_precision=node_precision,
+        impurity_precision=impurity_precision,
     )
 
     dt = buchheim(my_tree)
@@ -97,38 +99,46 @@ def recursive_draw(node, ax, max_x, max_y, fontsize, max_depth, depth=0):
 
 def get_label(**kwargs):
     node = kwargs["node"]
-    precision = kwargs["precision"]
+    impurity_precision = kwargs["impurity_precision"]
+    node_precision = kwargs["node_precision"]
     new_line = "\n"
     node_string = ""
 
     if type(node) is DecisionNode:
         node_string += "DecisionNode" + new_line
         node_string += f"X{node.split_idx} <= "
-        node_string += str(round(node.threshold, precision)) + new_line
+        node_string += str(round(node.threshold, impurity_precision)) + new_line
         if kwargs["impurity"]:
             node_string += "Impurity: "
-            node_string += str(round(node.impurity, precision)) + new_line
+            node_string += str(round(node.impurity, impurity_precision)) + new_line
 
     elif type(node) is LeafNode:
         node_string += "LeafNode" + new_line
         if kwargs["impurity"]:
             node_string += "Impurity: "
-            node_string += str(round(node.impurity, precision)) + new_line
+            node_string += str(round(node.impurity, impurity_precision)) + new_line
         node_string += "Samples: "
-        node_string += str(round(node.weighted_samples, precision)) + new_line
+        node_string += str(round(node.weighted_samples, impurity_precision)) + new_line
         node_string += "Value: "
         if len(node.value) == 1:
-            node_value_list = [round(node.value[0], precision)]
+            node_string += str(round(node.value[0], node_precision))
         else:
-            node_value_list = [round(x, 2) for x in node.value]
-        node_string += ", ".join(map(str, node_value_list))
+            node_value_string = "\n ["
+            value_length = len(node.value)
+            n_vals_per_line = max(value_length / 3, 4)  # Number of values per line
+            for i in range(value_length):
+                node_value_string += str(round(node.value[i], node_precision))
+                if (i + 1) % n_vals_per_line == 0 and i != value_length - 1:
+                    node_value_string += new_line
+                elif i != value_length - 1:
+                    node_value_string += ", "
+            node_value_string += "]"
+            node_string += node_value_string
     return node_string
 
 
 class DrawTree(object):
-    def __init__(
-        self, node, parent=None, depth=0, number=1, precision=3, impurity=True
-    ):
+    def __init__(self, node, parent=None, depth=0, number=1, **kwargs):
         self.x = -1.0
         self.y = depth
         self.node = node
@@ -138,25 +148,11 @@ class DrawTree(object):
 
             if node.left_child is not None:
                 lst.append(
-                    DrawTree(
-                        node.left_child,
-                        self,
-                        depth + 1,
-                        number=1,
-                        precision=precision,
-                        impurity=impurity,
-                    )
+                    DrawTree(node.left_child, self, depth + 1, number=1, **kwargs)
                 )
             if node.right_child is not None:
                 lst.append(
-                    DrawTree(
-                        node.right_child,
-                        self,
-                        depth + 1,
-                        number=2,
-                        precision=precision,
-                        impurity=impurity,
-                    )
+                    DrawTree(node.right_child, self, depth + 1, number=2, **kwargs)
                 )
         self.children = lst
         self.parent = parent
@@ -165,7 +161,7 @@ class DrawTree(object):
         self.ancestor = self
         self.change = self.shift = 0
         self._lmost_sibling = None
-        self.label = get_label(node=node, precision=precision, impurity=precision)
+        self.label = get_label(node=node, **kwargs)
         # this is the number of the node in its group of siblings 1..n
         self.number = number
 
