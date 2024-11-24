@@ -21,10 +21,7 @@ from adaXT.predict.predict import PredictLocalPolynomial
 
 def uniform_x_y(n, m):
     np.random.seed(2024)
-    return (
-        np.random.uniform(
-            1, 1000, (n, m)), np.random.uniform(
-            1, 1000, (n)))
+    return (np.random.uniform(1, 1000, (n, m)), np.random.uniform(1, 1000, (n)))
 
 
 def test_predict_leaf_matrix_classification():
@@ -132,25 +129,9 @@ def test_prediction():
 
 def test_predict_proba_probability():
     X = np.array(
-        [
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1],
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1]
-        ]
+        [[1, 1], [1, -1], [-1, -1], [-1, 1], [1, 1], [1, -1], [-1, -1], [-1, 1]]
     )
-    Xtest = np.array(
-        [
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1]
-        ]
-    )
+    Xtest = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
     Y_cla = np.array([0, 1, 0, 1, 0, 0, 1, 1])
     expected_probs = [[1, 0], [0.5, 0.5], [0.5, 0.5], [0, 1]]
     expected_class = [0, 0, 0, 1]
@@ -166,7 +147,8 @@ def test_predict_proba_probability():
             expected_class[i] == classes[np.argmax(pred_probs[i, :])]
         ), f"incorrect predicted class at {i}, expected {expected_class[i]} got {classes[np.argmax(pred_probs[i, :])]}"
         assert (
-            expected_probs[i][0] == pred_probs[i][0] and expected_probs[i][1] == pred_probs[i][1]
+            expected_probs[i][0] == pred_probs[i][0]
+            and expected_probs[i][1] == pred_probs[i][1]
         ), f"incorrect predicted prob at {i}, expected {expected_probs[i]} got {pred_probs[i]}"
 
 
@@ -247,9 +229,8 @@ def test_impurity_tol_setting():
     impurity_tol_desired = 0.75
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        impurity_tol=impurity_tol_desired)
+        "Classification", criteria=Gini_index, impurity_tol=impurity_tol_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -283,9 +264,8 @@ def test_min_samples_leaf_setting():
     min_samples_leaf_desired = 20
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_samples_leaf=min_samples_leaf_desired)
+        "Classification", criteria=Gini_index, min_samples_leaf=min_samples_leaf_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -301,9 +281,8 @@ def test_min_improvement_setting():
     min_improvement_desired = 0.000008
 
     tree = DecisionTree(
-        "Classification",
-        criteria=Gini_index,
-        min_improvement=min_improvement_desired)
+        "Classification", criteria=Gini_index, min_improvement=min_improvement_desired
+    )
     tree.fit(X, Y)
 
     for node in tree.leaf_nodes:
@@ -364,8 +343,7 @@ def assert_tree_equality(t1: DecisionTree, t2: DecisionTree):
             assert np.array_equal(
                 node1.value, node2.value
             ), f"{t1.tree_type}: {node1.value} != {node2.value}"
-    assert len(
-        q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
+    assert len(q2) == 0, f"{t2.tree_type}: Queue 2 not empty with length {len(q2)}"
 
 
 def test_sample_indices_classification():
@@ -559,4 +537,4 @@ def test_local_polynomial_predict():
 
 
 if __name__ == "__main__":
-    test_quantile_predict_array()
+    test_local_polynomial_predict()

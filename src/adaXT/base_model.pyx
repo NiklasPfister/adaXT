@@ -128,8 +128,8 @@ class BaseModel():
         tree_types = {
                 "Classification": [Entropy, PredictClassification,
                                    LeafBuilderClassification],
-                "Regression": [Squared_error, PredictRegression, LeafBuilderRegression], 
-                "Gradient": [Partial_quadratic, PredictLocalPolynomial, LeafBuilderPartialQuadratic], 
+                "Regression": [Squared_error, PredictRegression, LeafBuilderRegression],
+                "Gradient": [Partial_quadratic, PredictLocalPolynomial, LeafBuilderPartialQuadratic],
                 "Quantile": [Squared_error, PredictQuantile, LeafBuilderRegression]
             }
         if tree_type in tree_types.keys():
@@ -149,6 +149,7 @@ class BaseModel():
         else:
             if (criteria is None) or (predictor is None) or (leaf_builder is
                                                              None):
+                print(criteria, predictor, leaf_builder)
                 raise ValueError(
                     "tree_type was not a default tree_type, so criteria, predictor and leaf_builder must be supplied"
                 )
@@ -259,15 +260,10 @@ class BaseModel():
             valid_params[key].set_params(**sub_params)
 
         return self
-    
+
     def score(self, X: ArrayLike, y: ArrayLike, sample_weight: ArrayLike|None = None):
-        X, Y = self._check_input(X, y) 
+        X, Y = self._check_input(X, y)
         _, Y_pred = self._check_input(None, self.predict(X))
         _, Y_true = self._check_input(None, Y)
         sample_weight = self._check_sample_weight(sample_weight, X.shape[0])
         return -self.criteria.loss(Y_pred, Y_true, sample_weight)
-        
-
-
-
-

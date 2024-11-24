@@ -145,9 +145,20 @@ class DecisionTree(BaseModel):
         sample_weight : array-like object of dimension 1 | None
             Sample weights. May not be implemented for every criteria.
         """
+        # Check inputs
+        if not self.skip_check_input:
+            X, Y = self._check_input(X, Y)
+            self._check_tree_type(
+                self.tree_type,
+                self.criteria,
+                self.splitter,
+                self.leaf_builder,
+                self.predictor,
+            )
+            self.max_features = self._check_max_features(self.max_features)
+
         self._tree = _DecisionTree(
             tree_type=self.tree_type,
-            skip_check_input=self.skip_check_input,
             max_depth=self.max_depth,
             impurity_tol=self.impurity_tol,
             min_samples_split=self.min_samples_split,
@@ -159,6 +170,16 @@ class DecisionTree(BaseModel):
             predictor=self.predictor,
             splitter=self.splitter,
         )
+
+        self._tree.n_rows_fit = X.shape[0]
+        self._tree.n_rows_predict = X.shape[0]
+        self._tree.X_n_rows = X.shape[0]
+        self._tree.n_features = X.shape[1]
+
+        if not self.skip_check_input:
+            sample_weight = self._check_sample_weight(sample_weight=sample_weight)
+            sample_indices = self._check_sample_indices(sample_indices=sample_indices)
+
         self._tree.fit(
             X=X, Y=Y, sample_indices=sample_indices, sample_weight=sample_weight
         )
@@ -205,6 +226,13 @@ class DecisionTree(BaseModel):
             (N, K) numpy array with the prediction, where K depends on the
             Prediction class and is generally 1
         """
+        if self.predictor_instance is None:
+            raise AttributeError(
+                "The tree has not been fitted before trying to call predict"
+            )
+        if not self.skip_check_input:
+            X, _ = self._check_input(X)
+            self._check_dimensions(X)
         return self._tree.predict(X=X, **kwargs)
 
     def predict_weights(
@@ -231,6 +259,9 @@ class DecisionTree(BaseModel):
             A numpy array of shape MxN, where N denotes the number of rows of
             the original training data and M the number of rows of X.
         """
+        if (X is not None) and not self.skip_check_input:
+            X, _ = self._check_input(X)
+            self._check_dimensions(X)
         return self._tree.predict_weights(X=X, scale=scale)
 
     def predict_leaf(self, X: ArrayLike | None) -> dict:
@@ -250,7 +281,17 @@ class DecisionTree(BaseModel):
             A hash table with keys corresponding to LeafNode ids and values corresponding
             to lists of indices of the rows that land in a given LeafNode.
         """
+        if (X is not None) and not self.skip_check_input:
+            X, _ = self._check_input(X)
+            self._check_dimensions(X)
         return self._tree.predict_leaf(X=X)
+
+    def _tree_based_weights(
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
+    ) -> np.ndarray:
+        return self._tree._tree_based_weights(
+            hash0=hash0, hash1=hash1, size_X0=size_X0, size_X1=size_X1, scaling=scaling
+        )
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
         """
@@ -269,14 +310,13 @@ class DecisionTree(BaseModel):
         np.ndarray
             A NxM shaped np.ndarray.
         """
-        return self._tree.similarity(X0=X0, X1=X1)
+        if not self.skip_check_input:
+            X0, _ = self._check_input(X0)
+            self._check_dimensions(X0)
+            X1, _ = self._check_input(X1)
+            self._check_dimensions(X1)
 
-    def _tree_based_weights(
-        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
-    ) -> np.ndarray:
-        return self._tree._tree_based_weights(
-            hash0=hash0, hash1=hash1, size_X0=size_X0, size_X1=size_X1, scaling=scaling
-        )
+        return self._tree.similarity(X0=X0, X1=X1)
 
     def refit_leaf_nodes(
         self,
@@ -312,6 +352,11 @@ class DecisionTree(BaseModel):
         sample_indices: array-like object of dimension 1 | None
             Indices of X which to create new leaf nodes with.
         """
+        if not self.skip_check_input:
+            X, Y = self._check_input(X, Y)
+            self._check_dimensions(X)
+            sample_weight = self._check_sample_weight(sample_weight)
+            sample_indices = self._check_sample_indices(sample_indices)
         return self._tree.refit_leaf_nodes(
             X=X,
             Y=Y,

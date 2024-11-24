@@ -115,9 +115,9 @@ cdef class Predict():
 
 cdef class PredictClassification(Predict):
     def __init__(self,
-                  double[:, ::1] X,
-                  double[:, ::1] Y,
-                  object root, **kwargs) -> None:
+                 double[:, ::1] X,
+                 double[:, ::1] Y,
+                 object root, **kwargs) -> None:
         super().__init__(X, Y, root, **kwargs)
         self.classes = np.unique(Y)
 

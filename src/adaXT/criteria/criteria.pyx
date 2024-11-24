@@ -87,7 +87,7 @@ cdef class ClassificationCriteria(Criteria):
         memset(class_occurences, 0, self.num_classes*sizeof(double))
 
     @staticmethod
-    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true, double[::1] sample_weight ) -> float:
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true, double[::1] sample_weight) -> float:
         """ Zero one loss function """
         cdef:
             int i
@@ -361,13 +361,11 @@ cdef class RegressionCriteria(Criteria):
             double temp
             double tot_sum = 0.0
 
-
         if Y_true.shape[0] != n_samples:
             raise ValueError(
                     "Y_pred and Y_true have different number of samples in loss"
                     )
         for i in range(n_samples):
-            #TODO: Do we want the sample weight before we square the result
             temp = (Y_true[i, 0] - Y_pred[i, 0])*sample_weight[i]
             weighted_samples += sample_weight[i]
             tot_sum += temp*temp
