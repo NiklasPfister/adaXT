@@ -121,10 +121,10 @@ def build_single_tree(
     X: np.ndarray,
     Y: np.ndarray,
     honest_tree: bool,
-    criteria_class: type[Criteria],
-    predict_class: type[Predict],
-    leaf_builder_class: type[LeafBuilder],
-    splitter_class: type[Splitter],
+    criteria: type[Criteria],
+    predictor: type[Predict],
+    leaf_builder: type[LeafBuilder],
+    splitter: type[Splitter],
     tree_type: str | None = None,
     max_depth: int = sys.maxsize,
     impurity_tol: float = 0.0,
@@ -145,10 +145,10 @@ def build_single_tree(
         min_improvement=min_improvement,
         max_features=max_features,
         skip_check_input=skip_check_input,
-        criteria_class=criteria_class,
-        leaf_builder_class=leaf_builder_class,
-        predict_class=predict_class,
-        splitter_class=splitter_class,
+        criteria=criteria,
+        leaf_builder=leaf_builder,
+        predictor=predictor,
+        splitter=splitter,
     )
     tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
@@ -165,11 +165,11 @@ def oob_calculation(
     X_old: np.ndarray,
     Y_old: np.ndarray,
     parallel: ParallelModel,
-    predict_class: type[Predict],
-    criteria_class: type[Criteria],
+    predictor: type[Predict],
+    criteria: type[Criteria],
 ) -> tuple:
     X_pred = np.expand_dims(X_old[idx], axis=0)
-    Y_pred = predict_class.forest_predict(
+    Y_pred = predictor.forest_predict(
         X_old=X_old,
         Y_old=Y_old,
         X_new=X_pred,
@@ -190,6 +190,7 @@ def predict_single_tree(
 
 
 class RandomForest(BaseModel):
+    # TODO: Change criteria to criteria and criteria to criteria_instance
     """
     Attributes
     ----------
@@ -252,10 +253,10 @@ class RandomForest(BaseModel):
         min_samples_leaf: int = 1,
         min_improvement: float = 0.0,
         seed: int | None = None,
-        criteria_class: type[Criteria] | None = None,
-        leaf_builder_class: type[LeafBuilder] | None = None,
-        predict_class: type[Predict] | None = None,
-        splitter_class: type[Splitter] | None = None,
+        criteria: type[Criteria] | None = None,
+        leaf_builder: type[LeafBuilder] | None = None,
+        predictor: type[Predict] | None = None,
+        splitter: type[Splitter] | None = None,
     ) -> None:
         """
         Parameters
@@ -306,7 +307,7 @@ class RandomForest(BaseModel):
         leaf_builder : LeafBuilder
             The LeafBuilder class to use, if None it defaults to the forest_type
             default.
-        predict: Predict
+        predict : Predict
             The Prediction class to use, if None it defaults to the forest_type
             default.
         splitter : Splitter | None
@@ -326,10 +327,10 @@ class RandomForest(BaseModel):
         self.min_improvement = min_improvement
 
         self.forest_type = forest_type
-        self.criteria_class = criteria_class
-        self.splitter_class = splitter_class
-        self.leaf_builder_class = leaf_builder_class
-        self.predict_class = predict_class
+        self.criteria = criteria
+        self.splitter = splitter
+        self.leaf_builder = leaf_builder
+        self.predictor = predictor
 
         self.n_jobs = n_jobs
         self.seed = seed
@@ -426,10 +427,10 @@ class RandomForest(BaseModel):
             X=self.X,
             Y=self.Y,
             honest_tree=self.__is_honest(),
-            criteria_class=self.criteria_class,
-            predict_class=self.predict_class,
-            leaf_builder_class=self.leaf_builder_class,
-            splitter_class=self.splitter_class,
+            criteria=self.criteria,
+            predictor=self.predictor,
+            leaf_builder=self.leaf_builder,
+            splitter=self.splitter,
             tree_type=self.forest_type,
             max_depth=self.max_depth,
             impurity_tol=self.impurity_tol,
@@ -462,10 +463,10 @@ class RandomForest(BaseModel):
         # Can not be done in __init__ to conform with scikit-learn GridSearchCV
         self._check_tree_type(
             self.forest_type,
-            self.criteria_class,
-            self.splitter_class,
-            self.leaf_builder_class,
-            self.predict_class,
+            self.criteria,
+            self.splitter,
+            self.leaf_builder,
+            self.predictor,
         )
         self.parallel = ParallelModel(n_jobs=self.n_jobs)
         self.parent_rng = self.__get_random_generator(self.seed)
@@ -506,8 +507,8 @@ class RandomForest(BaseModel):
                         X_old=self.X,
                         Y_old=self.Y,
                         parallel=self.parallel,
-                        predict_class=self.predict_class,
-                        criteria_class=self.criteria_class,
+                        predictor=self.predictor,
+                        criteria=self.criteria,
                     )
                 )
             )
@@ -517,7 +518,7 @@ class RandomForest(BaseModel):
                 raise ValueError(
                     "Shape of predicted Y and true Y in oob oob_calculation does not match up!"
                 )
-            self.oob = self.criteria_class.loss(
+            self.oob = self.criteria.loss(
                 Y_pred, Y_true, np.ones(Y_pred.shape[0], dtype=np.double)
             )
 
@@ -565,7 +566,7 @@ class RandomForest(BaseModel):
         self._check_dimensions(X)
 
         predict_value = shared_numpy_array(X)
-        prediction = self.predict_class.forest_predict(
+        prediction = self.predictor.forest_predict(
             X_old=self.X,
             Y_old=self.Y,
             X_new=predict_value,

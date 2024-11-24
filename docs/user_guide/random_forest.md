@@ -112,10 +112,10 @@ the complexity of working with multiprocessing.
 When working with the [ParallelModel](../api_docs/Parallel.md#adaXT.parallel.ParallelModel)
 we generally advise on creating the parallel functions on the module level
 instead of being class methods. Class method parallelization often leads to
-AttributeErrors when attempting to access instance dependent attributes trough
+AttributeErrors when attempting to access instance dependent attributes through
 self due to the nature of multiprocessings use of
 [pickle](https://docs.python.org/3/library/pickle.html). Instead working with
 functions defined on the module level allows for seamless use of the
-multiprocessing as it is safe for serialization. Examples of these functions can
-be seen defined in the [RandomForest source
+multiprocessing as it is safe for serialization. As an example, take a look at 
+the functions defined in the [RandomForest source
 code](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/random_forest/random_forest.py).

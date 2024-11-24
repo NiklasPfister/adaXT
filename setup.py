@@ -26,6 +26,8 @@ with open("requirements.txt", "r") as f:
 
 USE_CYTHON = True
 
+DEBUG = False
+
 # Make all pyx files for the decision_tree
 ext = ".pyx" if USE_CYTHON else ".c"
 include_dir = np.get_include()
@@ -36,6 +38,7 @@ modules += [
     "criteria.crit_helpers",
 ]
 modules += [
+    "decision_tree._decision_tree",
     "decision_tree.decision_tree",
     "decision_tree.nodes",
     "decision_tree.splitter",
@@ -63,15 +66,20 @@ def get_cython_extensions() -> list[Extension]:
 
         dep_files = []
         dep_files.append(source_file + ".pxd")
+        if DEBUG:
+            comp_args = ["-O1"]
 
+        else:
+            comp_args = ["-O3"]
         extensions.append(
             Extension(
                 module,
                 sources=[pyx_source_file],
                 language="c++",
                 depends=dep_files,
-                extra_compile_args=["-O3"],
+                extra_compile_args=comp_args,
                 include_dirs=[include_dir],
+                define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
             )
         )
         # XXX hack around setuptools quirk for '*.pyx' sources
@@ -104,10 +112,10 @@ def run_build():
         include_dirs=[include_dir],
         ext_modules=extensions,
         package_data={
-            "adaXT.criteria": ["*.pxd", "*.pyi"],
-            "adaXT.decision_tree": ["*.pxd", "*.pyi"],
-            "adaXT.leaf_builder": ["*.pxd", "*.pyi"],
-            "adaXT.predict": ["*.pxd", "*.pyi"],
+            "adaXT.criteria": ["*.pxd", "*.pyi", "*.py"],
+            "adaXT.decision_tree": ["*.pxd", "*.pyi", "*.py"],
+            "adaXT.leaf_builder": ["*.pxd", "*.pyi", "*.py"],
+            "adaXT.predict": ["*.pxd", "*.pyi", "*.py"],
         },
         classifiers=[
             "Programming Language :: Python :: 3",
@@ -115,7 +123,7 @@ def run_build():
             "License :: OSI Approved :: BSD License",
             "Operating System :: OS Independent",
         ],
-        tests_require=TEST_DEP,
+        tests_requires=TEST_DEP,
         extras_require=extras,
         zip_safe=False,
     )

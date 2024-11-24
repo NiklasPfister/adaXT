@@ -9,6 +9,6 @@ cdef class Splitter:
         int n_features
         int[:] indices
         int n_indices
-        Criteria criteria
+        Criteria criteria_instance
 
     cpdef get_split(self, int[::1], int[::1])

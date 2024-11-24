@@ -1,4 +1,4 @@
-from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
+from adaXT.decision_tree import LeafNode, DecisionNode, DecisionTree
 from adaXT.criteria import (
     Gini_index,
     Squared_error,
@@ -6,7 +6,6 @@ from adaXT.criteria import (
     Partial_linear,
     Partial_quadratic,
 )
-
 import numpy as np
 
 
@@ -43,7 +42,7 @@ def test_gini_single():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", criteria_class=Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -94,7 +93,7 @@ def test_gini_multi():
     )
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = DecisionTree("Classification", criteria_class=Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y_multi)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
@@ -143,7 +142,7 @@ def test_regression():
         ]
     )
     Y_reg = np.array([2.2, -0.5, 0.5, -0.5, 2, -3, 2.2, -3])
-    tree = DecisionTree("Regression", criteria_class=Squared_error)
+    tree = DecisionTree("Regression", criteria=Squared_error)
     tree.fit(X, Y_reg)
     root = tree.root
     exp_val2 = [0.25, -0.5, 0.5, 0.25, -0.75]
@@ -188,7 +187,7 @@ def test_entropy_single():
         ]
     )
     Y_cla = np.array([1, -1, 1, -1, 1, -1, 1, -1])
-    tree = DecisionTree("Classification", criteria_class=Entropy)
+    tree = DecisionTree("Classification", criteria=Entropy)
     tree.fit(X, Y_cla)
     root = tree.root
     exp_val = [0.25, -0.75, 0]
@@ -238,7 +237,7 @@ def test_entropy_multi():
     )
     Y_multi = np.array([1, 2, 1, 0, 1, 0, 1, 0])
     Y_unique = len(np.unique(Y_multi))
-    tree = DecisionTree("Classification", criteria_class=Entropy)
+    tree = DecisionTree("Classification", criteria=Entropy)
     tree.fit(X, Y_multi)
     root = tree.root
     # DIFFERENT FROM SKLEARN THEIRS IS: [0.25, -0.75, -1.5], both give pure
@@ -278,8 +277,8 @@ def sanity_regression(n, m):
     Y1 = np.random.randint(0, 5, n)
     Y2 = np.random.uniform(0, 5, n)
 
-    tree1 = DecisionTree("Regression", criteria_class=Squared_error)
-    tree2 = DecisionTree("Regression", criteria_class=Squared_error)
+    tree1 = DecisionTree("Regression", criteria=Squared_error)
+    tree2 = DecisionTree("Regression", criteria=Squared_error)
     tree1.fit(X, Y1)
     tree2.fit(X, Y2)
     pred1 = tree1.predict(X)
@@ -297,7 +296,7 @@ def sanity_gini(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = DecisionTree("Classification", criteria_class=Gini_index)
+    tree = DecisionTree("Classification", criteria=Gini_index)
     tree.fit(X, Y)
 
     pred = tree.predict(X)
@@ -309,7 +308,7 @@ def sanity_entropy(n, m):
     X = np.random.uniform(0, 100, (n, m))
     Y = np.random.randint(0, 5, n)
 
-    tree = DecisionTree("Classification", criteria_class=Entropy)
+    tree = DecisionTree("Classification", criteria=Entropy)
     tree.fit(X, Y)
 
     pred = tree.predict(X)
@@ -320,7 +319,7 @@ def sanity_entropy(n, m):
 def sanity_partial_linear(n, m):
     X = np.c_[np.linspace(-1, 1, n), np.random.uniform(-1, 1, (n, m))]
     Y = X[:, 0] * (X[:, 0] > 0)
-    tree = DecisionTree("Gradient", criteria_class=Partial_linear, max_depth=1)
+    tree = DecisionTree("Gradient", criteria=Partial_linear, max_depth=1)
     tree.fit(X, Y)
     # Since the response is a piece-wise linear function it can be fit
     # exactly with the Partial_linear criteria, with a single split at 0
@@ -330,7 +329,7 @@ def sanity_partial_linear(n, m):
 def sanity_partial_quadratic(n, m):
     X = np.c_[np.linspace(-1, 1, n), np.random.uniform(-1, 1, (n, m))]
     Y = X[:, 0] ** 2 * (X[:, 0] > 0)
-    tree = DecisionTree("Gradient", criteria_class=Partial_quadratic, max_depth=1)
+    tree = DecisionTree("Gradient", criteria=Partial_quadratic, max_depth=1)
     tree.fit(X, Y)
     # Since the response is a piece-wise quadratic function it can be fit
     # exactly with the Partial_quadratic criteria, with a single split at 0
@@ -348,8 +347,8 @@ def test_sanity():
 
 
 if __name__ == "__main__":
-    # test_gini_single()
-    # test_gini_multi()
-    # test_entropy_single()
-    # test_entropy_multi()
-    print("Done.")
+    test_gini_single()
+    test_gini_multi()
+    test_entropy_single()
+    test_entropy_multi()
+    # print("Done.")
