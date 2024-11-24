@@ -70,28 +70,29 @@ class BaseModel:
             )
 
     def _check_input(self,
-                     X: ArrayLike,
+                     X: ArrayLike | None = None,
                      Y: ArrayLike | None = None
                      ) -> tuple[np.ndarray, np.ndarray|None]:
 
-        Y_check = (Y is not None)
-        # Make sure input arrays are c contigous
-        X = np.ascontiguousarray(X, dtype=DOUBLE)
+        if (X is None) and (Y is None):
+            raise ValueError(
+                    "X and Y are both None when checking input"
+                    )
+        if X is not None:
+            # Make sure input arrays are c contigous
+            X = np.ascontiguousarray(X, dtype=DOUBLE)
 
-        # Check that X is two dimensional
-        if X.ndim > 2:
-            raise ValueError("X should not be more than 2 dimensions")
-        elif X.ndim == 1:
-            X = np.expand_dims(X, axis=1)
-        elif X.ndim < 1:
-            raise ValueError("X has less than 1 dimension")
+            # Check that X is two dimensional
+            if X.ndim > 2:
+                raise ValueError("X should not be more than 2 dimensions")
+            elif X.ndim == 1:
+                X = np.expand_dims(X, axis=1)
+            elif X.ndim < 1:
+                raise ValueError("X has less than 1 dimension")
 
         # If Y is not None perform checks for Y
-        if Y_check:
+        if Y is not None:
             Y = np.ascontiguousarray(Y, dtype=DOUBLE)
-            # Check if X and Y has same number of rows
-            if X.shape[0] != Y.shape[0]:
-                raise ValueError("X and Y should have the same number of rows")
 
             # Check if Y has dimensions (n, 1) or (n,)
             if 2 < Y.ndim:
@@ -100,6 +101,11 @@ class BaseModel:
                 Y = np.expand_dims(Y, axis=1)
             elif Y.ndim < 1:
                 raise ValueError("Y has less than 1 dimension")
+
+        if (Y is not None) and (X is not None):
+            # Check if X and Y has same number of rows
+            if X.shape[0] != Y.shape[0]:
+                raise ValueError("X and Y should have the same number of rows")
         return X, Y
 
     def _check_tree_type(

@@ -63,7 +63,7 @@ class ParallelModel:
             Returns the result of running function on all elements of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
             ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -93,7 +93,7 @@ class ParallelModel:
         """
 
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
             ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -122,7 +122,7 @@ class ParallelModel:
             Returns the result of applying function to each element of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
             ret = list(starmap(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -152,7 +152,9 @@ class ParallelModel:
             Returns the result of applying function to each element of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if (self.n_jobs == 1) or (
+            ("__no_parallel" in kwargs) and kwargs["__no_parallel"]
+        ):
             ret = list(starmap(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -178,7 +180,7 @@ class ParallelModel:
             Function applied n_iterations number of times
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -205,7 +207,7 @@ class ParallelModel:
             Function applied n_iterations number of times
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1:
+        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:

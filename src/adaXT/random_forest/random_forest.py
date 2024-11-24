@@ -1,5 +1,7 @@
 import sys
 from typing import Literal
+import math
+import warnings
 
 import numpy as np
 from numpy.random import Generator, default_rng
@@ -14,6 +16,11 @@ from ..decision_tree.splitter import Splitter
 from ..base_model import BaseModel
 from ..predict import Predict
 from ..leaf_builder import LeafBuilder
+
+from functools import reduce
+from textwrap import dedent
+
+from collections import defaultdict
 
 
 def tree_based_weights(
@@ -40,13 +47,13 @@ def get_sample_indices(
     X_n_rows: int,
     sampling_args: dict,
     sampling: str | None,
-) -> tuple | None:
+) -> tuple:
     """
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
     """
     if sampling == "resampling":
-        return (
+        ret = (
             gen.choice(
                 np.arange(0, X_n_rows),
                 size=sampling_args["size"],
@@ -75,7 +82,7 @@ def get_sample_indices(
             size=resample_size1,
             replace=sampling_args["replace"],
         )
-        return (fit_indices, pred_indices)
+        ret = (fit_indices, pred_indices)
     elif sampling == "honest_forest":
         indices = np.arange(0, X_n_rows)
         if sampling_args["replace"]:
@@ -96,9 +103,21 @@ def get_sample_indices(
             size=resample_size1,
             replace=sampling_args["replace"],
         )
-        return (fit_indices, pred_indices)
+        ret = (fit_indices, pred_indices)
     else:
-        return (np.arange(0, X_n_rows), None)
+        ret = (np.arange(0, X_n_rows), None)
+
+    if sampling_args["OOB"]:
+        # Only fitting indices
+        if ret[1] is None:
+            picked = ret[0]
+        else:
+            picked = np.concatenate(ret[0], ret[1])
+        out_of_bag = np.setdiff1d(np.arange(0, X_n_rows), picked)
+    else:
+        out_of_bag = None
+
+    return (*ret, out_of_bag)
 
 
 def build_single_tree(
@@ -145,6 +164,28 @@ def build_single_tree(
     return tree
 
 
+def oob_calculation(
+    idx: np.int64,
+    trees: list,
+    X_old: np.ndarray,
+    Y_old: np.ndarray,
+    parallel: ParallelModel,
+    predict_class: type[Predict],
+    criteria_class: type[Criteria],
+) -> tuple:
+    X_pred = np.expand_dims(X_old[idx], axis=0)
+    Y_pred = predict_class.forest_predict(
+        X_old=X_old,
+        Y_old=Y_old,
+        X_new=X_pred,
+        trees=trees,
+        parallel=parallel,
+        __no_parallel=True,
+    ).astype(np.float64)
+    Y_true = Y_old[idx]
+    return (Y_pred, Y_true)
+
+
 def predict_single_tree(
     tree: DecisionTree, predict_values: np.ndarray, **kwargs
 ) -> np.ndarray:
@@ -184,6 +225,11 @@ class RandomForest(BaseModel):
                 used as prediction indices (truncated if value is too large). If float it
                 corresponds to the relative size of the fitting indices, while the remaining
                 indices are used as prediction indices (truncated if value is too large).
+            'OOB': Bool used by all sampling schemes (default False).
+                Computes the out of bag error given the data set.
+                If set to True, an attribute called oob will be defined after
+                fitting, which will have the out of bag error given by the
+                Criteria loss function.
         If None all parameters are set to their defaults.
     impurity_tol : float
         The tolerance of impurity in a leaf node.
@@ -349,6 +395,14 @@ class RandomForest(BaseModel):
             raise ValueError(
                 f"The provided sampling scheme '{self.sampling}' does not exist."
             )
+
+        if "OOB" not in sampling_args:
+            sampling_args["OOB"] = False
+        elif not isinstance(sampling_args["OOB"], bool):
+            raise ValueError(
+                "The provided sampling_args['OOB'] is not a bool as required."
+            )
+
         return sampling_args
 
     def __is_honest(self) -> bool:
@@ -359,17 +413,19 @@ class RandomForest(BaseModel):
 
     def __build_trees(self) -> None:
         # parent_rng.spawn() spawns random generators that children can use
-        fitting_prediction_indices = self.parallel.async_map(
+        indices = self.parallel.async_map(
             get_sample_indices,
             map_input=self.parent_rng.spawn(self.n_estimators),
             sampling_args=self.sampling_args,
             X_n_rows=self.X_n_rows,
             sampling=self.sampling,
         )
-        self.fitting_indices, self.prediction_indices = zip(*fitting_prediction_indices)
-        self.trees = self.parallel.async_starmap(
+        self.fitting_indices, self.prediction_indices, self.out_of_bag_indices = zip(
+            *indices
+        )
+        self.trees = self.parallel.starmap(
             build_single_tree,
-            map_input=fitting_prediction_indices,
+            map_input=zip(self.fitting_indices, self.prediction_indices),
             X=self.X,
             Y=self.Y,
             honest_tree=self.__is_honest(),
@@ -415,9 +471,43 @@ class RandomForest(BaseModel):
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
         # Fit trees
         self.__build_trees()
-
-        # Register that the forest was succesfully fitted
         self.forest_fitted = True
+
+        if self.sampling_args["OOB"]:
+            # Dict, but creates empty list instead of keyerror
+            tree_dict = defaultdict(list)
+
+            # Compute a dictionary, where every key is an index, which is out of
+            # bag for at least one tree. Each value is a list of the indices for
+            # trees, which said value is out of bag for.
+            for idx, array in enumerate(self.out_of_bag_indices):
+                for num in array:
+                    tree_dict[num].append(self.trees[idx])
+
+            # Expand dimensions as Y will always only be predicted on a single
+            # value. Thus when we combine them in this list, we will be missing
+            # a dimension
+            Y_pred, Y_true = (
+                np.expand_dims(np.array(x).flatten(), axis=-1)
+                for x in zip(
+                    *self.parallel.async_starmap(
+                        oob_calculation,
+                        map_input=tree_dict.items(),
+                        X_old=self.X,
+                        Y_old=self.Y,
+                        parallel=self.parallel,
+                        predict_class=self.predict_class,
+                        criteria_class=self.criteria_class,
+                    )
+                )
+            )
+
+            # sanity check
+            if Y_pred.shape != Y_true.shape:
+                raise ValueError(
+                    "Shape of predicted Y and true Y in oob oob_calculation does not match up!"
+                )
+            self.oob = self.criteria_class.loss(Y_pred, Y_true)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """

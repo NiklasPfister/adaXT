@@ -79,37 +79,8 @@ def get_cython_extensions() -> list[Extension]:
     return extensions
 
 
-def get_python_extensions() -> list[Extension]:
-    source_root = os.path.abspath(os.path.dirname(__file__))
-    source_root = os.path.join(source_root, "src")
-    extensions = []
-
-    for module in modules:
-        module = "adaXT." + module
-        module_names = module.split(".")
-        source_file = os.path.join(source_root, *module_names)
-
-        py_source_file = source_file + ".py"
-        # if not .py it is a .pyx file
-        if not os.path.exists(py_source_file):
-            continue
-
-        extensions.append(
-            Extension(
-                module,
-                sources=[py_source_file],
-                include_dirs=[include_dir],
-            )
-        )
-    return extensions
-
-
-# If we are using cython, then compile, otherwise use the c files
-
-
 def run_build():
     extensions = get_cython_extensions()
-    print(extensions)
     if USE_CYTHON:
         from Cython.Build import cythonize
 
@@ -119,8 +90,6 @@ def run_build():
             annotate=True,
             language_level="3",
         )
-    # We don't want to cythonize any python files such as random forest
-    extensions.extend(get_python_extensions())
     setup(
         name=NAME,
         version=VERSION,
