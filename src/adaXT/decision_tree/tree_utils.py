@@ -49,17 +49,30 @@ def plot_tree(
     for ann in anns:
         ann.update_bbox_position_size(renderer)
 
+    extents = [ann.get_bbox_patch().get_window_extent() for ann in anns]
+    max_width = max([extent.width for extent in extents])
+    max_height = max([extent.height for extent in extents])
+    scale = min(scale_x / max_width, scale_y / max_height)
     if fontsize is None:
         # get figure to data transform
         # adjust fontsize to avoid overlap
         # get max box width and height
-        extents = [ann.get_bbox_patch().get_window_extent() for ann in anns]
-        max_width = max([extent.width for extent in extents])
-        max_height = max([extent.height for extent in extents])
         # width should be around scale_x in axis coordinates
-        size = anns[0].get_fontsize() * min(scale_x / max_width, scale_y / max_height)
+        size = anns[0].get_fontsize() * scale
         for ann in anns:
             ann.set_fontsize(size)
+
+    # Legend of probabilities if it is classification.
+    if tree.tree_type == "Classification":
+        ax.annotate(
+            f"Values: {list(tree.predictor_instance.classes)}",
+            (0.01, 1),
+            fontsize=12,
+            bbox=dict(fc=ax.get_facecolor()),
+            ha="center",
+            va="center",
+            xycoords="axes fraction",
+        )
 
     return anns
 

@@ -12,7 +12,7 @@ cdef class Predict():
 
 cdef class PredictClassification(Predict):
     cdef:
-        double[::1] classes
+        readonly double[::1] classes
 
     cdef int __find_max_index(self, double[::1] lst)
 
