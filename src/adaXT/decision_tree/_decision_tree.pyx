@@ -38,8 +38,6 @@ class refit_object():
 
 
 class _DecisionTree(BaseModel):
-    # TODO: Change criteria to criteria and criteria to criteria_instance
-    # TODO: Make a wrapper classe for the DecisionTree
     def __init__(
             self,
             tree_type: str | None = None,

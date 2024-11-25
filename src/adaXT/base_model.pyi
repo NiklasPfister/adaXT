@@ -8,10 +8,10 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 class BaseModel:
-    predictor: Type[Predict]
-    leaf_builder: Type[Criteria]
-    criteria: Type[LeafBuilder]
-    splitter: Type[Splitter]
+    predictor: Type[Predict] | None
+    leaf_builder: Type[LeafBuilder] | None
+    criteria: Type[Criteria] | None
+    splitter: Type[Splitter] | None
 
     def _check_max_features(
         self, max_features: int | str | float | None

@@ -166,7 +166,6 @@ def oob_calculation(
     Y_old: np.ndarray,
     parallel: ParallelModel,
     predictor: type[Predict],
-    criteria: type[Criteria],
 ) -> tuple:
     X_pred = np.expand_dims(X_old[idx], axis=0)
     Y_pred = predictor.forest_predict(
@@ -508,7 +507,6 @@ class RandomForest(BaseModel):
                         Y_old=self.Y,
                         parallel=self.parallel,
                         predictor=self.predictor,
-                        criteria=self.criteria,
                     )
                 )
             )
