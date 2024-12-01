@@ -14,7 +14,7 @@ cdef double INFINITY = np.inf
 
 cdef double[:] current_feature_values
 
-cdef int compare(const void* a, const void* b) noexcept nogil:
+cdef inline int compare(const void* a, const void* b) noexcept nogil:
     cdef:
         int a1 = (<int *> a)[0]
         int b1 = (<int *> b)[0]
@@ -24,7 +24,7 @@ cdef int compare(const void* a, const void* b) noexcept nogil:
     else:
         return -1
 
-cdef int[::1] sort_feature(int[::1] indices):
+cdef inline int[::1] sort_feature(int[::1] indices):
     """
     Function to sort an array at given indices.
 

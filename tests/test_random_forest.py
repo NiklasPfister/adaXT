@@ -593,4 +593,6 @@ if __name__ == "__main__":
     # test_gradient_forest()
     # test_OOB_squared_error()
     # test_OOB_entropy()
+    test_tree_based_weights()
+    test_honest_sampling_leaf_samples()
     print("Done")

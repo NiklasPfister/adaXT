@@ -7,7 +7,7 @@ from .nodes import LeafNode, Node
 from ..predict import Predict
 from ..leaf_builder import LeafBuilder
 from ..base_model import BaseModel
-from ._decision_tree import _DecisionTree
+from ._decision_tree import _DecisionTree, DepthTreeBuilder
 import sys
 
 
@@ -155,10 +155,9 @@ class DecisionTree(BaseModel):
                 self.leaf_builder,
                 self.predictor,
             )
-            self.max_features = self._check_max_features(self.max_features)
+            self.max_features = self._check_max_features(self.max_features, X.shape[0])
 
         self._tree = _DecisionTree(
-            tree_type=self.tree_type,
             max_depth=self.max_depth,
             impurity_tol=self.impurity_tol,
             min_samples_split=self.min_samples_split,
@@ -180,9 +179,18 @@ class DecisionTree(BaseModel):
             sample_weight = self._check_sample_weight(sample_weight=sample_weight)
             sample_indices = self._check_sample_indices(sample_indices=sample_indices)
 
-        self._tree.fit(
-            X=X, Y=Y, sample_indices=sample_indices, sample_weight=sample_weight
+        builder = DepthTreeBuilder(
+            X=X,
+            Y=Y,
+            sample_indices=sample_indices,
+            max_features=self.max_features,
+            sample_weight=sample_weight,
+            criteria=self.criteria,
+            leaf_builder=self.leaf_builder,
+            predictor=self.predictor,
+            splitter=self.splitter,
         )
+        builder.build_tree(self._tree)
 
     def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
         """
@@ -324,7 +332,6 @@ class DecisionTree(BaseModel):
         Y: ArrayLike,
         sample_weight: ArrayLike | None = None,
         sample_indices: ArrayLike | None = None,
-        **kwargs,
     ) -> None:
         """
         Refits the leaf nodes in a previously fitted decision tree.
@@ -362,5 +369,4 @@ class DecisionTree(BaseModel):
             Y=Y,
             sample_weight=sample_weight,
             sample_indices=sample_indices,
-            **kwargs,
         )

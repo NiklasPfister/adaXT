@@ -166,7 +166,6 @@ def oob_calculation(
     Y_old: np.ndarray,
     parallel: ParallelModel,
     predictor: type[Predict],
-    criteria: type[Criteria],
 ) -> tuple:
     X_pred = np.expand_dims(X_old[idx], axis=0)
     Y_pred = predictor.forest_predict(
@@ -190,7 +189,6 @@ def predict_single_tree(
 
 
 class RandomForest(BaseModel):
-    # TODO: Change criteria to criteria and criteria to criteria_instance
     """
     Attributes
     ----------
@@ -476,10 +474,10 @@ class RandomForest(BaseModel):
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
         self.X_n_rows, self.n_features = self.X.shape
-
+        self.max_features = self._check_max_features(self.max_features, X.shape[0])
         self.sample_weight = self._check_sample_weight(sample_weight)
-
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
+
         # Fit trees
         self.__build_trees()
         self.forest_fitted = True
@@ -508,7 +506,6 @@ class RandomForest(BaseModel):
                         Y_old=self.Y,
                         parallel=self.parallel,
                         predictor=self.predictor,
-                        criteria=self.criteria,
                     )
                 )
             )

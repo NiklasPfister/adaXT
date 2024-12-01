@@ -1,5 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True
-
 cdef double mean(double[:] lst, int[:] indices):
     '''
     Function that calculates the mean of a dataset
