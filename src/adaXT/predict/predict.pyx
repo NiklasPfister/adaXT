@@ -7,7 +7,7 @@ from statistics import mode
 cimport numpy as cnp
 from ..parallel import ParallelModel
 
-#TODO: Change Predict to Predictor
+# TODO: Change Predict to Predictor
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t

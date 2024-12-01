@@ -1,14 +1,10 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
-# General
 import numpy as np
 import sys
-from numpy.typing import ArrayLike
 
 cimport numpy as cnp
 ctypedef cnp.float64_t DOUBLE_t
 ctypedef cnp.int64_t LONG_t
-
 from libcpp cimport bool
 
 
@@ -18,7 +14,6 @@ from ..predict import Predict
 from ..criteria import Criteria
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
-from ..base_model import BaseModel
 
 cdef double EPSILON = np.finfo('double').eps
 
@@ -42,7 +37,7 @@ class refit_object():
 
 cdef class _DecisionTree():
     cdef public:
-        object criteria 
+        object criteria
         object predictor
         object leaf_builder
         object splitter
@@ -171,9 +166,9 @@ cdef class _DecisionTree():
             self.leaf_nodes[i] = None
 
     cdef void __fit_new_leaf_nodes(self, cnp.ndarray[DOUBLE_t, ndim=2] X,
-                              cnp.ndarray[DOUBLE_t, ndim=2] Y,
-                              cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
-                              cnp.ndarray[LONG_t, ndim=1] sample_indices):
+                                   cnp.ndarray[DOUBLE_t, ndim=2] Y,
+                                   cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
+                                   cnp.ndarray[LONG_t, ndim=1] sample_indices):
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -265,7 +260,7 @@ cdef class _DecisionTree():
     cdef void __squash_tree(self):
 
         decision_queue = []
-        decision_queue.append(self.root)    
+        decision_queue.append(self.root)
         while len(decision_queue) > 0:
             cur_node = decision_queue.pop(0)
             # If we don't have a decision node, just continue
@@ -431,7 +426,6 @@ class DepthTreeBuilder:
                 self.feature_indices,
                 size=self.max_features,
                 replace=False)
-
 
     def build_tree(self, tree: _DecisionTree) -> None:
         """
