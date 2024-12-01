@@ -346,6 +346,8 @@ def test_sanity():
     sanity_partial_quadratic(n, m)
 
 
+# TODO: Test for SearchGridCV. Leave out a sample similair to
+
 if __name__ == "__main__":
     test_gini_single()
     test_gini_multi()

@@ -22,23 +22,23 @@ import inspect
 class BaseModel():
 
     def _check_max_features(
-        self, max_features: int | str | float | None
-    ) -> int | str | float | None:
+        self, max_features: int | str | float | None, tot_features: int
+    ) -> int:
 
         if max_features is None:
-            return max_features
+            return -1
         elif isinstance(max_features, int):
             if max_features < 1:
                 raise ValueError("max_features can not be less than 1")
             else:
-                return max_features
+                return min(max_features, tot_features)
         elif isinstance(max_features, float):
-            return max_features
+            return min(tot_features, int(max_features * tot_features))
         elif isinstance(max_features, str):
             if max_features == "sqrt":
-                return max_features
+                return int(np.sqrt(tot_features))
             elif max_features == "log2":
-                return max_features
+                return int(np.log2(tot_features))
             else:
                 raise ValueError("The only string options available for max_features are \"sqrt\", \"log2\"")
         else:
