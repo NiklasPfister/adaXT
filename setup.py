@@ -68,7 +68,6 @@ def get_cython_extensions() -> list[Extension]:
         dep_files.append(source_file + ".pxd")
         if DEBUG:
             comp_args = ["-O1"]
-
         else:
             comp_args = ["-O3"]
         extensions.append(
@@ -79,7 +78,9 @@ def get_cython_extensions() -> list[Extension]:
                 depends=dep_files,
                 extra_compile_args=comp_args,
                 include_dirs=[include_dir],
-                define_macros=[("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")],
+                define_macros=[
+                    ("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"),
+                ],
             )
         )
         # XXX hack around setuptools quirk for '*.pyx' sources
@@ -97,6 +98,13 @@ def run_build():
             gdb_debug=False,
             annotate=True,
             language_level="3",
+            compiler_directives={
+                "boundscheck": False,
+                "wraparound": False,
+                "cdivision": True,
+                "initializedcheck": False,
+                "nonecheck": False,
+            },
         )
     setup(
         name=NAME,

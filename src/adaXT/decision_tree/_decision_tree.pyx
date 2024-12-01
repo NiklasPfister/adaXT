@@ -1,4 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 import sys
 
@@ -510,12 +509,12 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
-                    weight_left = np.sum(list(map(lambda x:
-                                                  self.sample_weight[x],
-                                                  split[0])))
-                    weight_right = np.sum(list(map(lambda x:
-                                                   self.sample_weight[x],
-                                                   split[1])))
+                    weight_left = np.sum(
+                        self.sample_weight[split[0]]
+                    )
+                    weight_right = np.sum(
+                        self.sample_weight[split[1]]
+                    )
                     is_leaf = (
                         (
                             weighted_samples
