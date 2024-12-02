@@ -5,7 +5,7 @@ from adaXT.criteria import (
     Entropy,
     Partial_quadratic,
 )
-from adaXT.predict import PredictLocalPolynomial
+from adaXT.predictor import PredictorLocalPolynomial
 from adaXT.leaf_builder import LeafBuilderPartialQuadratic
 from adaXT.random_forest import RandomForest
 import numpy as np
@@ -278,13 +278,13 @@ def test_gradient_forest():
     tree = DecisionTree(
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
-        predictor=PredictLocalPolynomial,
+        predictor=PredictorLocalPolynomial,
         criteria=Partial_quadratic,
     )
     forest = RandomForest(
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
-        predictor=PredictLocalPolynomial,
+        predictor=PredictorLocalPolynomial,
         criteria=Partial_quadratic,
         sampling=None,
     )
