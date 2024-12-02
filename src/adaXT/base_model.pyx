@@ -7,7 +7,7 @@ from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
 
 from .predictor.predictor cimport (PredictorClassification, PredictorRegression,
-                               PredictorLocalPolynomial, PredictorQuantile)
+                                   PredictorLocalPolynomial, PredictorQuantile)
 from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderRegression,
                                          LeafBuilderPartialQuadratic)
