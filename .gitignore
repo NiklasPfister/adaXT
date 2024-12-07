@@ -184,3 +184,4 @@ scrap.pyx
 *.html
 src/adaXT/decision_tree/setup.py
 startup.sh
+test.py

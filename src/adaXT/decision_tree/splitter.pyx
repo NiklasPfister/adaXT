@@ -14,7 +14,7 @@ cdef double INFINITY = np.inf
 
 cdef double[:] current_feature_values
 
-cdef int compare(const void* a, const void* b) noexcept nogil:
+cdef inline int compare(const void* a, const void* b) noexcept nogil:
     cdef:
         int a1 = (<int *> a)[0]
         int b1 = (<int *> b)[0]
@@ -24,7 +24,7 @@ cdef int compare(const void* a, const void* b) noexcept nogil:
     else:
         return -1
 
-cdef int[::1] sort_feature(int[::1] indices):
+cdef inline int[::1] sort_feature(int[::1] indices):
     """
     Function to sort an array at given indices.
 
@@ -46,11 +46,11 @@ cdef int[::1] sort_feature(int[::1] indices):
 
 
 cdef class Splitter:
-    def __init__(self, double[:, ::1] X, double[:, ::1] Y, criteria: Criteria):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, criteria_instance: Criteria):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
-        self.criteria = criteria
+        self.criteria_instance = criteria_instance
 
     cpdef get_split(self, int[::1] indices, int[::1] feature_indices):
         global current_feature_values
@@ -84,7 +84,7 @@ cdef class Splitter:
                         self.X[sorted_index_list_feature[i + 1], feature]):
                     continue
                 # test the split
-                crit, threshold = self.criteria.evaluate_split(
+                crit, threshold = self.criteria_instance.evaluate_split(
                                                         sorted_index_list_feature, i+1,
                                                         feature
                                                         )
@@ -100,6 +100,6 @@ cdef class Splitter:
         # We found a best split
         if best_sorted is not None:
             split = [best_sorted[0:best_split_idx], best_sorted[best_split_idx:self.n_indices]]
-            best_imp = [self.criteria.impurity(split[0]), self.criteria.impurity(split[1])]
+            best_imp = [self.criteria_instance.impurity(split[0]), self.criteria_instance.impurity(split[1])]
 
         return split, best_threshold, best_feature, best_score, best_imp

@@ -1,4 +1,4 @@
-from adaXT.decision_tree import DecisionTree, LeafNode, DecisionNode
+from adaXT.decision_tree import LeafNode, DecisionNode, DecisionTree
 from adaXT.criteria import (
     Gini_index,
     Squared_error,
@@ -6,7 +6,6 @@ from adaXT.criteria import (
     Partial_linear,
     Partial_quadratic,
 )
-
 import numpy as np
 
 
@@ -347,9 +346,11 @@ def test_sanity():
     sanity_partial_quadratic(n, m)
 
 
+# TODO: Test for SearchGridCV. Leave out a sample similair to
+
 if __name__ == "__main__":
-    # test_gini_single()
-    # test_gini_multi()
-    # test_entropy_single()
-    # test_entropy_multi()
-    print("Done.")
+    test_gini_single()
+    test_gini_multi()
+    test_entropy_single()
+    test_entropy_multi()
+    # print("Done.")

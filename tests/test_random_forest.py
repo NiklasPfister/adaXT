@@ -121,7 +121,10 @@ def test_dominant_feature():
 
     # Create forest and fit data
     forest = RandomForest(
-        "Classification", n_estimators=100, criteria=Gini_index, sampling="resampling"
+        "Classification",
+        n_estimators=100,
+        criteria=Gini_index,
+        sampling="resampling",
     )
     forest.fit(X, Y)
 
@@ -275,19 +278,20 @@ def test_gradient_forest():
     tree = DecisionTree(
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
-        predict=PredictLocalPolynomial,
+        predictor=PredictLocalPolynomial,
         criteria=Partial_quadratic,
     )
     forest = RandomForest(
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
-        predict=PredictLocalPolynomial,
+        predictor=PredictLocalPolynomial,
         criteria=Partial_quadratic,
         sampling=None,
     )
     tree.fit(X_reg, Y_reg)
     forest.fit(X_reg, Y_reg)
     tree_predict = tree.predict(X_reg)
+    print("")
     forest_predict = forest.predict(X_reg)
     assert np.allclose(
         tree_predict, forest_predict
@@ -579,14 +583,16 @@ def test_OOB_entropy():
 
 
 if __name__ == "__main__":
-    # test_dominant_feature()
+    test_dominant_feature()
     # test_deterministic_seeding_classification()
     # test_quantile_regression_forest()
     # test_random_forest_weights()
     # test_honest_sampling_leaf_samples()
     # test_n_jobs_predict_forest()
     # test_random_forest()
-    test_OOB_squared_error()
-    test_OOB_entropy()
-
+    # test_gradient_forest()
+    # test_OOB_squared_error()
+    # test_OOB_entropy()
+    test_tree_based_weights()
+    test_honest_sampling_leaf_samples()
     print("Done")

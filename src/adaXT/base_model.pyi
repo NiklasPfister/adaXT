@@ -8,10 +8,10 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 class BaseModel:
-    predict_class: Type[Predict]
-    leaf_builder_class: Type[Criteria]
-    criteria_class: Type[LeafBuilder]
-    splitter_class: Type[Splitter]
+    predictor: Type[Predict] | None
+    leaf_builder: Type[LeafBuilder] | None
+    criteria: Type[Criteria] | None
+    splitter: Type[Splitter] | None
 
     def _check_max_features(
         self, max_features: int | str | float | None
@@ -30,7 +30,7 @@ class BaseModel:
 
     def _check_input(
         self, X: ArrayLike, Y: ArrayLike | None = None
-    ) -> tuple[np.ndarray, ...]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         pass
 
     def _check_tree_type(

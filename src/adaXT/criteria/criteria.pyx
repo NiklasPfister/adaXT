@@ -1,14 +1,13 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
 from libc.math cimport log2
 from libc.stdlib cimport malloc, free
 from libc.string cimport memset
 import numpy as np
 from .crit_helpers cimport weighted_mean
 
+
 # Abstract Criteria class
 cdef class Criteria:
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         self.X = X
         self.Y = Y
         self.sample_weight = sample_weight
@@ -67,13 +66,14 @@ cdef class Criteria:
         return (crit, mean_thresh)
 
     @staticmethod
-    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true, double[:, ::1] sample_weight) -> float:
         raise ValueError("Loss is not implemented for the given Criteria")
 
 
 cdef class ClassificationCriteria(Criteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1]
                  sample_weight) -> None:
+        super().__init__(X, Y, sample_weight)
         self.first_call = True
 
     def __del__(self) -> None:
@@ -85,11 +85,12 @@ cdef class ClassificationCriteria(Criteria):
         memset(class_occurences, 0, self.num_classes*sizeof(double))
 
     @staticmethod
-    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true, double[::1] sample_weight) -> float:
         """ Zero one loss function """
         cdef:
             int i
             int n_samples = Y_pred.shape[0]
+            double weighted_samples = 0.0
             double tot_sum = 0.0
 
         if Y_true.shape[0] != n_samples:
@@ -98,7 +99,9 @@ cdef class ClassificationCriteria(Criteria):
                     )
         for i in range(n_samples):
             if Y_pred[i, 0] != Y_true[i, 0]:
-                tot_sum += 1.0
+                tot_sum += sample_weight[i]
+
+            weighted_samples += sample_weight[i]
 
         return tot_sum / n_samples
 
@@ -347,11 +350,12 @@ cdef class Entropy(ClassificationCriteria):
 
 cdef class RegressionCriteria(Criteria):
     @staticmethod
-    def loss(double[:,  ::1] Y_pred, double[:, ::1]  Y_true) -> double:
+    def loss(double[:,  ::1] Y_pred, double[:, ::1] Y_true, double[::1] sample_weight) -> float:
         """ Mean squared error loss """
         cdef:
             int i
             int n_samples = Y_pred.shape[0]
+            double weighted_samples = 0.0
             double temp
             double tot_sum = 0.0
 
@@ -360,10 +364,11 @@ cdef class RegressionCriteria(Criteria):
                     "Y_pred and Y_true have different number of samples in loss"
                     )
         for i in range(n_samples):
-            temp = Y_true[i, 0] - Y_pred[i, 0]
+            temp = (Y_true[i, 0] - Y_pred[i, 0])*sample_weight[i]
+            weighted_samples += sample_weight[i]
             tot_sum += temp*temp
 
-        return tot_sum / n_samples
+        return tot_sum / weighted_samples
 
 
 # Squared error criteria
