@@ -1,4 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
@@ -7,7 +6,11 @@ from statistics import mode
 cimport numpy as cnp
 from ..parallel import ParallelModel
 
-# TODO: Change Predict to Predictor
+# Circulair import. Since only used for typing, this fixes the issue.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..decision_tree import DecisionTree
+
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t

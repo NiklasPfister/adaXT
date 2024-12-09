@@ -1,4 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 from numpy import float64 as DOUBLE
 from .predict import Predict
 from .criteria import Criteria

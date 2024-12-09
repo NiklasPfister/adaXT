@@ -14,6 +14,8 @@ from ..criteria import Criteria
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
 
+from ..utils cimport dsum
+
 cdef double EPSILON = np.finfo('double').eps
 
 
@@ -223,7 +225,7 @@ cdef class _DecisionTree():
         # (1) Only a single root node (n_objs == 0)
         # (2) At least one split (n_objs > 0)
         if self.root is None:
-            weighted_samples = np.sum([sample_weight[x] for x in all_idx])
+            weighted_samples = np.sum(sample_weight)
             self.root = leaf_builder.build_leaf(
                     leaf_id=0,
                     indices=all_idx,
@@ -238,7 +240,7 @@ cdef class _DecisionTree():
             for i in range(n_objs):
                 obj = refit_objs[i]
                 leaf_indices = np.array(obj.indices, dtype=np.int32)
-                weighted_samples = np.sum([sample_weight[x] for x in leaf_indices])
+                weighted_samples = np.sum(sample_weight)
                 new_node = leaf_builder.build_leaf(
                         leaf_id=i,
                         indices=leaf_indices,
@@ -483,7 +485,7 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            weighted_samples = np.sum([self.sample_weight[x] for x in indices])
+            weighted_samples = np.sum(self.sample_weight)
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
@@ -509,11 +511,15 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
+                    l = split[0]
+                    r = split[1]
+                    ll = l.shape[0]
+                    rr = r.shape[0]
                     weight_left = np.sum(
-                        self.sample_weight[split[0]]
+                        self.sample_weight[l]
                     )
                     weight_right = np.sum(
-                        self.sample_weight[split[1]]
+                        self.sample_weight[r]
                     )
                     is_leaf = (
                         (

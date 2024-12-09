@@ -1,5 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
 from ..decision_tree.nodes import LeafNode, LocalPolynomialLeafNode
 import numpy as np
 cimport numpy as cnp
