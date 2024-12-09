@@ -49,7 +49,7 @@ For the `Classification` tree type, the following default components are used:
 - Criteria class:
   [Entropy](../api_docs/Criteria.md#adaXT.criteria.criteria.Entropy)
 - Predict class:
-  [PredictClassification](../api_docs/Predict.md#adaXT.predict.predict.PredictClassification)
+  [PredictorClassification](../api_docs/Predict.md#adaXT.predictor.predictor.PredictClassification)
 - LeafBuilder class:
   [LeafBuilderClassification](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
 
@@ -126,7 +126,7 @@ For the `Quantile` tree type, the following default components are used:
 - Criteria class:
   [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
 - Predict class:
-  [PredictQuantile](../api_docs/Predict.md#adaXT.predict.predict.PredictQuantile)
+  [PredictorQuantile](../api_docs/Predict.md#adaXT.predictor.predictor.PredictQuantile)
 - LeafBuilder class:
   [LeafBuilderRegression](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
 
@@ -210,7 +210,7 @@ plt.show()
 It is also possible to manually specify the tree type. This is particularly
 useful when you have custom components for the tree and do not want to use any
 of the default classes. To do this simply set `tree_type` to None and provide
-the `criteria`, `predict` and `leaf_builder` classes when initializing the tree.
+the `criteria`, `predictor` and `leaf_builder` classes when initializing the tree.
 
 ## Further functionality
 

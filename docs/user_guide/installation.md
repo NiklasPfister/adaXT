@@ -23,7 +23,7 @@ pip install git+https://github.com/NiklasPfister/adaXT.git@Development#egg=adaXT
 
 ## Modifying the project and building it locally
 
-Simple extensions such as adding a custom criteria or predict class can be
+Simple extensions such as adding a custom criteria or predictor class can be
 easily done without any modifications to the base package, as described
 [here](creatingCriteria.md) and
 [here](creatingPredict.md). However, more involved changes may

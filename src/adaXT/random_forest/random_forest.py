@@ -12,7 +12,7 @@ from ..criteria import Criteria
 from ..decision_tree import DecisionTree
 from ..decision_tree.splitter import Splitter
 from ..base_model import BaseModel
-from ..predict import Predict
+from ..predictor import Predictor
 from ..leaf_builder import LeafBuilder
 
 from collections import defaultdict
@@ -122,7 +122,7 @@ def build_single_tree(
     Y: np.ndarray,
     honest_tree: bool,
     criteria: type[Criteria],
-    predictor: type[Predict],
+    predictor: type[Predictor],
     leaf_builder: type[LeafBuilder],
     splitter: type[Splitter],
     tree_type: str | None = None,
@@ -165,7 +165,7 @@ def oob_calculation(
     X_old: np.ndarray,
     Y_old: np.ndarray,
     parallel: ParallelModel,
-    predictor: type[Predict],
+    predictor: type[Predictor],
 ) -> tuple:
     X_pred = np.expand_dims(X_old[idx], axis=0)
     Y_pred = predictor.forest_predict(
@@ -251,7 +251,7 @@ class RandomForest(BaseModel):
         seed: int | None = None,
         criteria: type[Criteria] | None = None,
         leaf_builder: type[LeafBuilder] | None = None,
-        predictor: type[Predict] | None = None,
+        predictor: type[Predictor] | None = None,
         splitter: type[Splitter] | None = None,
     ) -> None:
         """
@@ -303,7 +303,7 @@ class RandomForest(BaseModel):
         leaf_builder : LeafBuilder
             The LeafBuilder class to use, if None it defaults to the forest_type
             default.
-        predict : Predict
+        predictor : Predictor
             The Prediction class to use, if None it defaults to the forest_type
             default.
         splitter : Splitter | None

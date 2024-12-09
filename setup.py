@@ -47,7 +47,7 @@ modules += [
     "decision_tree.tree_utils",
 ]
 modules += ["leaf_builder.leaf_builder"]
-modules += ["predict.predict"]
+modules += ["predictor.predictor"]
 modules += ["random_forest.random_forest"]
 
 
@@ -139,7 +139,7 @@ def run_build():
             "adaXT.criteria": ["*.pxd", "*.pyi", "*.py"],
             "adaXT.decision_tree": ["*.pxd", "*.pyi", "*.py"],
             "adaXT.leaf_builder": ["*.pxd", "*.pyi", "*.py"],
-            "adaXT.predict": ["*.pxd", "*.pyi", "*.py"],
+            "adaXT.predictor": ["*.pxd", "*.pyi", "*.py"],
         },
         classifiers=[
             "Programming Language :: Python :: 3",

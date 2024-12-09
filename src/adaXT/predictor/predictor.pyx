@@ -65,7 +65,7 @@ def predict_quantile(
     return indices
 
 
-cdef class Predict():
+cdef class Predictor():
 
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, object root, **kwargs):
         self.X = X
@@ -77,7 +77,7 @@ cdef class Predict():
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
-        raise NotImplementedError("Function predict is not implemented for this Predict class")
+        raise NotImplementedError("Function predict is not implemented for this Predictor class")
 
     cpdef dict predict_leaf(self, cnp.ndarray X):
         cdef:
@@ -118,7 +118,7 @@ cdef class Predict():
         return np.mean(predictions, axis=0, dtype=DOUBLE)
 
 
-cdef class PredictClassification(Predict):
+cdef class PredictorClassification(Predictor):
     def __init__(self,
                  double[:, ::1] X,
                  double[:, ::1] Y,
@@ -208,7 +208,7 @@ cdef class PredictClassification(Predict):
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
-cdef class PredictRegression(Predict):
+cdef class PredictorRegression(Predictor):
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs, n_col
@@ -240,7 +240,7 @@ cdef class PredictRegression(Predict):
         return prediction
 
 
-cdef class PredictLocalPolynomial(PredictRegression):
+cdef class PredictorLocalPolynomial(PredictorRegression):
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
@@ -280,7 +280,7 @@ cdef class PredictLocalPolynomial(PredictRegression):
         return deriv_mat
 
 
-cdef class PredictQuantile(Predict):
+cdef class PredictorQuantile(Predictor):
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
