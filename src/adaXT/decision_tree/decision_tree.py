@@ -4,7 +4,7 @@ import numpy as np
 from .splitter import Splitter
 from ..criteria import Criteria
 from .nodes import LeafNode, Node
-from ..predict import Predict
+from ..predictor import Predictor
 from ..leaf_builder import LeafBuilder
 from ..base_model import BaseModel
 from ._decision_tree import _DecisionTree, DepthTreeBuilder
@@ -53,7 +53,7 @@ class DecisionTree(BaseModel):
         min_improvement: float = 0,
         criteria: Type[Criteria] | None = None,
         leaf_builder: Type[LeafBuilder] | None = None,
-        predictor: Type[Predict] | None = None,
+        predictor: Type[Predictor] | None = None,
         splitter: Type[Splitter] | None = None,
         skip_check_input: bool = False,
     ) -> None:
@@ -82,8 +82,8 @@ class DecisionTree(BaseModel):
         leaf_builder : Type[LeafBuilder] | None
             The LeafBuilder class to use, if None it defaults to the tree_type
             default.
-        predict : Type[Predict] | None
-            The Predict class to use, if None it defaults to the tree_type
+        predictor : Type[Predictor] | None
+            The Predictor class to use, if None it defaults to the tree_type
             default.
         splitter : Type[Splitter] | None
             The Splitter class to use, if None it defaults to the default

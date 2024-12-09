@@ -1,4 +1,4 @@
-from .predict import Predict
+from .predictor import Predictor
 from .criteria import Criteria
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
@@ -8,7 +8,7 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 class BaseModel:
-    predictor: Type[Predict] | None
+    predictor: Type[Predictor] | None
     leaf_builder: Type[LeafBuilder] | None
     criteria: Type[Criteria] | None
     splitter: Type[Splitter] | None
@@ -39,7 +39,7 @@ class BaseModel:
         criteria: type[Criteria] | None,
         splitter: type[Splitter] | None,
         leaf_builder: type[LeafBuilder] | None,
-        predict: type[Predict] | None,
+        predictor: type[Predictor] | None,
     ):
         pass
 

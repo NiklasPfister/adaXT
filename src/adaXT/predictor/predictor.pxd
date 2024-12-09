@@ -1,6 +1,6 @@
 cimport numpy as cnp
 
-cdef class Predict():
+cdef class Predictor():
     cdef:
         double[:, ::1] X
         double[:, ::1] Y
@@ -10,7 +10,7 @@ cdef class Predict():
     cpdef dict predict_leaf(self, cnp.ndarray X)
 
 
-cdef class PredictClassification(Predict):
+cdef class PredictorClassification(Predictor):
     cdef:
         double[::1] classes
 
@@ -21,13 +21,13 @@ cdef class PredictClassification(Predict):
     cdef cnp.ndarray __predict(self, cnp.ndarray X)
 
 
-cdef class PredictRegression(Predict):
+cdef class PredictorRegression(Predictor):
     pass
 
 
-cdef class PredictLocalPolynomial(PredictRegression):
+cdef class PredictorLocalPolynomial(PredictorRegression):
     pass
 
 
-cdef class PredictQuantile(Predict):
+cdef class PredictorQuantile(Predictor):
     pass
