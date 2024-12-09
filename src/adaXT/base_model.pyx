@@ -1,13 +1,13 @@
 # cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 from numpy import float64 as DOUBLE
-from .predict import Predict
+from .predictor import Predictor
 from .criteria import Criteria
 from .criteria.criteria import Entropy, Squared_error, Partial_quadratic
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
 
-from .predict.predict cimport (PredictClassification, PredictRegression,
-                               PredictLocalPolynomial, PredictQuantile)
+from .predictor.predictor cimport (PredictorClassification, PredictorRegression,
+                                   PredictorLocalPolynomial, PredictorQuantile)
 from .leaf_builder.leaf_builder cimport (LeafBuilderClassification,
                                          LeafBuilderRegression,
                                          LeafBuilderPartialQuadratic)
@@ -120,17 +120,17 @@ class BaseModel():
         criteria: type[Criteria] | None,
         splitter: type[Splitter] | None,
         leaf_builder: type[LeafBuilder] | None,
-        predictor: type[Predict] | None,
+        predictor: type[Predictor] | None,
     ) -> None:
         # tree_types. To add a new one add an entry in the following dictionary,
         # where the key is the name, and the value is a list of a criteria,
         # predict and leaf_builder class in that order.
         tree_types = {
-                "Classification": [Entropy, PredictClassification,
+                "Classification": [Entropy, PredictorClassification,
                                    LeafBuilderClassification],
-                "Regression": [Squared_error, PredictRegression, LeafBuilderRegression],
-                "Gradient": [Partial_quadratic, PredictLocalPolynomial, LeafBuilderPartialQuadratic],
-                "Quantile": [Squared_error, PredictQuantile, LeafBuilderRegression]
+                "Regression": [Squared_error, PredictorRegression, LeafBuilderRegression],
+                "Gradient": [Partial_quadratic, PredictorLocalPolynomial, LeafBuilderPartialQuadratic],
+                "Quantile": [Squared_error, PredictorQuantile, LeafBuilderRegression]
             }
         if tree_type in tree_types.keys():
             # Set the defaults

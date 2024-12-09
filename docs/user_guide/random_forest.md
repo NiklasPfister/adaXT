@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from adaXT.random_forest import RandomForest
 from adaXT.criteria import Partial_linear
 from adaXT.leaf_builder import LeafBuilderPartialLinear
-from adaXT.predict import PredictLocalPolynomial
+from adaXT.predictor import PredictorLocalPolynomial
 
 # Training and test data
 n = 200
@@ -30,7 +30,7 @@ rf = RandomForest("Regression", min_samples_leaf=30)
 rf_lin = RandomForest("Regression",
                       criteria=Partial_linear,
                       leaf_builder=LeafBuilderPartialLinear,
-                      predict=PredictLocalPolynomial,
+                      predictor=PredictorLocalPolynomial,
                       min_samples_leaf=30)
 rf.fit(Xtrain, Ytrain)
 rf_lin.fit(Xtrain, Ytrain)

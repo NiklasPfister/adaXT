@@ -9,7 +9,7 @@ from libcpp cimport bool
 
 # Custom
 from .splitter import Splitter
-from ..predict import Predict
+from ..predictor import Predictor
 from ..criteria import Criteria
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
@@ -50,7 +50,7 @@ cdef class _DecisionTree():
             self,
             criteria: type[Criteria],
             leaf_builder: type[LeafBuilder],
-            predictor: type[Predict],
+            predictor: type[Predictor],
             splitter: type[Splitter],
             max_depth: long = sys.maxsize,
             impurity_tol: float = 0.0,
@@ -382,7 +382,7 @@ class DepthTreeBuilder:
         criteria: Criteria,
         splitter: Splitter,
         leaf_builder: LeafBuilder,
-        predictor: Predict,
+        predictor: Predictor,
     ) -> None:
         """
         Parameters
@@ -404,7 +404,7 @@ class DepthTreeBuilder:
         leaf_builder : LeafBuilder
             The LeafBuilder class to use
         predictor
-            The Predict class to use
+            The Predictor class to use
         """
         self.X = X
         self.Y = Y
