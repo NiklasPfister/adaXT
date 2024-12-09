@@ -18,7 +18,6 @@ from ..utils cimport dsum
 
 cdef double EPSILON = np.finfo('double').eps
 
-
 class refit_object():
     def __init__(
             self,
@@ -225,7 +224,7 @@ cdef class _DecisionTree():
         # (1) Only a single root node (n_objs == 0)
         # (2) At least one split (n_objs > 0)
         if self.root is None:
-            weighted_samples = dsum(sample_weight)
+            weighted_samples = dsum(sample_weight, all_idx)
             self.root = leaf_builder.build_leaf(
                     leaf_id=0,
                     indices=all_idx,
@@ -240,7 +239,7 @@ cdef class _DecisionTree():
             for i in range(n_objs):
                 obj = refit_objs[i]
                 leaf_indices = np.array(obj.indices, dtype=np.int32)
-                weighted_samples = dsum(sample_weight)
+                weighted_samples = dsum(sample_weight, leaf_indices)
                 new_node = leaf_builder.build_leaf(
                         leaf_id=i,
                         indices=leaf_indices,
@@ -471,7 +470,7 @@ class DepthTreeBuilder:
 
         # Update the tree now that we have the correct samples
         leaf_builder = self.leaf_builder(X, Y, all_idx)
-        weighted_total = dsum(self.sample_weight)
+        weighted_total = dsum(self.sample_weight, all_idx)
 
         queue.append(queue_obj(all_idx, 0, criteria_instance.impurity(all_idx)))
         n_nodes = 0
@@ -485,7 +484,7 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            weighted_samples = dsum(self.sample_weight)
+            weighted_samples = dsum(self.sample_weight, indices)
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
@@ -511,15 +510,11 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
-                    l = split[0]
-                    r = split[1]
-                    ll = l.shape[0]
-                    rr = r.shape[0]
                     weight_left = dsum(
-                        self.sample_weight[l]
+                        self.sample_weight, split[0]
                     )
                     weight_right = dsum(
-                        self.sample_weight[r]
+                        self.sample_weight, split[1]
                     )
                     is_leaf = (
                         (
