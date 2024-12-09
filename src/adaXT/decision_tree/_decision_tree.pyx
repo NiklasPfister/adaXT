@@ -18,6 +18,7 @@ from ..utils cimport dsum
 
 cdef double EPSILON = np.finfo('double').eps
 
+
 class refit_object():
     def __init__(
             self,

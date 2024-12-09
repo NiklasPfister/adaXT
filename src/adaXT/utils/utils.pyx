@@ -7,4 +7,3 @@ cdef inline double dsum(double[::1] arr, int[::1] indices):
         res += arr[i]
 
     return res
-
