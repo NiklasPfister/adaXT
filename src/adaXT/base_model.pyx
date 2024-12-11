@@ -28,7 +28,11 @@ class BaseModel():
         if max_features is None:
             return -1
         elif isinstance(max_features, int):
-            if max_features < 1:
+            # Set to -1 for _DecisionTree, if no input given. Allow as a default
+            # too.
+            if max_features == -1:
+                return -1
+            elif max_features < 1:
                 raise ValueError("max_features can not be less than 1")
             else:
                 return min(max_features, tot_features)
