@@ -28,11 +28,13 @@ USE_CYTHON = True
 
 DEBUG = False
 
+PROFILE = False
+
 # Make all pyx files for the decision_tree
-ext = ".pyx" if USE_CYTHON else ".c"
+ext = ".pyx" if USE_CYTHON else ".cpp"
 include_dir = np.get_include()
 
-modules = ["base_model"]
+modules = ["base_model", "utils.utils"]
 modules += [
     "criteria.criteria",
     "criteria.crit_helpers",
@@ -70,6 +72,10 @@ def get_cython_extensions() -> list[Extension]:
             comp_args = ["-O1"]
         else:
             comp_args = ["-O3"]
+        macros = [("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION")]
+        if PROFILE:
+            macros.append(("CYTHON_TRACE", "1"))
+
         extensions.append(
             Extension(
                 module,
@@ -78,9 +84,7 @@ def get_cython_extensions() -> list[Extension]:
                 depends=dep_files,
                 extra_compile_args=comp_args,
                 include_dirs=[include_dir],
-                define_macros=[
-                    ("NPY_NO_DEPRECATED_API", "NPY_1_7_API_VERSION"),
-                ],
+                define_macros=macros,
             )
         )
         # XXX hack around setuptools quirk for '*.pyx' sources
@@ -92,19 +96,31 @@ def run_build():
     extensions = get_cython_extensions()
     if USE_CYTHON:
         from Cython.Build import cythonize
+        from Cython.Compiler.Options import get_directive_defaults
+
+        compiler_directives = get_directive_defaults()
+        compiler_directives.update(
+            {
+                "boundscheck": False,
+                "wraparound": False,
+                "cdivision": True,
+                "initializedcheck": False,
+                "nonecheck": False,
+            }
+        )
+
+        if PROFILE:
+            compiler_directives["profile"] = True
+            compiler_directives["linetrace"] = True
+            compiler_directives["binding"] = True
 
         extensions = cythonize(
             extensions,
             gdb_debug=False,
             annotate=True,
             language_level="3",
-            compiler_directives={
-                "boundscheck": False,
-                "wraparound": False,
-                "cdivision": True,
-                "initializedcheck": False,
-                "nonecheck": False,
-            },
+            compiler_directives=compiler_directives,
+            verbose=True,
         )
     setup(
         name=NAME,
@@ -131,7 +147,6 @@ def run_build():
             "License :: OSI Approved :: BSD License",
             "Operating System :: OS Independent",
         ],
-        tests_requires=TEST_DEP,
         extras_require=extras,
         zip_safe=False,
     )
