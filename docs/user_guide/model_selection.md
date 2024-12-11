@@ -1,6 +1,6 @@
 # Model Selection
-To allow for model selection, adaXTs DecisionTree and RandomForest are both
-compatible with scikit-learns [model
+To allow for model selection, adaXT's DecisionTree and RandomForest are both
+compatible with scikit-learn's [model
 selection](https://scikit-learn.org/1.5/modules/grid_search.html#exhaustive-grid-search).
 This allows for use with classes such as
 [GridSearchCV](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.GridSearchCV.html)
@@ -8,9 +8,9 @@ and
 [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
 
 
-## Using SearchGridCV with adaXT
-Here we introduce the difference when using scikit-learns own
-DecisionTreeClassifier and adaXTs DecisionTree with the SearchGridCV. First,
+## Using GridSearchCV with adaXT
+Here we introduce the difference when using scikit-learn's own
+DecisionTreeClassifier and adaXT's DecisionTree with the GridSearchCV. First,
 there is the initial setup:
 
 ```python
@@ -38,7 +38,8 @@ param_grid_sk = param_grid | {"criterion": ["gini", "entropy"]}
 ```
 First we import the necessary components and setup the parameter grids of the
 two decision trees. Here we note our first difference. In adaXT we generally
-stick to the naming theme of calling it a criteria rather than a criterion.
+stick to the naming theme of calling it a criteria rather than a criterion, when
+passing input to the tree.
 Second, when passing in the possible parameters instead of it being a string as
 in DecisionTreeClassifier we instead pass in the two classes Gini_index or
 Entropy (or perhaps your own [implementation](creatingCriteria.md)). Next, we
@@ -75,7 +76,7 @@ minor tweaks. And the same can be said when using the Pipeline.
 ## Using Pipeline
 
 AdaXT makes it easy to use any preprocessing from sklearn when fitting as adaXT
-is compatible with sklearns
+is compatible with sklearn's
 [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
 An example of the use case can be seen here:
 ```python
@@ -101,8 +102,8 @@ print(pipe.set_params(tree__max_depth=5).fit(X_train, y_train).score(X_test, y_t
 
 Again, there are only minor changes between how the DecisionTree and the
 DecisionTreeClassifier would be used. The only difference is, that we have to
-specify, that the DecisionTree is classification. However, one could also pass
-in a custom criteria, leaf_builder and predictor and the DecisionTree would still work
+specify, that the DecisionTree is for classification. However, one could also pass
+in a custom criteria, leaf_builder, and predictor and the DecisionTree would still work
 fine with the Pipeline.
 
 
