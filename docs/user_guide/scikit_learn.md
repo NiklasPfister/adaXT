@@ -107,9 +107,3 @@ DecisionTreeClassifier would be used. The only difference is, that we have to
 specify, that the DecisionTree is for classification. Instead, one could also pass
 in a custom criteria, leaf_builder, and predictor and the DecisionTree can still be
 used as part of a Pipeline.
-
-
-
-
-
-
