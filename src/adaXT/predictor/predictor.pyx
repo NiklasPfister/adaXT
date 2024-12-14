@@ -6,7 +6,7 @@ from statistics import mode
 cimport numpy as cnp
 from ..parallel import ParallelModel
 
-# Circulair import. Since only used for typing, this fixes the issue.
+# Circular import. Since only used for typing, this fixes the issue.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from ..decision_tree import DecisionTree
