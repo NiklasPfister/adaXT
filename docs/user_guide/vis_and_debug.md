@@ -1,4 +1,4 @@
-# Visualizations and Analysing 
+# Visualizations and Analysis Tools 
 
 <!-- TODO: Write this section -->
 
