@@ -1,11 +1,12 @@
 # Model Selection
-To allow for model selection, adaXT's DecisionTree and RandomForest are both
+To allow for model selection, adaXT's DecisionTree and RandomForest classes are both
 compatible with scikit-learn's [model
 selection](https://scikit-learn.org/1.5/modules/grid_search.html#exhaustive-grid-search).
-This allows for use with classes such as
+This in partciular means that functions such as
 [GridSearchCV](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.GridSearchCV.html)
 and
-[Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
+[Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html)
+can also be used with adaXT.
 
 
 ## Using GridSearchCV with adaXT
@@ -36,14 +37,12 @@ param_grid = {
 param_grid_ada = param_grid | {"criteria": [Gini_index, Entropy]}
 param_grid_sk = param_grid | {"criterion": ["gini", "entropy"]}
 ```
-First we import the necessary components and setup the parameter grids of the
-two decision trees. Here we note our first difference. In adaXT we generally
-stick to the naming theme of calling it a criteria rather than a criterion, when
-passing input to the tree.
-Second, when passing in the possible parameters instead of it being a string as
-in DecisionTreeClassifier we instead pass in the two classes Gini_index or
-Entropy (or perhaps your own [implementation](creatingCriteria.md)). Next, we
-can define and fit the GridSearchCV instance.
+Here, we import the necessary components and setup the parameter grids of the
+two decision trees. One small difference to be aware of is that the parameter names
+and format are different in some cases, e.g., in sklearn it is called criterion and
+takes a string as input, while in adaXT it is called criteria and takes a criteria class
+such as Gini_index, Entropy or perhaps your own [implementation](creatingCriteria.md).
+Next, we define and fit the GridSearchCV instance.
 
 ```python
 grid_search_ada = GridSearchCV(
@@ -70,15 +69,17 @@ print("Best accuracy sklearn: ", grid_search_sk.best_score_)
 
 ```
 And that is it. The workflow resembles what you are used to with only a few
-minor tweaks. And the same can be said when using the Pipeline.
-
+minor tweaks.
 
 ## Using Pipeline
 
-AdaXT makes it easy to use any preprocessing from sklearn when fitting as adaXT
+AdaXT makes it easy to use any preprocessing tools from sklearn because adaXT
 is compatible with sklearn's
 [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
-An example of the use case can be seen here:
+An example that combines a scaling step with a decision tree is provided below. Note that
+while combining a scaling step with a decision tree is generally not needed as
+decision trees are scale invariant, it can become useful if one additionally 
+adds a dimensonality reduction step after the scaling, for example.
 ```python
 from adaXT.decision_tree import DecisionTree
 from sklearn.pipeline import Pipeline
@@ -102,9 +103,9 @@ print(pipe.set_params(tree__max_depth=5).fit(X_train, y_train).score(X_test, y_t
 
 Again, there are only minor changes between how the DecisionTree and the
 DecisionTreeClassifier would be used. The only difference is, that we have to
-specify, that the DecisionTree is for classification. However, one could also pass
-in a custom criteria, leaf_builder, and predictor and the DecisionTree would still work
-fine with the Pipeline.
+specify, that the DecisionTree is for classification. Instead, one could also pass
+in a custom criteria, leaf_builder, and predictor and the DecisionTree can still be
+used as part of a Pipeline.
 
 
 
