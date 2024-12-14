@@ -1,15 +1,17 @@
-# Model Selection
-To allow for model selection, adaXT's DecisionTree and RandomForest classes are both
-compatible with scikit-learn's [model
-selection](https://scikit-learn.org/1.5/modules/grid_search.html#exhaustive-grid-search).
-This in partciular means that functions such as
-[GridSearchCV](https://scikit-learn.org/dev/modules/generated/sklearn.model_selection.GridSearchCV.html)
+# Using scikit-learn functionality
+
+To simplify integration of adaXT into existing ML workflows based on [scikit-learn](https://scikit-learn.org),
+adaXT's DecisionTree and RandomForest classes are both designed to be compatible with
+with some of scikit-learn tools.
+
+For example, functions such as
+[GridSearchCV](https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.GridSearchCV.html)
 and
-[Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html)
-can also be used with adaXT.
+[Pipeline](https://scikit-learn.org/stable/modules/generated/sklearn.pipeline.Pipeline.html)
+can be used with adaXT.
 
 
-## Using GridSearchCV with adaXT
+## Using GridSearchCV
 Here we introduce the difference when using scikit-learn's own
 DecisionTreeClassifier and adaXT's DecisionTree with the GridSearchCV. First,
 there is the initial setup:
@@ -72,7 +74,6 @@ And that is it. The workflow resembles what you are used to with only a few
 minor tweaks.
 
 ## Using Pipeline
-
 AdaXT makes it easy to use any preprocessing tools from sklearn because adaXT
 is compatible with sklearn's
 [Pipeline](https://scikit-learn.org/1.5/modules/generated/sklearn.pipeline.Pipeline.html).
