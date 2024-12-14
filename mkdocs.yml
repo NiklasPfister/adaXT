@@ -66,8 +66,8 @@ nav:
           - Random forests: user_guide/random_forest.md 
           - Honest splitting: user_guide/honest_splitting.md
           - Tree-based weights: user_guide/tree_based_weights.md
-          - Visualizing and debugging: user_guide/vis_and_debug.md
-          - Model Selection: user_guide/model_selection.md
+          - Visualizing and analysis tools: user_guide/vis_and_analysis.md
+          - Using scikit-learn: user_guide/scikit_learn.md
       - Modifying and extending:
           - Overview of components: user_guide/overview_components.md
           - Creating custom criteria: user_guide/creatingCriteria.md
