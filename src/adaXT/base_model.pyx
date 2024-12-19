@@ -152,7 +152,6 @@ class BaseModel():
         else:
             if (criteria is None) or (predictor is None) or (leaf_builder is
                                                              None):
-                print(criteria, predictor, leaf_builder)
                 raise ValueError(
                     "tree_type was not a default tree_type, so criteria, predictor and leaf_builder must be supplied"
                 )
