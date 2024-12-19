@@ -66,7 +66,8 @@ nav:
           - Random forests: user_guide/random_forest.md 
           - Honest splitting: user_guide/honest_splitting.md
           - Tree-based weights: user_guide/tree_based_weights.md
-          - Visualizing and debugging: user_guide/vis_and_debug.md
+          - Visualizing and analysis tools: user_guide/vis_and_analysis.md
+          - Using scikit-learn functionality: user_guide/scikit_learn.md
       - Modifying and extending:
           - Overview of components: user_guide/overview_components.md
           - Creating custom criteria: user_guide/creatingCriteria.md
@@ -75,7 +76,7 @@ nav:
       - DecisionTree: api_docs/DecisionTree.md
       - RandomForest: api_docs/RandomForest.md
       - Criteria: api_docs/Criteria.md
-      - Predict: api_docs/Predict.md
+      - Predictor: api_docs/Predictor.md
       - Nodes: api_docs/Nodes.md
       - LeafBuilder: api_docs/LeafBuilder.md
       - Splitter: api_docs/Splitter.md
