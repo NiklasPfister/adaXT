@@ -48,11 +48,11 @@ def recurse_node_left(cur_node):
         print(f"X{cur_node.split_idx} <= {cur_node.threshold}")
         recurse_node_left(cur_node.left_child)
         recurse_node_left(cur_node.right_child)
-    elif isinstance(cur_node, LeafNode):
-        print("LeafNode")
-        print(f"Value: {cur_node.value}")
     else:
-        print("Child was None")
+      # If not a DecisionNode, then it will always be LeafNode
+      assert(isinstance(cur_node, LeafNode)) 
+      print("LeafNode")
+      print(f"Value: {cur_node.value}")
 
 
 recurse_node_left(tree.root)

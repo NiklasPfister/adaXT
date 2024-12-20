@@ -8,6 +8,11 @@ class Predictor:
     The base Predictor class from which all other predict classes need to inhert.
     """
 
+    X: np.ndarray
+    Y: np.ndarray
+    n_features: int
+    root: object
+
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
         pass
 

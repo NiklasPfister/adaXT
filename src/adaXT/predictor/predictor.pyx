@@ -47,7 +47,7 @@ def predict_proba(
 
 def predict_quantile(
     tree: DecisionTree, X: np.ndarray, n_obs: int
-) -> np.ndarray:
+) -> list:
     # Check if quantile is an array
     indices = []
 
@@ -281,7 +281,6 @@ cdef class PredictorLocalPolynomial(PredictorRegression):
 
 
 cdef class PredictorQuantile(Predictor):
-
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs
@@ -339,6 +338,5 @@ cdef class PredictorQuantile(Predictor):
             for j in range(n_trees):
                 indices_combined.extend(prediction_indices[j][i])
             pred_indices_combined.append(indices_combined)
-        ret = [np.quantile(Y_old[pred_indices_combined[i]], quantile) for i in
-               range(n_obs)]
-        return np.array(ret, dtype=DOUBLE)
+        ret = np.quantile(Y_old[pred_indices_combined], quantile)
+        return ret
