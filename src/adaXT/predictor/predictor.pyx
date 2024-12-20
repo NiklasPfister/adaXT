@@ -338,5 +338,5 @@ cdef class PredictorQuantile(Predictor):
             for j in range(n_trees):
                 indices_combined.extend(prediction_indices[j][i])
             pred_indices_combined.append(indices_combined)
-        ret = np.quantile(Y_old[pred_indices_combined], quantile)
+        ret = np.quantile(Y_old[pred_indices_combined, 0], quantile, axis=1)
         return ret
