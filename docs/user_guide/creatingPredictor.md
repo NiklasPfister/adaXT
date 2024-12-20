@@ -1,4 +1,4 @@
-# Creating a custom prediction
+# Creating a custom Predictor
 
 ## General overview of the Predictor
 
