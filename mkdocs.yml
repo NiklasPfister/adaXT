@@ -71,7 +71,7 @@ nav:
       - Modifying and extending:
           - Overview of components: user_guide/overview_components.md
           - Creating custom criteria: user_guide/creatingCriteria.md
-          - Creating custom prediction: user_guide/creatingPredict.md
+          - Creating custom prediction: user_guide/creatingPredictor.md
   - API reference:
       - DecisionTree: api_docs/DecisionTree.md
       - RandomForest: api_docs/RandomForest.md
