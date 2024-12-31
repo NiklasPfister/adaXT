@@ -38,33 +38,34 @@ cdef class MyPredictorClass(Predictor):
   
 
 ```
-The template has three components: (1) The \_\_init\_\_ function, which is used to
-initialize the class. Because Cython removes a lot of the boiler plate with
-default Python classes, we cannot just add attributes to our cdef class without
-defining the attributes specifically on the class via the \_\_init\_\_ function.
-You can overwrite the \_\_init\_\_ function if desired to initialize variables on 
-the Predictor class, which can then be used in the predict method.
-If you do not use the \_\_init\_\_ functionality, you generally do not need to
-add any extra attributes. (2) The predict method, wich is used to compute the
-predictions at the provided X values. It is a simple def function 
-and can be used like any other regular Python method. Within this function you 
-in particular have access to the general attributes found on the
-[Predictor](../api_docs/Predictor.md) class. This includes the number of
-features and the root node object, which you can use to traverse the tree (see 
-example below).
-(3) The forest_predict method, which is used to aggregate predictions across trees
-for forest predictions. It is a static method, which allows
-us to parallelize across trees. If your custom Predictor just averages the
-tree predictions, you can just inherit the forest_predict method from the base
-Predictor class.
+The template includes three main components:
+
+1. \_\_init\_\_ function: This function is used to initialize the class. Because Cython
+   removes a lot of the boiler plate with default Python classes Cython, you cannot
+   add attributes to a cdef class without explicitly defining them. The \_\_init\_\_
+   function allows you to define and initialize these attributes. If you do not need
+   additional attributes, you can skip this step.
+2. predict method: This method is used to compute predictions for the given input X
+   values. It is a standard Python method and can be used like any other. Within this
+   method, you have access to the general attributes of the
+   [Predictor](../api_docs/Predictor.md) class, including the number of features and
+   the root node object, which can be used to traverse the tree.
+4. forest_predict method: This static method aggregates predictions across multiple
+   trees for forest predictions. It enables parallel processing across trees. If your
+   custom Predictor simply averages tree predictions, you can inherit this method
+   from the base Predictor class.
 
 ## Example of creating a Predictor
 
+To illustrate each component, we go over the PredictorQuantile class, which is used
+for quantile regression trees and forests. It does not add any additional attributes
+so the \_\_init\_\_ function is not needed in this case.
+
 ### The predict method
 
-As an example we have the PredictorQuantile, which is able to predict the
-quantiles of regression data instead of just the mean squared error as the
-regular regression predict. First, let us just focus on the predict method:
+In quantile regression we want to predict the quantiles of the conditional distribution
+instead of just the conditional mean as in regular regression. For a single tree this can
+be done with the following predict method:
 
 ```cython
 cdef class PredictorQuantile(Predictor):
@@ -101,34 +102,30 @@ cdef class PredictorQuantile(Predictor):
         return prediction
 
 ```
+Here, we first define the types of the variables used. This allows Cython to
+optimize the code, which leads to a faster prediction runtime.
 
-The PredictorQuantile needs no initialization beyond what is done by the regular
-Predictor, and so it does not implement any special attributes or the
-\_\_init\_\_ function. Next, inside the predict method, we define the types of
-the variables used. This allows cython for greater optimisation, which leads to
-a faster prediction time. Then, we check the kwargs for the key "quantile". Any
-keyword arguments passed to the DecisionTree.predict is passed directly to the
-Predictor.predict, meaning that we can access the desired quantile from the
-predict signature without having to changed anything else. As we allow for
-multiple quantiles, we have to setup the prediction variable depending on if the
-quantile is a Squence or just a single element. Then we can proceed by going
-through the tree.
+Next, we check the kwargs for the key `quantile`. Any keyword arguments passed
+to the DecisionTree.predict is passed directly to the Predictor.predict, meaning
+that we can access the desired quantile from the predict signature without having
+to changed anything else. As we want to allow for multiple quantiles to be
+predicted at the same time, we have to initalize the `prediction` variable differently
+depending on whether `quantile` is a Sequence or just a single element.
 
-For every observation, we go to the root node and loop as long as we are in a
-DecisionNode. We can check if we are split to the left or the right, and
-traverse down the tree.
-
-Once the cur_node is no longer an instance of the DecisionNode, then we have
-reached a LeafNode. We can access all Y values via self.Y(.base has to be added,
+Finally, we iterate over the tree: For every observation, we go to the root node
+and loop as long as we are in a DecisionNode. In each step, we check if we split
+to the left or the right, and traverse down the tree. Once `cur_node` is no longer
+an instance of the DecisionNode, we know that we have reached a LeafNode.
+We can access all Y values via `self.Y.base` ('.base' has to be added,
 as we are indexing with a list of elements) and the indices of the elements
-within the LeafNode via cur_node.indices. As we only have a single Y output
+within the LeafNode via `cur_node.indices`. As we only have a single Y output
 value, we simply want the first column of Y. This is then repeated for the rest
-of the given X values.
+of the provided X values.
 
 ### The forest_predict method
 
 The forest_predict method looks a lot more intimidating, but is just as
-straight forward as working with the predict method. Here is the overview:
+straightforward as the predict method. Here is the code:
 
 ```cython
 def predict_quantile(
@@ -181,24 +178,22 @@ cdef class PredictorQuantile(Predictor):
 ```
 
 The forest_predict method is a staticmethod, meaning that it is tied to the
-general Predictor class and not a specific instance of the class. The reason for
-this is, that we in the predictor can control specifically have the
-parallelisation happens, when we are predicting for the tree. For the quantile
-for example, we want to be able to control this ourselves.
+Predictor class itself and not a specific instance of the class. The reason for
+this is that it allows us to fully control the parallization over trees. For
+the PredictorQuantile, for example, we want to be able to control this ourselves.
 
-As before we define the variables used and check the input for quantile.
-However, this time we have defined a function at the top level of the file,
-which is not some method and is globally available. This has to be a globally
-available function for the multiprocessing to work probably. This function
-simply traverse a given tree, and finds the LeafNode each element of X would end
-up in and adds the indices of elements already in the LeafNode. This
-predict_quantile function is called using the parallel.async_map, which is
-adaXTs way of making parallelisation more manageable. It makes use of the
-[Parallel](../api_docs/Parallel.md) class. The async_map calls the
-predict_quantile with all the trees in parallel, and returns the result. This
-means, that prediction_indices will contain a list with the length of the number
-of estimators of the random forest. Each element of the list will be a single
-trees prediction for the input array X. As we want a list, where we have
-combined all the predictions for X, we create pred_indices_combined for the
-purpose. This just leaves us with calling numpy's quantile implementation and
-returning the result!
+As before we define the variables used and check the input for the kwarg
+`quantile`. However, this time we needed to define a globally available function
+`predict_quantile` at the top level of the file. It has to be a globally available
+for the multiprocessing to work probably. This function traverses a given tree,
+and finds the LeafNode each element of X would end up in and adds the indices
+of the elements already in the LeafNode. We then call `predict_quantile`
+using the parallel.async_map, which is adaXTs way of making
+parallelization more manageable. It makes use of the
+[Parallel](../api_docs/Parallel.md) class. The async_map calls
+`predict_quantile` with all the trees in parallel, and returns the result. This
+means, that `prediction_indices` will contain a list with the length equal
+to the number of trees in the forest. Each element of the list will be a single
+trees prediction for the input array X. We then create a list
+`pred_indices_combined` where we combine all the predictions for X.
+To get the final result, we then just call numpy's quantile implementation.
