@@ -1,9 +1,9 @@
 # Visualizations and analysis tools
 
-## Visualising DecisionTrees
+## Visualizing DecisionTrees
 
 adaXT provides general plotting functionality with matplotlib. An example of
-plotting a random DecisionTree with a maximum depth of 3 can be seen below:
+plotting a DecisionTree with a maximum depth of 3 is shown below:
 
 ```python
 from adaXT.decision_tree import DecisionTree, plot_tree
@@ -26,17 +26,17 @@ plot_tree(tree)
 plt.show()
 ```
 
-Which could produce a tree, such as this one:
+The resulting plot will look similar to the following:
 
 ![Plot of DecisionTree](../assets/figures/DecisionTreePlot.png)
 
-## Analysing the DecisionTree
+## Analyzing the DecisionTree
 
 adaXT DecisionTrees are built up of individual [Nodes](../api_docs/Nodes.md).
 Under the hood, adaXT calls these nodes when predicting. This makes it possible
-for the user to traverse the tree in their own manner, such that each individual
-node can be looked at in more detail. As an example, below is a script provided,
-which simply prints all the nodes in the tree.
+for the user to traverse the tree on their own, such that each individual
+node can be investigated in more detail. Below we provide an example script,
+which prints all the nodes in a tree.
 
 ```python
 from adaXT.decision_tree import DecisionNode, LeafNode
@@ -58,8 +58,8 @@ def recurse_node_left(cur_node):
 recurse_node_left(tree.root)
 ```
 
-This recursive function run on the tree provided in the previous section, would
-give the output:
+Applying this recursive function to the decision tree shown in the previous
+section, would result in the following output:
 
 ```verbatim
 DecisionNode
