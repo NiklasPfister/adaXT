@@ -220,6 +220,6 @@ other sections of the user guide.
 - [Tree-based weights](tree_based_weights.md): A fitted
   decision tree provides a similarity notion on the predictor space that has
   some useful properties. Check out this section to see how this can be used.
-- [Visualizations and analysis](vis_and_analysis.md): There are
+- [Visualizations and analysis tools](vis_and_analysis.md): There are
   several function available that can help with analyzing a fitted decision
   tree.
