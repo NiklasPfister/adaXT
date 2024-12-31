@@ -3,8 +3,8 @@
 ## General overview of the Predictor
 
 Like other elements in adaXT, it is possible to create a custom
-[Predictor](../api_docs/Predictor.md). First, create a new .pyx file and follow
-the template:
+[Predictor](../api_docs/Predictor.md). You can start by creating a new
+.pyx file using the following template:
 
 ```cython
 from adaXT.predictor cimport Predictor
@@ -38,22 +38,25 @@ cdef class MyPredictorClass(Predictor):
   
 
 ```
-
-Here we note a few things. Because Cython removes a lot of the boiler plate with
-default Python classes, we can not just add attributes to our cdef class without
-defining the attributes specifically on the class. This is what the initial cdef
-is for. If you do not use the \_\_init\_\_ functionality, it is generally not needed
-to add any extra attributes either.
-
-Next, one can overwrite the \_\_init\_\_ function in case it is desired to
-initialize some general structures on the Predictor class, which can be used
-when predicting later on.
-
-Lastly, we have the predict function itself. This is a simple def function and
-can be used like any other regular python method. One thing to note is, that you
-have access to the general attributes found on the
+The template has three components: (1) The \_\_init\_\_ function, which is used to
+initialize the class. Because Cython removes a lot of the boiler plate with
+default Python classes, we cannot just add attributes to our cdef class without
+defining the attributes specifically on the class via the \_\_init\_\_ function.
+You can overwrite the \_\_init\_\_ function if desired to initialize variables on 
+the Predictor class, which can then be used in the predict method.
+If you do not use the \_\_init\_\_ functionality, you generally do not need to
+add any extra attributes. (2) The predict method, wich is used to compute the
+predictions at the provided X values. It is a simple def function 
+and can be used like any other regular Python method. Within this function you 
+in particular have access to the general attributes found on the
 [Predictor](../api_docs/Predictor.md) class. This includes the number of
-features, and the root node object, which we can later use to traverse the tree.
+features and the root node object, which you can use to traverse the tree (see 
+example below).
+(3) The forest_predict method, which is used to aggregate predictions across trees
+for forest predictions. It is a static method, which allows
+us to parallelize across trees. If your custom Predictor just averages the
+tree predictions, you can just inherit the forest_predict method from the base
+Predictor class.
 
 ## Example of creating a Predictor
 
