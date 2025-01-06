@@ -45,12 +45,12 @@ The template includes three main components:
    add attributes to a cdef class without explicitly defining them. The \_\_init\_\_
    function allows you to initialize these attributes after you have defined them above.
    If you do not need additional attributes, you can skip this step.
-3. predict method: This method is used to compute predictions for the given input X
+2. predict method: This method is used to compute predictions for the given input X
    values. It is a standard Python method and can be used like any other. Within this
    method, you have access to the general attributes of the
    [Predictor](../api_docs/Predictor.md) class, including the number of features and
    the root node object, which can be used to traverse the tree.
-4. forest_predict method: This static method aggregates predictions across multiple
+3. forest_predict method: This static method aggregates predictions across multiple
    trees for forest predictions. It enables parallel processing across trees. If your
    custom Predictor simply averages tree predictions, you can inherit this method
    from the base Predictor class.
