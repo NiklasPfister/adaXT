@@ -9,9 +9,7 @@ class Node:
     depth: int
     impurity: float
 
-    def __init__(
-        self, indices: np.ndarray, depth: int, impurity: float
-    ) -> None:
+    def __init__(self, indices: np.ndarray, depth: int, impurity: float) -> None:
         """
         Parameters
         ----------
@@ -114,6 +112,7 @@ class LinearPolynomialLeafNode(LeafNode):
         parent: object,
         theta0: float,
         theta1: float,
+        theta2: float,
     ) -> None:
         """
         Parameters

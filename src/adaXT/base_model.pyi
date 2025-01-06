@@ -1,4 +1,4 @@
-from .predict import Predict
+from .predictor import Predictor
 from .criteria import Criteria
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
@@ -8,10 +8,10 @@ import numpy as np
 from numpy.typing import ArrayLike
 
 class BaseModel:
-    predict_class: Type[Predict]
-    leaf_builder_class: Type[Criteria]
-    criteria_class: Type[LeafBuilder]
-    splitter_class: Type[Splitter]
+    predictor: Type[Predictor] | None
+    leaf_builder: Type[LeafBuilder] | None
+    criteria: Type[Criteria] | None
+    splitter: Type[Splitter] | None
 
     def _check_max_features(
         self, max_features: int | str | float | None
@@ -30,7 +30,7 @@ class BaseModel:
 
     def _check_input(
         self, X: ArrayLike, Y: ArrayLike | None = None
-    ) -> tuple[np.ndarray, ...]:
+    ) -> tuple[np.ndarray | None, np.ndarray | None]:
         pass
 
     def _check_tree_type(
@@ -39,7 +39,7 @@ class BaseModel:
         criteria: type[Criteria] | None,
         splitter: type[Splitter] | None,
         leaf_builder: type[LeafBuilder] | None,
-        predict: type[Predict] | None,
+        predictor: type[Predictor] | None,
     ):
         pass
 

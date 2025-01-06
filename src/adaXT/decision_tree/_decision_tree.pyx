@@ -1,22 +1,20 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
-
-# General
 import numpy as np
 import sys
-from numpy.typing import ArrayLike
 
 cimport numpy as cnp
 ctypedef cnp.float64_t DOUBLE_t
+ctypedef cnp.int64_t LONG_t
+from libcpp cimport bool
 
 
 # Custom
 from .splitter import Splitter
-from ..predict import Predict
+from ..predictor import Predictor
 from ..criteria import Criteria
 from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
-from ..base_model import BaseModel
+
+from ..utils cimport dsum
 
 cdef double EPSILON = np.finfo('double').eps
 
@@ -38,87 +36,52 @@ class refit_object():
         self.indices.append(idx)
 
 
-class DecisionTree(BaseModel):
+cdef class _DecisionTree():
+    cdef public:
+        object criteria
+        object predictor
+        object leaf_builder
+        object splitter
+        object leaf_nodes, predictor_instance, root
+        long max_depth, min_samples_leaf, max_features
+        long min_samples_split, n_nodes, n_features
+        long n_rows_fit, n_rows_predict, X_n_rows
+        float impurity_tol, min_improvement
+
     def __init__(
             self,
-            tree_type: str | None = None,
-            skip_check_input: bool = False,
-            max_depth: int = sys.maxsize,
-            impurity_tol: float = 0,
+            criteria: type[Criteria],
+            leaf_builder: type[LeafBuilder],
+            predictor: type[Predictor],
+            splitter: type[Splitter],
+            max_depth: long = sys.maxsize,
+            impurity_tol: float = 0.0,
             min_samples_split: int = 1,
             min_samples_leaf: int = 1,
-            min_improvement: float = 0,
-            max_features: int | float | Literal["sqrt", "log2"] | None = None,
-            criteria: Criteria | None = None,
-            leaf_builder: LeafBuilder | None = None,
-            predict: Predict | None = None,
-            splitter: Splitter | None = None) -> None:
+            min_improvement: float = 0.0,
+            max_features: int | float | Literal["sqrt", "log2"] | None = None) -> None:
 
-        if skip_check_input:
-            self.criteria_class = criteria
-            self.predict_class = predict
-            self.leaf_builder_class = leaf_builder
-            self.splitter_class = splitter
-            self.max_features = max_features
-        else:
-            self._check_tree_type(tree_type, criteria, splitter, leaf_builder, predict)
-            self.max_features = self._check_max_features(max_features)
+        self.criteria = criteria
+        self.predictor = predictor
+        self.leaf_builder = leaf_builder
+        self.splitter = splitter
+        self.max_features = max_features
 
-        self.skip_check_input = skip_check_input
         self.max_depth = max_depth
         self.impurity_tol = impurity_tol
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
-        self.tree_type = tree_type
         self.leaf_nodes = None
+        self.predictor_instance = None
         self.root = None
-        self.predictor = None
         self.n_nodes = -1
         self.n_features = -1
 
-    def fit(self,
-            X: ArrayLike,
-            Y: ArrayLike,
-            sample_indices: ArrayLike | None = None,
-            sample_weight: ArrayLike | None = None) -> None:
+    def predict(self, cnp.ndarray[DOUBLE_t, ndim=2] X, **kwargs) -> np.ndarray:
+        return self.predictor_instance.predict(X, **kwargs)
 
-        # Check inputs
-        if not self.skip_check_input:
-            X, Y = self._check_input(X, Y)
-
-        # These values are used when checking sample_indices and sample_weight,
-        # so they have to be updated after checking X and Y
-        self.n_rows_fit = X.shape[0]
-        self.n_rows_predict = X.shape[0]
-        self.X_n_rows = X.shape[0]
-        self.n_features = X.shape[1]
-
-        if not self.skip_check_input:
-            sample_weight = self._check_sample_weight(sample_weight=sample_weight)
-            sample_indices = self._check_sample_indices(sample_indices=sample_indices)
-
-        builder = DepthTreeBuilder(
-            X=X,
-            Y=Y,
-            sample_indices=sample_indices,
-            max_features=self.max_features,
-            sample_weight=sample_weight,
-            criteria_class=self.criteria_class,
-            leaf_builder_class=self.leaf_builder_class,
-            predict_class=self.predict_class,
-            splitter_class=self.splitter_class)
-        builder.build_tree(self)
-
-    def predict(self, X: ArrayLike, **kwargs) -> np.ndarray:
-        if not self.predictor:
-            raise AttributeError("The tree has not been fitted before trying to call predict")
-        if not self.skip_check_input:
-            X, _ = self._check_input(X)
-            self._check_dimensions(X)
-        return self.predictor.predict(X, **kwargs)
-
-    def __get_leaf(self, scale: bool = False) -> dict:
+    cdef dict __get_leaf(self, bool scale = False):
         if self.root is None:
             raise ValueError("The tree has not been trained before trying to predict")
 
@@ -130,6 +93,30 @@ class DecisionTree(BaseModel):
         for node in leaf_nodes:
             ht[node.id] = node.indices
         return ht
+
+    def predict_weights(self, X: np.ndarray | None = None,
+                        bool scale = True) -> np.ndarray:
+        if X is None:
+            size_0 = self.n_rows_predict
+            new_hash_table = self.__get_leaf()
+        else:
+            size_0 = X.shape[0]
+            new_hash_table = self.predict_leaf(X)
+        if scale:
+            scaling = "row"
+        else:
+            scaling = "none"
+        default_hash_table = self.__get_leaf()
+        return self._tree_based_weights(new_hash_table, default_hash_table,
+                                        size_0, self.n_rows_predict,
+                                        scaling=scaling)
+
+    def predict_leaf(self, X: np.ndarray | None = None) -> dict:
+        if X is None:
+            return self.__get_leaf()
+        if self.predictor_instance is None:
+            raise ValueError("The tree has not been trained before trying to predict")
+        return self.predictor_instance.predict_leaf(X)
 
     def _tree_based_weights(self, hash0: dict, hash1: dict, size_X0: int,
                             size_X1: int, scaling: str) -> np.ndarray:
@@ -157,50 +144,14 @@ class DecisionTree(BaseModel):
                         matrix[indices_1, ind2] += val
         return matrix
 
-    def similarity(self, X0: ArrayLike, X1: ArrayLike):
-        if not self.skip_check_input:
-            X0, _ = self._check_input(X0)
-            self._check_dimensions(X0)
-            X1, _ = self._check_input(X1)
-            self._check_dimensions(X1)
-
+    def similarity(self, cnp.ndarray[DOUBLE_t, ndim=2] X0,
+                   cnp.ndarray[DOUBLE_t, ndim=2] X1):
         hash0 = self.predict_leaf(X0)
         hash1 = self.predict_leaf(X1)
         return self._tree_based_weights(hash0, hash1, X0.shape[0], X1.shape[0],
                                         scaling="similarity")
 
-    def predict_weights(self, X: ArrayLike | None = None,
-                        scale: bool = True) -> np.ndarray:
-        if X is None:
-            size_0 = self.n_rows_predict
-            new_hash_table = self.__get_leaf()
-        else:
-            if not self.skip_check_input:
-                X, _ = self._check_input(X)
-                self._check_dimensions(X)
-            size_0 = X.shape[0]
-            new_hash_table = self.predict_leaf(X)
-        if scale:
-            scaling = "row"
-        else:
-            scaling = "none"
-        default_hash_table = self.__get_leaf()
-        return self._tree_based_weights(new_hash_table, default_hash_table,
-                                        size_0, self.n_rows_predict,
-                                        scaling=scaling)
-
-    def predict_leaf(self, X: ArrayLike | None = None) -> dict:
-        if X is None:
-            return self.__get_leaf()
-        else:
-            if not self.skip_check_input:
-                X, _ = self._check_input(X)
-                self._check_dimensions(X)
-        if not self.predictor:
-            raise ValueError("The tree has not been trained before trying to predict")
-        return self.predictor.predict_leaf(X)
-
-    def __remove_leaf_nodes(self) -> None:
+    cdef void __remove_leaf_nodes(self):
         cdef:
             int i, n_nodes
             object parent
@@ -215,8 +166,10 @@ class DecisionTree(BaseModel):
                 parent.right_child = None
             self.leaf_nodes[i] = None
 
-    def __fit_new_leaf_nodes(self, X: np.ndarray, Y: np.ndarray, sample_weight:
-                             np.ndarray, sample_indices: np.ndarray) -> None:
+    cdef void __fit_new_leaf_nodes(self, cnp.ndarray[DOUBLE_t, ndim=2] X,
+                                   cnp.ndarray[DOUBLE_t, ndim=2] Y,
+                                   cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
+                                   cnp.ndarray[LONG_t, ndim=1] sample_indices):
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -265,19 +218,19 @@ class DecisionTree(BaseModel):
                         cur_node = cur_node.right_child
                     depth += 1
 
-        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
-        criteria = self.criteria_class(X, Y, sample_weight)
+        leaf_builder = self.leaf_builder(X, Y, all_idx)
+        criteria_instance = self.criteria(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
         # Two cases:
         # (1) Only a single root node (n_objs == 0)
         # (2) At least one split (n_objs > 0)
         if self.root is None:
-            weighted_samples = np.sum([sample_weight[x] for x in all_idx])
+            weighted_samples = dsum(sample_weight, all_idx)
             self.root = leaf_builder.build_leaf(
                     leaf_id=0,
                     indices=all_idx,
                     depth=0,
-                    impurity=criteria.impurity(all_idx),
+                    impurity=criteria_instance.impurity(all_idx),
                     weighted_samples=weighted_samples,
                     parent=None)
             self.leaf_nodes = [self.root]
@@ -287,12 +240,12 @@ class DecisionTree(BaseModel):
             for i in range(n_objs):
                 obj = refit_objs[i]
                 leaf_indices = np.array(obj.indices, dtype=np.int32)
-                weighted_samples = np.sum([sample_weight[x] for x in leaf_indices])
+                weighted_samples = dsum(sample_weight, leaf_indices)
                 new_node = leaf_builder.build_leaf(
                         leaf_id=i,
                         indices=leaf_indices,
                         depth=obj.depth,
-                        impurity=criteria.impurity(leaf_indices),
+                        impurity=criteria_instance.impurity(leaf_indices),
                         weighted_samples=weighted_samples,
                         parent=obj.parent,
                         )
@@ -305,7 +258,7 @@ class DecisionTree(BaseModel):
             self.leaf_nodes = nodes
 
     # Assumes that each visited node is marked during __fit_new_leaf_nodes
-    def __squash_tree(self) -> None:
+    cdef void __squash_tree(self):
 
         decision_queue = []
         decision_queue.append(self.root)
@@ -361,19 +314,14 @@ class DecisionTree(BaseModel):
                 decision_queue.append(cur_node.right_child)
 
     def refit_leaf_nodes(self,
-                         X: ArrayLike,
-                         Y: ArrayLike,
-                         sample_weight: ArrayLike | None = None,
-                         sample_indices: ArrayLike | None = None,
-                         **kwargs) -> None:
+                         cnp.ndarray[DOUBLE_t, ndim=2] X,
+                         cnp.ndarray[DOUBLE_t, ndim=2] Y,
+                         cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
+                         cnp.ndarray[LONG_t, ndim=1] sample_indices) -> None:
+
         if self.root is None:
             raise ValueError("The tree has not been trained before trying to\
                              refit leaf nodes")
-        if not self.skip_check_input:
-            X, Y = self._check_input(X, Y)
-            self._check_dimensions(X)
-            sample_weight = self._check_sample_weight(sample_weight)
-            sample_indices = self._check_sample_indices(sample_indices)
 
         # Remove current leaf nodes
         self.__remove_leaf_nodes()
@@ -383,7 +331,6 @@ class DecisionTree(BaseModel):
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
-        return
 
 
 # From below here, it is the DepthTreeBuilder
@@ -434,10 +381,10 @@ class DepthTreeBuilder:
         max_features: int | None,
         sample_weight: np.ndarray,
         sample_indices: np.ndarray | None,
-        criteria_class: Criteria,
-        splitter_class: Splitter,
-        leaf_builder_class: LeafBuilder,
-        predict_class: Predict,
+        criteria: Criteria,
+        splitter: Splitter,
+        leaf_builder: LeafBuilder,
+        predictor: Predictor,
     ) -> None:
         """
         Parameters
@@ -452,62 +399,36 @@ class DepthTreeBuilder:
             The weight of all samples
         sample_indices : np.ndarray
             The sample indices to use of the total data
-        criteria_class : Criteria
+        criteria : Criteria
             Criteria class used for impurity calculations
-        splitter_class : Splitter | None, optional
+        splitter : Splitter | None, optional
             Splitter class used to split data, by default None
-        leaf_builder_class : LeafBuilder
+        leaf_builder : LeafBuilder
             The LeafBuilder class to use
-        predict_class
-            The Predict class to use
+        predictor
+            The Predictor class to use
         """
         self.X = X
         self.Y = Y
         self.sample_indices = sample_indices
         self.sample_weight = sample_weight
+        self.max_features = max_features
 
-        _, col = X.shape
-        self.int_max_features = self.__parse_max_features(max_features)
-
-        self.feature_indices = np.arange(col, dtype=np.int32)
-        self.num_features = col
-
-        self.criteria = criteria_class(self.X, self.Y, self.sample_weight)
-        self.splitter = splitter_class(self.X, self.Y, self.criteria)
-
-        # These can not yet be initialized, as they depend on the all_idx
-        # parameter calculated in build_tree
-        self.predict_class = predict_class
-        self.leaf_builder_class = leaf_builder_class
+        self.splitter = splitter
+        self.criteria = criteria
+        self.predictor = predictor
+        self.leaf_builder = leaf_builder
 
     def __get_feature_indices(self) -> np.ndarray:
-        if self.int_max_features is None:
+        if self.max_features == -1:
             return self.feature_indices
         else:
             return np.random.choice(
                 self.feature_indices,
-                size=self.int_max_features,
+                size=self.max_features,
                 replace=False)
 
-    def __parse_max_features(self,
-                             max_features: int|str|float|None
-                             ) -> int:
-
-        if max_features is None:
-            return None
-        elif isinstance(max_features, int):
-            return min(max_features, self.num_features)
-        elif isinstance(max_features, float):
-            return min(self.num_features, int(max_features * self.num_features))
-        elif isinstance(max_features, str):
-            if max_features == "sqrt":
-                return int(np.sqrt(self.num_features))
-            elif max_features == "log2":
-                return int(np.log2(self.num_features))
-        else:
-            raise ValueError("Unable to parse max_features")
-
-    def build_tree(self, tree: DecisionTree) -> None:
+    def build_tree(self, tree: _DecisionTree) -> None:
         """
         Builds the tree
 
@@ -520,10 +441,16 @@ class DepthTreeBuilder:
         int :
             returns 0 on succes
         """
+        # initialization
         X = self.X
         Y = self.Y
-        splitter = self.splitter
-        criteria = self.criteria
+        _, col = X.shape
+        self.max_features = tree.max_features
+
+        self.feature_indices = np.arange(col, dtype=np.int32)
+
+        criteria_instance = self.criteria(self.X, self.Y, self.sample_weight)
+        splitter_instance = self.splitter(self.X, self.Y, criteria_instance)
 
         min_samples_split = tree.min_samples_split
         min_samples_leaf = tree.min_samples_leaf
@@ -538,15 +465,15 @@ class DepthTreeBuilder:
 
         queue = []  # queue for objects that need to be built
 
-        all_idx = np.array(
-            [x for x in self.sample_indices if self.sample_weight[x] != 0], dtype=np.int32
-        )
+        all_idx = np.array([
+            x for x in self.sample_indices if self.sample_weight[x] != 0
+        ], dtype=np.int32)
 
         # Update the tree now that we have the correct samples
-        leaf_builder = self.leaf_builder_class(X, Y, all_idx)
-        weighted_total = np.sum(self.sample_weight)
+        leaf_builder = self.leaf_builder(X, Y, all_idx)
+        weighted_total = dsum(self.sample_weight, all_idx)
 
-        queue.append(queue_obj(all_idx, 0, criteria.impurity(all_idx)))
+        queue.append(queue_obj(all_idx, 0, criteria_instance.impurity(all_idx)))
         n_nodes = 0
         leaf_count = 0  # Number of leaf nodes
         while len(queue) > 0:
@@ -558,7 +485,7 @@ class DepthTreeBuilder:
                 obj.parent,
                 obj.is_left,
             )
-            weighted_samples = np.sum([self.sample_weight[x] for x in indices])
+            weighted_samples = dsum(self.sample_weight, indices)
             # Stopping Conditions - BEFORE:
             # boolean used to determine wheter 'current node' is a leaf or not
             # additional stopping criteria can be added with 'or' statements
@@ -573,7 +500,7 @@ class DepthTreeBuilder:
 
             # If it is not a leaf, find the best split
             if not is_leaf:
-                split, best_threshold, best_index, _, child_imp = splitter.get_split(
+                split, best_threshold, best_index, _, child_imp = splitter_instance.get_split(
                     indices, self.__get_feature_indices()
                 )
                 # If we were unable to find a split, this must be a leaf.
@@ -584,12 +511,12 @@ class DepthTreeBuilder:
                     # boolean used to determine wheter 'parent node' is a leaf or not
                     # additional stopping criteria can be added with 'or'
                     # statements
-                    weight_left = np.sum(list(map(lambda x:
-                                                  self.sample_weight[x],
-                                                  split[0])))
-                    weight_right = np.sum(list(map(lambda x:
-                                                   self.sample_weight[x],
-                                                   split[1])))
+                    weight_left = dsum(
+                        self.sample_weight, split[0]
+                    )
+                    weight_right = dsum(
+                        self.sample_weight, split[1]
+                    )
                     is_leaf = (
                         (
                             weighted_samples
@@ -651,4 +578,4 @@ class DepthTreeBuilder:
         tree.max_depth = max_depth_seen
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.predictor = self.predict_class(self.X, self.Y, root)
+        tree.predictor_instance = self.predictor(self.X, self.Y, root)

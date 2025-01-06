@@ -49,9 +49,9 @@ For the `Classification` tree type, the following default components are used:
 - Criteria class:
   [Entropy](../api_docs/Criteria.md#adaXT.criteria.criteria.Entropy)
 - Predict class:
-  [PredictClassification](../api_docs/#adaXT.predict.predict.PredictClassification)
+  [PredictorClassification](../api_docs/Predictor.md#adaXT.predictor.predictor.PredictClassification)
 - LeafBuilder class:
-  [LeafBuilderClassification](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
+  [LeafBuilderClassification](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
 
 Below is a short example that illustrates how to use a classification tree.
 
@@ -98,9 +98,9 @@ For the `Regression` tree type, the following default components are used:
 - Criteria class:
   [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
 - Predict class:
-  [PredictRegression](../api_docs/#adaXT.predict.predict.PredictRegression)
+  [PredictRegression](../api_docs/Predictor.md#adaXT.predict.predict.PredictRegression)
 - LeafBuilder class:
-  [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+  [LeafBuilderRegression](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
 
 Regression trees work similar to classification trees as illustrated in the
 following example:
@@ -126,9 +126,9 @@ For the `Quantile` tree type, the following default components are used:
 - Criteria class:
   [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
 - Predict class:
-  [PredictQuantile](../api_docs/#adaXT.predict.predict.PredictQuantile)
+  [PredictorQuantile](../api_docs/Predictor.md#adaXT.predictor.predictor.PredictQuantile)
 - LeafBuilder class:
-  [LeafBuilderRegression](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
+  [LeafBuilderRegression](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
 
 Quantile trees are the building block for quantile random forests that were
 proposed by
@@ -161,9 +161,9 @@ For the `Gradient` tree type, the following default components are used:
 - Criteria class:
   [Partial_quadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.Partial_quadratic)
 - Predict class:
-  [PredictLocalPolynomial](../api_docs/#adaXT.predict.predict.PredictLocalPolynomial)
+  [PredictLocalPolynomial](../api_docs/Predictor.md#adaXT.predict.predict.PredictLocalPolynomial)
 - LeafBuilder class:
-  [LeafBuilderLocalPolynomial](../api_docs/#adaXT.leaf_builder.leaf_builder.LeafBuilderLocalPolynomial)
+  [LeafBuilderLocalPolynomial](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderPartialLinear)
 
 Gradient trees are a non-standard type of trees that allow estimation of
 derivates (in the first coordinate) of the conditional expectation function. The
@@ -210,16 +210,16 @@ plt.show()
 It is also possible to manually specify the tree type. This is particularly
 useful when you have custom components for the tree and do not want to use any
 of the default classes. To do this simply set `tree_type` to None and provide
-the `criteria`, `predict` and `leaf_builder` classes when initializing the tree.
+the `criteria`, `predictor` and `leaf_builder` classes when initializing the tree.
 
 ## Further functionality
 
 adaXT provides various additional functionality, each of which is discussed in
 other sections of the user guide.
 
-- [Tree-based weights](/docs/user_guide/tree_based_weights.md): A fitted
+- [Tree-based weights](tree_based_weights.md): A fitted
   decision tree provides a similarity notion on the predictor space that has
   some useful properties. Check out this section to see how this can be used.
-- [Visualizations and debugging](/docs/user_guide/vis_and_debug.md): There are
+- [Visualizations and analysis tools](vis_and_analysis.md): There are
   several function available that can help with analyzing a fitted decision
   tree.

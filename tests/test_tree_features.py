@@ -7,7 +7,7 @@ from adaXT.criteria import (
     Partial_quadratic,
 )
 from adaXT.decision_tree.nodes import LeafNode, DecisionNode
-from adaXT.predict import PredictLocalPolynomial, PredictQuantile
+from adaXT.predictor import PredictorLocalPolynomial, PredictorQuantile
 from adaXT.leaf_builder import (
     LeafBuilderPartialLinear,
     LeafBuilderPartialQuadratic,
@@ -16,7 +16,7 @@ from adaXT.leaf_builder import (
 
 import numpy as np
 
-from adaXT.predict.predict import PredictLocalPolynomial
+from adaXT.predictor.predictor import PredictorLocalPolynomial
 
 
 def uniform_x_y(n, m):
@@ -131,26 +131,9 @@ def test_prediction():
 
 
 def test_predict_proba_probability():
-    X = np.array(
-        [
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1],
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1]
-        ]
-    )
-    Xtest = np.array(
-        [
-            [1, 1],
-            [1, -1],
-            [-1, -1],
-            [-1, 1]
-        ]
-    )
+    X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1],
+                  [1, 1], [1, -1], [-1, -1], [-1, 1]])
+    Xtest = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
     Y_cla = np.array([0, 1, 0, 1, 0, 0, 1, 1])
     expected_probs = [[1, 0], [0.5, 0.5], [0.5, 0.5], [0, 1]]
     expected_class = [0, 0, 0, 1]
@@ -166,7 +149,8 @@ def test_predict_proba_probability():
             expected_class[i] == classes[np.argmax(pred_probs[i, :])]
         ), f"incorrect predicted class at {i}, expected {expected_class[i]} got {classes[np.argmax(pred_probs[i, :])]}"
         assert (
-            expected_probs[i][0] == pred_probs[i][0] and expected_probs[i][1] == pred_probs[i][1]
+            expected_probs[i][0] == pred_probs[i][0]
+            and expected_probs[i][1] == pred_probs[i][1]
         ), f"incorrect predicted prob at {i}, expected {expected_probs[i]} got {pred_probs[i]}"
 
 
@@ -485,7 +469,7 @@ def test_quantile_predict():
     tree = DecisionTree(
         "Quantile",
         criteria=Squared_error,
-        predict=PredictQuantile,
+        predictor=PredictorQuantile,
         leaf_builder=LeafBuilderRegression,
         max_depth=0,
     )
@@ -504,7 +488,7 @@ def test_quantile_predict_array():
     tree = DecisionTree(
         "Quantile",
         criteria=Squared_error,
-        predict=PredictQuantile,
+        predictor=PredictorQuantile,
         leaf_builder=LeafBuilderRegression,
         max_depth=0,
     )
@@ -534,7 +518,7 @@ def test_local_polynomial_predict():
     tree1 = DecisionTree(
         None,
         criteria=Partial_linear,
-        predict=PredictLocalPolynomial,
+        predictor=PredictorLocalPolynomial,
         leaf_builder=LeafBuilderPartialLinear,
         max_depth=1,
     )
@@ -542,7 +526,7 @@ def test_local_polynomial_predict():
     tree2 = DecisionTree(
         None,
         criteria=Partial_quadratic,
-        predict=PredictLocalPolynomial,
+        predictor=PredictorLocalPolynomial,
         leaf_builder=LeafBuilderPartialQuadratic,
         max_depth=1,
     )
@@ -559,4 +543,4 @@ def test_local_polynomial_predict():
 
 
 if __name__ == "__main__":
-    test_quantile_predict_array()
+    test_local_polynomial_predict()

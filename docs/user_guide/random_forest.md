@@ -8,7 +8,7 @@ better than decision trees alone.
 
 The [RandomForest](../api_docs/RandomForest.md) class is used in adaXT to create
 random forests. It takes mostly the same parameters as the
-[DecisionTree](/docs/api_docs/DecisionTree.md) class, as illustrated in the
+[DecisionTree](../api_docs/DecisionTree.md) class, as illustrated in the
 example below.
 
 ```python
@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from adaXT.random_forest import RandomForest
 from adaXT.criteria import Partial_linear
 from adaXT.leaf_builder import LeafBuilderPartialLinear
-from adaXT.predict import PredictLocalPolynomial
+from adaXT.predictor import PredictorLocalPolynomial
 
 # Training and test data
 n = 200
@@ -30,7 +30,7 @@ rf = RandomForest("Regression", min_samples_leaf=30)
 rf_lin = RandomForest("Regression",
                       criteria=Partial_linear,
                       leaf_builder=LeafBuilderPartialLinear,
-                      predict=PredictLocalPolynomial,
+                      predictor=PredictorLocalPolynomial,
                       min_samples_leaf=30)
 rf.fit(Xtrain, Ytrain)
 rf_lin.fit(Xtrain, Ytrain)
@@ -103,7 +103,19 @@ utilized. Users are therefore encouraged to select the `n_jobs` parameter with
 this trade-off in mind.
 
 In order to avoid making the random forest code too complex, we have separated
-the multiprocessing logic into a separate class called...
+the multiprocessing logic into a separate class called
+[ParallelModel](../api_docs/Parallel.md#adaXT.parallel.ParallelModel). The
+[ParallelModel](../api_docs/Parallel.md#adaXT.parallel.ParallelModel) offers a variety of
+methods capable of computing functions in parallel. With this it aims to reduce
+the complexity of working with multiprocessing.
 
-<!--TODO: Add a few additional details and mention why certain functions are defined-->
-<!--outside of the RandomForest class-->
+When working with the [ParallelModel](../api_docs/Parallel.md#adaXT.parallel.ParallelModel)
+we generally advise on creating the parallel functions on the module level
+instead of being class methods. Class method parallelization often leads to
+AttributeErrors when attempting to access instance dependent attributes through
+self due to the nature of multiprocessings use of
+[pickle](https://docs.python.org/3/library/pickle.html). Instead working with
+functions defined on the module level allows for seamless use of the
+multiprocessing as it is safe for serialization. As an example, take a look at 
+the functions defined in the [RandomForest source
+code](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/random_forest/random_forest.py).

@@ -1,11 +1,9 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
-
 from ..decision_tree.nodes import LeafNode, LocalPolynomialLeafNode
 import numpy as np
 cimport numpy as cnp
 
 cdef class LeafBuilder:
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
         self.X = X
         self.Y = Y
 
@@ -20,7 +18,8 @@ cdef class LeafBuilder:
 
 
 cdef class LeafBuilderClassification(LeafBuilder):
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, int[::1] all_idx, **kwargs):
+        super().__init__(X, Y, all_idx, **kwargs)
         self.classes = np.array(np.unique(Y.base[all_idx, 0]), dtype=np.double)
         self.n_classes = self.classes.shape[0]
 

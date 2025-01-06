@@ -1,4 +1,3 @@
-# cython: boundscheck=False, wraparound=False, cdivision=True, initializedcheck=False
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
@@ -6,6 +5,12 @@ from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
 from ..parallel import ParallelModel
+
+# Circular import. Since only used for typing, this fixes the issue.
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..decision_tree import DecisionTree
+
 
 # Use with cdef code instead of the imported DOUBLE
 ctypedef cnp.float64_t DOUBLE_t
@@ -42,7 +47,7 @@ def predict_proba(
 
 def predict_quantile(
     tree: DecisionTree, X: np.ndarray, n_obs: int
-) -> np.ndarray:
+) -> list:
     # Check if quantile is an array
     indices = []
 
@@ -60,9 +65,9 @@ def predict_quantile(
     return indices
 
 
-cdef class Predict():
+cdef class Predictor():
 
-    def __cinit__(self, double[:, ::1] X, double[:, ::1] Y, object root):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, object root, **kwargs):
         self.X = X
         self.Y = Y
         self.n_features = X.shape[1]
@@ -72,7 +77,7 @@ cdef class Predict():
         return (self.__class__, (self.X.base, self.Y.base, self.root))
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
-        raise NotImplementedError("Function predict is not implemented for this Predict class")
+        raise NotImplementedError("Function predict is not implemented for this Predictor class")
 
     cpdef dict predict_leaf(self, cnp.ndarray X):
         cdef:
@@ -113,12 +118,12 @@ cdef class Predict():
         return np.mean(predictions, axis=0, dtype=DOUBLE)
 
 
-cdef class PredictClassification(Predict):
-    def __cinit__(self,
-                  double[:, ::1] X,
-                  double[:, ::1] Y,
-                  object root,
-                  **kwargs) -> None:
+cdef class PredictorClassification(Predictor):
+    def __init__(self,
+                 double[:, ::1] X,
+                 double[:, ::1] Y,
+                 object root, **kwargs) -> None:
+        super().__init__(X, Y, root, **kwargs)
         self.classes = np.unique(Y)
 
     cdef int __find_max_index(self, double[::1] lst):
@@ -203,7 +208,7 @@ cdef class PredictClassification(Predict):
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
-cdef class PredictRegression(Predict):
+cdef class PredictorRegression(Predictor):
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs, n_col
@@ -235,7 +240,7 @@ cdef class PredictRegression(Predict):
         return prediction
 
 
-cdef class PredictLocalPolynomial(PredictRegression):
+cdef class PredictorLocalPolynomial(PredictorRegression):
 
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
@@ -275,8 +280,7 @@ cdef class PredictLocalPolynomial(PredictRegression):
         return deriv_mat
 
 
-cdef class PredictQuantile(Predict):
-
+cdef class PredictorQuantile(Predictor):
     def predict(self, cnp.ndarray X, **kwargs) -> np.ndarray:
         cdef:
             int i, cur_split_idx, n_obs
@@ -334,6 +338,5 @@ cdef class PredictQuantile(Predict):
             for j in range(n_trees):
                 indices_combined.extend(prediction_indices[j][i])
             pred_indices_combined.append(indices_combined)
-        ret = [np.quantile(Y_old[pred_indices_combined[i]], quantile) for i in
-               range(n_obs)]
-        return np.array(ret, dtype=DOUBLE)
+        ret = np.quantile(Y_old[pred_indices_combined, 0], quantile, axis=1)
+        return ret

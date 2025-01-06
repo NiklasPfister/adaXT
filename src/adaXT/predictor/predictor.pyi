@@ -3,10 +3,15 @@ from ..decision_tree.nodes import DecisionNode
 from ..decision_tree import DecisionTree
 from ..parallel import ParallelModel
 
-class Predict:
+class Predictor:
     """
-    The base Predict class from which all other predict classes need to inhert.
+    The base Predictor class from which all other predict classes need to inhert.
     """
+
+    X: np.ndarray
+    Y: np.ndarray
+    n_features: int
+    root: object
 
     def __init__(self, X: np.ndarray, Y: np.ndarray, root: DecisionNode) -> None:
         pass
@@ -69,7 +74,7 @@ class Predict:
             Array of response values used during training.
         X_new: np.ndarray
             Array of new feature values at which to predict.
-        tree: list[DecisionTree]
+        trees: list[DecisionTree]
             List of fitted DecisionTrees fitted within the random forest.
         parallel: ParallelModel
             ParallelModel used for multiprocessing.
@@ -81,7 +86,7 @@ class Predict:
         """
         pass
 
-class PredictClassification(Predict):
+class PredictorClassification(Predictor):
     """
     The default prediction class for the 'Classification' tree type.
     """
@@ -106,7 +111,7 @@ class PredictClassification(Predict):
         """
         pass
 
-class PredictRegression(Predict):
+class PredictorRegression(Predictor):
     """
     The default prediction class for the 'Regression' tree type.
     """
@@ -130,7 +135,7 @@ class PredictRegression(Predict):
 
     pass
 
-class PredictLocalPolynomial(Predict):
+class PredictorLocalPolynomial(Predictor):
     """
     The default prediction class for the 'Gradient' tree type.
     """
@@ -166,7 +171,7 @@ class PredictLocalPolynomial(Predict):
         """
         pass
 
-class PredictQuantile(Predict):
+class PredictorQuantile(Predictor):
     """
     The default prediction class for the 'Quantile' tree type.
     """
