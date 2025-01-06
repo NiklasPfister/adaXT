@@ -34,14 +34,15 @@ cdef class MyPredictorClass(Predictor):
                       **kwargs) -> np.ndarray:
     # Define special handling for the RandomForest predict.
     # If it is not defined, then the RandomForest will take the mean of all the
-    # predict for it's estimators.
+    # predict for its estimators.
   
 
 ```
+
 The template includes three main components:
 
 1. \_\_init\_\_ function: This function is used to initialize the class. Because Cython
-   removes a lot of the boiler plate with default Python classes Cython, you cannot
+   removes a lot of the boilerplate with default Python classes Cython, you cannot
    add attributes to a cdef class without explicitly defining them. The \_\_init\_\_
    function allows you to initialize these attributes after you have defined them above.
    If you do not need additional attributes, you can skip this step.
@@ -102,6 +103,7 @@ cdef class PredictorQuantile(Predictor):
         return prediction
 
 ```
+
 Here, we first define the types of the variables used. This allows Cython to
 optimize the code, which leads to a faster prediction runtime.
 
