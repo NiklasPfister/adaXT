@@ -43,9 +43,9 @@ The template includes three main components:
 1. \_\_init\_\_ function: This function is used to initialize the class. Because Cython
    removes a lot of the boiler plate with default Python classes Cython, you cannot
    add attributes to a cdef class without explicitly defining them. The \_\_init\_\_
-   function allows you to define and initialize these attributes. If you do not need
-   additional attributes, you can skip this step.
-2. predict method: This method is used to compute predictions for the given input X
+   function allows you to initialize these attributes after you have defined them above.
+   If you do not need additional attributes, you can skip this step.
+3. predict method: This method is used to compute predictions for the given input X
    values. It is a standard Python method and can be used like any other. Within this
    method, you have access to the general attributes of the
    [Predictor](../api_docs/Predictor.md) class, including the number of features and
@@ -108,7 +108,7 @@ optimize the code, which leads to a faster prediction runtime.
 Next, we check the kwargs for the key `quantile`. Any keyword arguments passed
 to the DecisionTree.predict is passed directly to the Predictor.predict, meaning
 that we can access the desired quantile from the predict signature without having
-to changed anything else. As we want to allow for multiple quantiles to be
+to change anything else. As we want to allow for multiple quantiles to be
 predicted at the same time, we have to initalize the `prediction` variable differently
 depending on whether `quantile` is a Sequence or just a single element.
 
