@@ -49,7 +49,7 @@ For the `Classification` tree type, the following default components are used:
 - Criteria class:
   [Entropy](../api_docs/Criteria.md#adaXT.criteria.criteria.Entropy)
 - Predict class:
-  [PredictorClassification](../api_docs/Predict.md#adaXT.predictor.predictor.PredictClassification)
+  [PredictorClassification](../api_docs/Predictor.md#adaXT.predictor.predictor.PredictClassification)
 - LeafBuilder class:
   [LeafBuilderClassification](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderClassification)
 
@@ -98,7 +98,7 @@ For the `Regression` tree type, the following default components are used:
 - Criteria class:
   [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
 - Predict class:
-  [PredictRegression](../api_docs/Predict.md#adaXT.predict.predict.PredictRegression)
+  [PredictRegression](../api_docs/Predictor.md#adaXT.predict.predict.PredictRegression)
 - LeafBuilder class:
   [LeafBuilderRegression](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
 
@@ -126,7 +126,7 @@ For the `Quantile` tree type, the following default components are used:
 - Criteria class:
   [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
 - Predict class:
-  [PredictorQuantile](../api_docs/Predict.md#adaXT.predictor.predictor.PredictQuantile)
+  [PredictorQuantile](../api_docs/Predictor.md#adaXT.predictor.predictor.PredictQuantile)
 - LeafBuilder class:
   [LeafBuilderRegression](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderRegression)
 
@@ -161,7 +161,7 @@ For the `Gradient` tree type, the following default components are used:
 - Criteria class:
   [Partial_quadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.Partial_quadratic)
 - Predict class:
-  [PredictLocalPolynomial](../api_docs/Predict.md#adaXT.predict.predict.PredictLocalPolynomial)
+  [PredictLocalPolynomial](../api_docs/Predictor.md#adaXT.predict.predict.PredictLocalPolynomial)
 - LeafBuilder class:
   [LeafBuilderLocalPolynomial](../api_docs/LeafBuilder.md#adaXT.leaf_builder.leaf_builder.LeafBuilderPartialLinear)
 
@@ -220,6 +220,6 @@ other sections of the user guide.
 - [Tree-based weights](tree_based_weights.md): A fitted
   decision tree provides a similarity notion on the predictor space that has
   some useful properties. Check out this section to see how this can be used.
-- [Visualizations and debugging](vis_and_debug.md): There are
+- [Visualizations and analysis tools](vis_and_analysis.md): There are
   several function available that can help with analyzing a fitted decision
   tree.

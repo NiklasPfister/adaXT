@@ -58,16 +58,16 @@ def plot_tree(
         # adjust fontsize to avoid overlap
         # get max box width and height
         # width should be around scale_x in axis coordinates
-        size = anns[0].get_fontsize() * scale
+        fontsize = anns[0].get_fontsize() * scale
         for ann in anns:
-            ann.set_fontsize(size)
+            ann.set_fontsize(fontsize)
 
     # Legend of probabilities if it is classification.
     if tree.tree_type == "Classification":
         ax.annotate(
             f"Values: {list(tree.predictor_instance.classes)}",
             (0.01, 1),
-            fontsize=12,
+            fontsize=fontsize,
             bbox=dict(fc=ax.get_facecolor()),
             ha="center",
             va="center",
@@ -293,7 +293,6 @@ def apportion(v, default_ancestor, distance):
 
 def move_subtree(wl, wr, shift):
     subtrees = wr.number - wl.number
-    # print wl, wr, wr.number, wl.number, shift, subtrees, shift/subtrees
     wr.change -= shift / subtrees
     wr.shift += shift
     wl.change += shift / subtrees
