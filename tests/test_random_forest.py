@@ -19,16 +19,26 @@ import sys
 
 
 def get_regression_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.uniform(lowy, highy, n)
     return (X, Y)
 
 
 def get_classification_data(
-    n, m, random_state: np.random.RandomState, lowx=0, highx=100, lowy=0, highy=5
-):
+        n,
+        m,
+        random_state: np.random.RandomState,
+        lowx=0,
+        highx=100,
+        lowy=0,
+        highy=5):
     X = random_state.uniform(lowx, highx, (n, m))
     Y = random_state.randint(lowy, highy, n)
     return (X, Y)
@@ -147,7 +157,8 @@ def test_deterministic_seeding_regression():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_regression_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(
+        0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
@@ -180,7 +191,8 @@ def test_deterministic_seeding_classification():
     random_state = np.random.RandomState(100)
     tree_state = 100
     X, Y = get_classification_data(n, m, random_state=random_state)
-    prediction_data = np.random.uniform(0, 10, (n, m))  # Get new data to predict
+    prediction_data = np.random.uniform(
+        0, 10, (n, m))  # Get new data to predict
     forest1 = RandomForest(
         "Classification",
         n_estimators=100,
@@ -333,7 +345,8 @@ def test_random_forest_weights():
         sampling=None,
     )
     res = squared_forest.predict_weights(X=None, scale=False)
-    trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
+    trees = [DecisionTree("Regression", max_depth=2)
+             for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
     tree_sum = np.sum(
@@ -379,8 +392,12 @@ def test_tree_based_weights():
     weights_honest_tree = rf_honest_tree.predict_weights(Xtest)
     weights_honest_forest = rf_honest_forest.predict_weights(Xtest)
     # Check shapes
-    assert np.array_equal(weights_boot.shape, [Xtest.shape[0], Xtrain.shape[0]])
-    assert np.array_equal(weights_honest_tree.shape, [Xtest.shape[0], Xtrain.shape[0]])
+    assert np.array_equal(
+        weights_boot.shape, [
+            Xtest.shape[0], Xtrain.shape[0]])
+    assert np.array_equal(
+        weights_honest_tree.shape, [
+            Xtest.shape[0], Xtrain.shape[0]])
     assert np.array_equal(
         weights_honest_forest.shape, [Xtest.shape[0], Xtrain.shape[0]]
     )
@@ -390,7 +407,9 @@ def test_tree_based_weights():
     assert np.sum(weights_honest_forest.sum(axis=1)) == Xtest.shape[0]
     # Check predictions based on weights match regular predictions
     assert np.allclose(rf_boot.predict(Xtest), weights_boot.dot(Ytrain))
-    assert np.allclose(rf_honest_tree.predict(Xtest), weights_honest_tree.dot(Ytrain))
+    assert np.allclose(
+        rf_honest_tree.predict(Xtest),
+        weights_honest_tree.dot(Ytrain))
     assert np.allclose(
         rf_honest_forest.predict(Xtest), weights_honest_forest.dot(Ytrain)
     )
@@ -435,8 +454,18 @@ def test_n_jobs():
     n = 1000
     m = 10
     X_reg, Y_reg = get_regression_data(n, m, random_state=random_state)
-    forest_1 = run_squared_error(X_reg, Y_reg, n_jobs=1, n_estimators=100, seed=2024)
-    forest_5 = run_squared_error(X_reg, Y_reg, n_jobs=5, n_estimators=100, seed=2024)
+    forest_1 = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=1,
+        n_estimators=100,
+        seed=2024)
+    forest_5 = run_squared_error(
+        X_reg,
+        Y_reg,
+        n_jobs=5,
+        n_estimators=100,
+        seed=2024)
     pred_1 = forest_1.predict(X_reg)
     pred_2 = forest_5.predict(X_reg)
     assert np.allclose(pred_1, pred_2)
@@ -459,7 +488,8 @@ def test_n_jobs_predict_forest():
         sampling=None,
     )
     res = squared_forest.predict_weights(X=X_reg, scale=False)
-    trees = [DecisionTree("Regression", max_depth=2) for _ in range(n_estimators)]
+    trees = [DecisionTree("Regression", max_depth=2)
+             for _ in range(n_estimators)]
     for item in trees:
         item.fit(X_reg, Y_reg)
     tree_sum = np.sum(
@@ -506,7 +536,11 @@ def check_OOB(X, Y, forest):
             picked_indices = np.concatenate(
                 (forest.fitting_indices[i], forest.prediction_indices[i])
             )
-        out_of_bag = np.setdiff1d(np.arange(0, forest.X.shape[0]), picked_indices)
+        out_of_bag = np.setdiff1d(
+            np.arange(
+                0,
+                forest.X.shape[0]),
+            picked_indices)
         assert np.array_equal(out_of_bag, forest.out_of_bag_indices[i])
 
 

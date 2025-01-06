@@ -155,7 +155,8 @@ class DecisionTree(BaseModel):
                 self.leaf_builder,
                 self.predictor,
             )
-            self.max_features = self._check_max_features(self.max_features, X.shape[0])
+            self.max_features = self._check_max_features(
+                self.max_features, X.shape[0])
 
         self._tree = _DecisionTree(
             max_depth=self.max_depth,
@@ -176,8 +177,10 @@ class DecisionTree(BaseModel):
         self._tree.n_features = X.shape[1]
 
         if not self.skip_check_input:
-            sample_weight = self._check_sample_weight(sample_weight=sample_weight)
-            sample_indices = self._check_sample_indices(sample_indices=sample_indices)
+            sample_weight = self._check_sample_weight(
+                sample_weight=sample_weight)
+            sample_indices = self._check_sample_indices(
+                sample_indices=sample_indices)
 
         builder = DepthTreeBuilder(
             X=X,
@@ -295,11 +298,18 @@ class DecisionTree(BaseModel):
         return self._tree.predict_leaf(X=X)
 
     def _tree_based_weights(
-        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
-    ) -> np.ndarray:
+            self,
+            hash0: dict,
+            hash1: dict,
+            size_X0: int,
+            size_X1: int,
+            scaling: str) -> np.ndarray:
         return self._tree._tree_based_weights(
-            hash0=hash0, hash1=hash1, size_X0=size_X0, size_X1=size_X1, scaling=scaling
-        )
+            hash0=hash0,
+            hash1=hash1,
+            size_X0=size_X0,
+            size_X1=size_X1,
+            scaling=scaling)
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
         """
