@@ -13,3 +13,6 @@ clean:
 
 lint:
 	cython-lint src/* --max-line-length=127
+
+test_pypi:
+	pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple adaXT
