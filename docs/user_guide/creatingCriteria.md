@@ -47,11 +47,15 @@ should be computed. To access the feature and response you can make use of
 `self.y[indices]` are the feature and response samples for which the impurity
 needs to be computed. With this in place you should be able to implement almost
 any criteria function you can imagine. Keep in mind that the `impurity` method
-is extremely often (approximately $n\log(n)$ times). Therefore you should invest
-a bit of time in optimizing the function in order to avoid long fitting times.
+is used often (approximately $n\log(n)$ times). Therefore you should invest a
+bit of time in optimizing the function in order to avoid long fitting times.
 Further computational speed-ups can be achieved by implementing
 `proxy_improvement` and `update_proxy` methods in the criteria class. If these
 are not explicitly defined the code defaults to using the `impurity` method.
+Although we do not provide in depth examples of those functionalities here, feel
+free to look at
+[criteria.pyx](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/criteria/criteria.pyx)
+where the default criteria make use of both.
 
 Once you have finished defining your critera class and saved the .pyx file, you
 can compile the Cython code and use it as part of adaXT.
