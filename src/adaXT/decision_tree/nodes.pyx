@@ -1,19 +1,20 @@
 import numpy as np
 
 
-class Node:
+cdef class Node:
     def __init__(
             self,
             indices: np.ndarray,
             depth: int,
             impurity: float) -> None:
+        self.is_leaf = 0
         self.indices = np.asarray(indices)
         self.depth = depth
         self.impurity = impurity
         self.visited = 0
 
 
-class DecisionNode(Node):
+cdef class DecisionNode(Node):
     def __init__(
             self,
             indices: np.ndarray,
@@ -30,9 +31,10 @@ class DecisionNode(Node):
         self.left_child = left_child
         self.right_child = right_child
         self.parent = parent
+        self.is_leaf = 0
 
 
-class LeafNode(Node):
+cdef class LeafNode(Node):
     def __init__(
             self,
             id: int,
@@ -47,9 +49,10 @@ class LeafNode(Node):
         self.parent = parent
         self.id = id
         self.value = np.asarray(value)
+        self.is_leaf = 1
 
 
-class LocalPolynomialLeafNode(LeafNode):
+cdef class LocalPolynomialLeafNode(LeafNode):
     def __init__(
             self,
             id: int,

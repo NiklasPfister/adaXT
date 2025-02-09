@@ -29,6 +29,7 @@ USE_CYTHON = True
 DEBUG = False
 
 PROFILE = False
+ANNOTATE = True
 
 # Make all pyx files for the decision_tree
 ext = ".pyx" if USE_CYTHON else ".cpp"
@@ -109,18 +110,25 @@ def run_build():
             }
         )
 
+
         if PROFILE:
             compiler_directives["profile"] = True
             compiler_directives["linetrace"] = True
             compiler_directives["binding"] = True
 
+        arg_dir = {
+            "gdb_debug": False,
+            "language_level": "3",
+            "compiler_directives": compiler_directives,
+            "verbose": True,
+        }
+
+        if ANNOTATE: 
+            arg_dir["annotate"] = True
+
         extensions = cythonize(
             extensions,
-            gdb_debug=False,
-            annotate=True,
-            language_level="3",
-            compiler_directives=compiler_directives,
-            verbose=True,
+            **arg_dir
         )
     setup(
         name=NAME,

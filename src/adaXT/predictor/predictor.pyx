@@ -1,6 +1,7 @@
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
+from ..decision_tree.nodes cimport Node, DecisionNode
 from collections.abc import Sequence
 from statistics import mode
 cimport numpy as cnp
@@ -135,31 +136,34 @@ cdef class PredictorClassification(Predictor):
                 cur_max = i
         return cur_max
 
-    cdef cnp.ndarray __predict(self, cnp.ndarray X):
+    cdef inline cnp.ndarray __predict(self, cnp.ndarray X):
         cdef:
             int i, cur_split_idx, idx, n_obs
             double cur_threshold
-            object cur_node
-            cnp.ndarray[DOUBLE_t, ndim=1] prediction
+            Node cur_node
+            DecisionNode dNode
+            const double[:, ::1] X_ndarray
+            double[:] prediction
 
         # Make sure that x fits the dimensions.
         n_obs = X.shape[0]
+        X_ndarray = X
         prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
-            while isinstance(cur_node, DecisionNode):
-                cur_split_idx = cur_node.split_idx
-                cur_threshold = cur_node.threshold
-                if X[i, cur_split_idx] < cur_threshold:
-                    cur_node = cur_node.left_child
+            while not cur_node.is_leaf:
+                dNode = cur_node
+                cur_split_idx = dNode.split_idx
+                cur_threshold = dNode.threshold
+                if X_ndarray[i, cur_split_idx] <= cur_threshold:
+                    cur_node = dNode.left_child
                 else:
-                    cur_node = cur_node.right_child
+                    cur_node = dNode.right_child
 
             idx = self.__find_max_index(cur_node.value)
-            if self.classes is not None:
-                prediction[i] = self.classes[idx]
-        return prediction
+            prediction[i] = self.classes[idx]
+        return np.array(prediction)
 
     cdef cnp.ndarray __predict_proba(self, cnp.ndarray X):
         cdef:
