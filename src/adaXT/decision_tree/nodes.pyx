@@ -22,13 +22,15 @@ cdef class Node:
                 (self.indices, self.depth, self.impurity), # Input to Callable
                 {
                     "is_leaf": self.is_leaf,
-                    "visited": self.visited
+                    "visited": self.visited,
+                    "indices": self.indices.base
                 } # Current state of variables that can not be passed to init
                 )
     # This function is passed the state provided above
     def __setstate__(self, d: dict):
         self.is_leaf = d["is_leaf"]
         self.visited = d["visited"]
+        self.indices = d["indices"]
 
 cdef class DecisionNode(Node):
     def __init__(
