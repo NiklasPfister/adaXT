@@ -2,17 +2,33 @@ import numpy as np
 
 
 cdef class Node:
+    def __cinit__(self):
+        self.is_leaf = 0
+        self.visited = 0
+    
     def __init__(
             self,
             indices: np.ndarray,
             depth: int,
             impurity: float) -> None:
-        self.is_leaf = 0
-        self.indices = np.asarray(indices)
+        self.indices = indices
         self.depth = depth
         self.impurity = impurity
-        self.visited = 0
 
+    def __reduce__(self):
+        return (
+                self.__class__, # Callable object that will be called ot create
+                                # initial state upon pickle
+                (self.indices, self.depth, self.impurity), # Input to Callable
+                {
+                    "is_leaf": self.is_leaf,
+                    "visited": self.visited
+                } # Current state of variables that can not be passed to init
+                )
+    # This function is passed the state provided above
+    def __setstate__(self, d: dict):
+        self.is_leaf = d["is_leaf"]
+        self.visited = d["visited"]
 
 cdef class DecisionNode(Node):
     def __init__(
@@ -31,10 +47,8 @@ cdef class DecisionNode(Node):
         self.left_child = left_child
         self.right_child = right_child
         self.parent = parent
-        self.is_leaf = 0
 
-
-cdef class LeafNode(Node):
+class LeafNode(Node):
     def __init__(
             self,
             id: int,
@@ -52,7 +66,7 @@ cdef class LeafNode(Node):
         self.is_leaf = 1
 
 
-cdef class LocalPolynomialLeafNode(LeafNode):
+class LocalPolynomialLeafNode(LeafNode):
     def __init__(
             self,
             id: int,

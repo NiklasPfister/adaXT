@@ -72,6 +72,7 @@ cdef class _DecisionTree():
         self.min_samples_split = min_samples_split
         self.min_samples_leaf = min_samples_leaf
         self.min_improvement = min_improvement
+
         self.leaf_nodes = None
         self.predictor_instance = None
         self.root = None

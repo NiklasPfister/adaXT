@@ -2,8 +2,8 @@ cimport numpy as cnp
 
 cdef class Predictor():
     cdef:
-        double[:, ::1] X
-        double[:, ::1] Y
+        const double[:, ::1] X
+        const double[:, ::1] Y
         int n_features
         object root
 
