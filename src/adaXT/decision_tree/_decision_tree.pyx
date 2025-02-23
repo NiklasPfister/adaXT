@@ -40,6 +40,7 @@ class refit_object():
     def add_idx(self, idx: int) -> None:
         self.indices.append(idx)
 
+
 @cython.auto_pickle(True)
 cdef class _DecisionTree():
     cdef public:
@@ -592,5 +593,5 @@ class DepthTreeBuilder:
         tree.max_depth = max_depth_seen
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        if not self.ensemble: 
+        if not self.ensemble:
             tree.predictor_instance = self.predictor(self.X, self.Y, root)

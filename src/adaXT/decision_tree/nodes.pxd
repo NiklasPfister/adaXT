@@ -9,7 +9,7 @@ cdef class Node:
         bint is_leaf
 
 cdef class DecisionNode(Node):
-    cdef public: 
+    cdef public:
         double threshold
         int split_idx
         object left_child

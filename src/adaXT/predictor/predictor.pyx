@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 from numpy import float64 as DOUBLE
 from ..decision_tree.nodes import DecisionNode
@@ -30,6 +29,7 @@ def predict_default(
     predictor_instance = predictor(X_train, Y_train, tree.root)
     res = predictor_instance.predict(X_pred)
     return res
+
 
 def predict_proba(
         tree,
@@ -95,7 +95,6 @@ cdef class Predictor():
         # Make sure that x fits the dimensions.
         ht = {}
         n_obs = X.shape[0]
-        prediction = np.empty(n_obs, dtype=DOUBLE)
 
         for i in range(n_obs):
             cur_node = self.root
@@ -119,7 +118,7 @@ cdef class Predictor():
                        cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
-                       trees:list[DecisionTree],
+                       trees: list[DecisionTree],
                        parallel: ParallelModel,
                        **kwargs) -> np.ndarray:
         predictions = parallel.async_map(predict_default,
@@ -149,7 +148,7 @@ cdef class PredictorClassification(Predictor):
                 cur_max = i
         return cur_max
 
-    cdef inline cnp.ndarray __predict(self, double[:,::1] X):
+    cdef inline cnp.ndarray __predict(self, double[:, ::1] X):
         cdef:
             int i, cur_split_idx, n_obs
             double cur_threshold
@@ -182,7 +181,6 @@ cdef class PredictorClassification(Predictor):
             double cur_threshold
             Node cur_node
             DecisionNode dNode
-            double[:] prediction
             list ret_val
 
         # Make sure that x fits the dimensions.
@@ -216,7 +214,7 @@ cdef class PredictorClassification(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
-                       trees:list[DecisionTree],
+                       trees: list[DecisionTree],
                        parallel: ParallelModel,
                        **kwargs) -> np.ndarray:
         # Forest_predict_proba
@@ -358,13 +356,12 @@ cdef class PredictorQuantile(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
-                       trees:list[DecisionTree],
+                       trees: list[DecisionTree],
                        parallel: ParallelModel,
                        **kwargs) -> np.ndarray:
         cdef:
             int i, j, n_obs, n_trees
-            # cnp.ndarray 
-            # list pred_indices_combined, indices_combined, prediction_indices       
+            list pred_indices_combined, indices_combined, prediction_indices
         if "quantile" not in kwargs.keys():
             raise ValueError(
                 "quantile called without quantile passed as argument"

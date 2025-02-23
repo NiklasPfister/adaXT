@@ -1,6 +1,5 @@
 # cython: embedsignature=True
 import numpy as np
-cimport numpy as cnp
 
 cdef class Node:
     def __init__(
@@ -28,8 +27,9 @@ cdef class DecisionNode(Node):
             left_child: "DecisionNode|LeafNode|None" = None,
             right_child: "DecisionNode|LeafNode|None" = None,
             parent: "DecisionNode|None" = None,
-            is_leaf: int=0,
-            visited: int=0) -> None:
+            is_leaf: int = 0,
+            visited: int = 0) -> None:
+
         super().__init__(indices, depth, impurity)
         self.threshold = threshold
         self.split_idx = split_idx
