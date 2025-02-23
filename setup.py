@@ -110,7 +110,6 @@ def run_build():
             }
         )
 
-
         if PROFILE:
             compiler_directives["profile"] = True
             compiler_directives["linetrace"] = True
@@ -123,13 +122,10 @@ def run_build():
             "verbose": True,
         }
 
-        if ANNOTATE: 
+        if ANNOTATE:
             arg_dir["annotate"] = True
 
-        extensions = cythonize(
-            extensions,
-            **arg_dir
-        )
+        extensions = cythonize(extensions, **arg_dir)
     setup(
         name=NAME,
         version=VERSION,

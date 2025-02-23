@@ -24,10 +24,12 @@ def tree_based_weights(
     X1: np.ndarray | None,
     size_X0: int,
     size_X1: int,
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
     scaling: str,
 ) -> np.ndarray:
-    hash0 = tree.predict_leaf(X=X0)
-    hash1 = tree.predict_leaf(X=X1)
+    hash0 = tree._forest_predict_leaf(X_pred=X0, X_train=X_train, Y_train=Y_train)
+    hash1 = tree._forest_predict_leaf(X_pred=X1, X_train=X_train, Y_train=Y_train)
     return tree._tree_based_weights(
         hash0=hash0,
         hash1=hash1,
@@ -63,8 +65,7 @@ def get_sample_indices(
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -74,7 +75,7 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
@@ -85,8 +86,7 @@ def get_sample_indices(
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
         else:
-            resample_size0 = np.min(
-                [sampling_args["split"], sampling_args["size"]])
+            resample_size0 = np.min([sampling_args["split"], sampling_args["size"]])
             resample_size1 = np.min(
                 [X_n_rows - sampling_args["split"], sampling_args["size"]]
             )
@@ -96,7 +96,7 @@ def get_sample_indices(
             replace=sampling_args["replace"],
         )
         pred_indices = gen.choice(
-            indices[sampling_args["split"]:],
+            indices[sampling_args["split"] :],
             size=resample_size1,
             replace=sampling_args["replace"],
         )
@@ -151,18 +151,13 @@ def build_single_tree(
         leaf_builder=leaf_builder,
         predictor=predictor,
         splitter=splitter,
+        ensemble=True,
     )
-    tree.fit(
-        X=X,
-        Y=Y,
-        sample_indices=fitting_indices,
-        sample_weight=sample_weight)
+    tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:
         tree.refit_leaf_nodes(
-            X=X,
-            Y=Y,
-            sample_weight=sample_weight,
-            sample_indices=prediction_indices)
+            X=X, Y=Y, sample_weight=sample_weight, sample_indices=prediction_indices
+        )
 
     return tree
 
@@ -170,28 +165,22 @@ def build_single_tree(
 def oob_calculation(
     idx: np.int64,
     trees: list,
-    X_old: np.ndarray,
-    Y_old: np.ndarray,
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
     parallel: ParallelModel,
     predictor: type[Predictor],
 ) -> tuple:
-    X_pred = np.expand_dims(X_old[idx], axis=0)
+    X_pred = np.expand_dims(X_train[idx], axis=0)
     Y_pred = predictor.forest_predict(
-        X_old=X_old,
-        Y_old=Y_old,
-        X_new=X_pred,
+        X_train=X_train,
+        Y_train=Y_train,
+        X_pred=X_pred,
         trees=trees,
         parallel=parallel,
         __no_parallel=True,
     ).astype(np.float64)
-    Y_true = Y_old[idx]
+    Y_true = Y_train[idx]
     return (Y_pred, Y_true)
-
-
-def predict_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, **kwargs
-) -> np.ndarray:
-    return tree.predict(predict_values, **kwargs)
 
 
 class RandomForest(BaseModel):
@@ -353,8 +342,7 @@ class RandomForest(BaseModel):
             if "size" not in sampling_args:
                 sampling_args["size"] = self.X_n_rows
             elif isinstance(sampling_args["size"], float):
-                sampling_args["size"] = int(
-                    sampling_args["size"] * self.X_n_rows)
+                sampling_args["size"] = int(sampling_args["size"] * self.X_n_rows)
             elif not isinstance(sampling_args["size"], int):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
@@ -424,7 +412,8 @@ class RandomForest(BaseModel):
             sampling=self.sampling,
         )
         self.fitting_indices, self.prediction_indices, self.out_of_bag_indices = zip(
-            *indices)
+            *indices
+        )
         self.trees = self.parallel.starmap(
             build_single_tree,
             map_input=zip(self.fitting_indices, self.prediction_indices),
@@ -446,8 +435,9 @@ class RandomForest(BaseModel):
             sample_weight=self.sample_weight,
         )
 
-    def fit(self, X: ArrayLike, Y: ArrayLike,
-            sample_weight: ArrayLike | None = None) -> None:
+    def fit(
+        self, X: ArrayLike, Y: ArrayLike, sample_weight: ArrayLike | None = None
+    ) -> None:
         """
         Fit the random forest with training data (X, Y).
 
@@ -479,8 +469,7 @@ class RandomForest(BaseModel):
         self.X = shared_numpy_array(X)
         self.Y = shared_numpy_array(Y)
         self.X_n_rows, self.n_features = self.X.shape
-        self.max_features = self._check_max_features(
-            self.max_features, X.shape[0])
+        self.max_features = self._check_max_features(self.max_features, X.shape[0])
         self.sample_weight = self._check_sample_weight(sample_weight)
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
 
@@ -508,8 +497,8 @@ class RandomForest(BaseModel):
                     *self.parallel.async_starmap(
                         oob_calculation,
                         map_input=tree_dict.items(),
-                        X_old=self.X,
-                        Y_old=self.Y,
+                        X_train=self.X,
+                        Y_train=self.Y,
                         parallel=self.parallel,
                         predictor=self.predictor,
                     )
@@ -570,9 +559,9 @@ class RandomForest(BaseModel):
 
         predict_value = shared_numpy_array(X)
         prediction = self.predictor.forest_predict(
-            X_old=self.X,
-            Y_old=self.Y,
-            X_new=predict_value,
+            X_train=self.X,
+            Y_train=self.Y,
+            X_pred=predict_value,
             trees=self.trees,
             parallel=self.parallel,
             **kwargs,
@@ -627,6 +616,8 @@ class RandomForest(BaseModel):
             X1=None,
             size_X0=size_0,
             size_X1=self.X_n_rows,
+            X_train=self.X,
+            Y_train=self.Y,
             scaling=scaling,
         )
 
@@ -668,6 +659,8 @@ class RandomForest(BaseModel):
             X1=X1,
             size_X0=size_0,
             size_X1=size_1,
+            X_train=self.X,
+            Y_train=self.Y,
             scaling="similarity",
         )
         return np.mean(weight_list, axis=0)

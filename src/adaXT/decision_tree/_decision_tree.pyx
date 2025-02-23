@@ -1,3 +1,4 @@
+# cython: auto_pickle=False
 import numpy as np
 import sys
 
@@ -11,8 +12,12 @@ from libcpp cimport bool
 from .splitter import Splitter
 from ..predictor import Predictor
 from ..criteria import Criteria
-from .nodes import DecisionNode
 from ..leaf_builder import LeafBuilder
+
+# for c level definitions
+
+cimport cython
+from .nodes import DecisionNode
 
 from ..utils cimport dsum
 
@@ -35,13 +40,13 @@ class refit_object():
     def add_idx(self, idx: int) -> None:
         self.indices.append(idx)
 
-
+@cython.auto_pickle(True)
 cdef class _DecisionTree():
     cdef public:
         object criteria
+        object splitter
         object predictor
         object leaf_builder
-        object splitter
         object leaf_nodes, predictor_instance, root
         long max_depth, min_samples_leaf, max_features
         long min_samples_split, n_nodes, n_features
@@ -79,7 +84,7 @@ cdef class _DecisionTree():
         self.n_nodes = -1
         self.n_features = -1
 
-    def predict(self, cnp.ndarray[DOUBLE_t, ndim=2] X, **kwargs) -> np.ndarray:
+    def predict(self, double[:, ::1] X, **kwargs) -> np.ndarray:
         return self.predictor_instance.predict(X, **kwargs)
 
     cdef dict __get_leaf(self, bool scale = False):
@@ -111,6 +116,13 @@ cdef class _DecisionTree():
         return self._tree_based_weights(new_hash_table, default_hash_table,
                                         size_0, self.n_rows_predict,
                                         scaling=scaling)
+
+    def _forest_predict_leaf(self, double[:, ::1] X_train, double[:, ::1]
+                             Y_train, double[:, ::1] X_pred, **kwargs):
+        if X_pred is None:
+            return self.__get_leaf()
+        predictor_instance = self.predictor(X_train, Y_train, self.root)
+        return predictor_instance.predict_leaf(X_pred, **kwargs)
 
     def predict_leaf(self, X: np.ndarray | None = None) -> dict:
         if X is None:
@@ -219,7 +231,7 @@ cdef class _DecisionTree():
                         cur_node = cur_node.right_child
                     depth += 1
 
-        leaf_builder = self.leaf_builder(X, Y, all_idx)
+        leaf_builder_instance = self.leaf_builder(X, Y, all_idx)
         criteria_instance = self.criteria(X, Y, sample_weight)
         # Make refit objects into leaf_nodes
         # Two cases:
@@ -227,7 +239,7 @@ cdef class _DecisionTree():
         # (2) At least one split (n_objs > 0)
         if self.root is None:
             weighted_samples = dsum(sample_weight, all_idx)
-            self.root = leaf_builder.build_leaf(
+            self.root = leaf_builder_instance.build_leaf(
                     leaf_id=0,
                     indices=all_idx,
                     depth=0,
@@ -242,7 +254,7 @@ cdef class _DecisionTree():
                 obj = refit_objs[i]
                 leaf_indices = np.array(obj.indices, dtype=np.int32)
                 weighted_samples = dsum(sample_weight, leaf_indices)
-                new_node = leaf_builder.build_leaf(
+                new_node = leaf_builder_instance.build_leaf(
                         leaf_id=i,
                         indices=leaf_indices,
                         depth=obj.depth,
@@ -386,6 +398,7 @@ class DepthTreeBuilder:
         splitter: Splitter,
         leaf_builder: LeafBuilder,
         predictor: Predictor,
+        ensemble: bool = False,
     ) -> None:
         """
         Parameters
@@ -420,6 +433,8 @@ class DepthTreeBuilder:
         self.predictor = predictor
         self.leaf_builder = leaf_builder
 
+        self.ensemble = ensemble
+
     def __get_feature_indices(self) -> np.ndarray:
         if self.max_features == -1:
             return self.feature_indices
@@ -443,9 +458,7 @@ class DepthTreeBuilder:
             returns 0 on succes
         """
         # initialization
-        X = self.X
-        Y = self.Y
-        _, col = X.shape
+        _, col = self.X.shape
         self.max_features = tree.max_features
 
         self.feature_indices = np.arange(col, dtype=np.int32)
@@ -471,7 +484,7 @@ class DepthTreeBuilder:
         ], dtype=np.int32)
 
         # Update the tree now that we have the correct samples
-        leaf_builder = self.leaf_builder(X, Y, all_idx)
+        leaf_builder_instance = self.leaf_builder(self.X, self.Y, all_idx)
         weighted_total = dsum(self.sample_weight, all_idx)
 
         queue.append(queue_obj(all_idx, 0, criteria_instance.impurity(all_idx)))
@@ -557,7 +570,7 @@ class DepthTreeBuilder:
                              child_imp[1], new_node, 0))
 
             else:
-                new_node = leaf_builder.build_leaf(
+                new_node = leaf_builder_instance.build_leaf(
                         leaf_id=leaf_count,
                         indices=indices,
                         depth=depth,
@@ -579,4 +592,5 @@ class DepthTreeBuilder:
         tree.max_depth = max_depth_seen
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        tree.predictor_instance = self.predictor(self.X, self.Y, root)
+        if not self.ensemble: 
+            tree.predictor_instance = self.predictor(self.X, self.Y, root)
