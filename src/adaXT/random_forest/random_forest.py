@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 from numpy.random import Generator, default_rng
 
+from adaXT import parallel
 from adaXT.parallel import ParallelModel, shared_numpy_array
 
 from numpy.typing import ArrayLike
@@ -176,7 +177,7 @@ def oob_calculation(
         X_pred=X_pred,
         trees=trees,
         parallel=parallel,
-        __no_parallel=True,
+        sequential=True,
     ).astype(np.float64)
     Y_true = Y_train[idx]
     return (Y_pred, Y_true)

@@ -1,19 +1,21 @@
 cimport numpy as cnp
+cimport cython
 cdef class Node:
     cdef public:
+        Node parent
         cnp.ndarray indices
         int depth
         double impurity
-        object parent
         bint visited
         bint is_leaf
 
+@cython.final
 cdef class DecisionNode(Node):
     cdef public:
+        Node left_child
+        Node right_child
         double threshold
         int split_idx
-        object left_child
-        object right_child
 
 cdef class LeafNode(Node):
     cdef public:

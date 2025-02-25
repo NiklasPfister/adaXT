@@ -12,18 +12,23 @@ from .splitter import Splitter
 from ..predictor import Predictor
 from ..criteria import Criteria
 from ..leaf_builder import LeafBuilder
+from .nodes import DecisionNode
 
 # for c level definitions
 
 cimport cython
-from .nodes import DecisionNode
+from .nodes cimport DecisionNode, Node
 
 from ..utils cimport dsum
 
 cdef double EPSILON = np.finfo('double').eps
 
+# Pseudo Node class, which will get replaced after refitting leaf nodes.
+cdef class refit_object(Node):
+    cdef public:
+        list list_idx
+        bint is_left
 
-class refit_object():
     def __init__(
             self,
             idx: int,
@@ -31,13 +36,13 @@ class refit_object():
             parent: DecisionNode,
             is_left: bool) -> None:
 
-        self.indices = [idx]
+        self.list_idx = [idx]
         self.depth = depth
         self.parent = parent
         self.is_left = is_left
 
     def add_idx(self, idx: int) -> None:
-        self.indices.append(idx)
+        self.list_idx.append(idx)
 
 
 @cython.auto_pickle(True)
@@ -252,7 +257,7 @@ cdef class _DecisionTree():
             nodes = []
             for i in range(n_objs):
                 obj = refit_objs[i]
-                leaf_indices = np.array(obj.indices, dtype=np.int32)
+                leaf_indices = np.array(obj.list_idx, dtype=np.int32)
                 weighted_samples = dsum(sample_weight, leaf_indices)
                 new_node = leaf_builder_instance.build_leaf(
                         leaf_id=i,
