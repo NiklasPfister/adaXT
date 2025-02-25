@@ -76,7 +76,7 @@ cdef class ClassificationCriteria(Criteria):
         super().__init__(X, Y, sample_weight)
         self.first_call = True
 
-    def __del__(self) -> None:
+    def __dealloc__(self) -> None:
         free(self.weight_in_class_left)
         free(self.weight_in_class_right)
 

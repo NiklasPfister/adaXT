@@ -29,7 +29,7 @@ cdef class MyPredictorClass(Predictor):
     # Define your own custom predict function
 
   @staticmethod
-  def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+  def forest_predict(cnp.ndarray X_train, cnp.ndarray Y_train, cnp.ndarray X_pred,
                       trees: list[DecisionTree], parallel: ParallelModel,
                       **kwargs) -> np.ndarray:
     # Define special handling for the RandomForest predict.
@@ -151,7 +151,7 @@ def predict_quantile(
 
 cdef class PredictorQuantile(Predictor):
   @staticmethod
-  def forest_predict(cnp.ndarray X_old, cnp.ndarray Y_old, cnp.ndarray X_new,
+  def forest_predict(cnp.ndarray X_train, cnp.ndarray Y_train, cnp.ndarray X_pred,
                       trees: list[DecisionTree], parallel: ParallelModel,
                       **kwargs) -> np.ndarray:
       cdef:
@@ -162,9 +162,9 @@ cdef class PredictorQuantile(Predictor):
               "quantile called without quantile passed as argument"
           )
       quantile = kwargs['quantile']
-      n_obs = X_new.shape[0]
+      n_obs = X_pred.shape[0]
       prediction_indices = parallel.async_map(predict_quantile,
-                                              map_input=trees, X=X_new,
+                                              map_input=trees, X=X_pred,
                                               n_obs=n_obs)
       # In case the leaf nodes have multiple elements and not just one, we
       # have to combine them together
@@ -175,7 +175,7 @@ cdef class PredictorQuantile(Predictor):
           for j in range(n_trees):
               indices_combined.extend(prediction_indices[j][i])
           pred_indices_combined.append(indices_combined)
-      ret = np.quantile(Y_old[pred_indices_combined], quantile)
+      ret = np.quantile(Y_train[pred_indices_combined], quantile)
       return np.array(ret, dtype=DOUBLE)
 ```
 

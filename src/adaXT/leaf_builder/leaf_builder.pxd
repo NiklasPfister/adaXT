@@ -21,7 +21,7 @@ cdef class LeafBuilderClassification(LeafBuilder):
         double[::1] classes
         int n_classes
 
-    cdef double[::1] __get_mean(self, int[::1] indices)
+    cdef inline cnp.ndarray __get_mean(self, int[::1] indices)
 
     cpdef object build_leaf(self,
                             int leaf_id,

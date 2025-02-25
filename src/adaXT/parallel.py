@@ -19,8 +19,7 @@ def shared_numpy_array(array) -> np.ndarray:
     elif array.ndim == 1:
         row = array.shape[0]
         shared_array = RawArray(ctypes.c_double, row)
-        shared_array_np = np.ndarray(
-            shape=row, dtype=np.double, buffer=shared_array)
+        shared_array_np = np.ndarray(shape=row, dtype=np.double, buffer=shared_array)
     else:
         raise ValueError("Array is neither 1 dimensional nor 2 dimensional")
     np.copyto(shared_array_np, array)
@@ -47,10 +46,12 @@ class ParallelModel:
         self.n_jobs = n_jobs if n_jobs != -1 else cpu_count()
 
     def async_map(
-            self,
-            function: Callable,
-            map_input: Iterable,
-            **kwargs) -> Iterable:
+        self,
+        function: Callable,
+        map_input: Iterable,
+        sequential: bool = False,
+        **kwargs,
+    ) -> Iterable:
         """
         Asynchronously applies the function to the map_input passing along any
         kwargs given to the function.
@@ -68,7 +69,8 @@ class ParallelModel:
             Returns the result of running function on all elements of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+
+        if self.n_jobs == 1 or sequential:
             ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -77,10 +79,12 @@ class ParallelModel:
         return ret
 
     def map(
-            self,
-            function: Callable,
-            map_input: Iterable,
-            **kwargs) -> Iterable:
+        self,
+        function: Callable,
+        map_input: Iterable,
+        sequential: bool = False,
+        **kwargs,
+    ) -> Iterable:
         """
         Maps the function with map_input. Similair to async_map, but instead
         guarantees that the first element returned is the result of the first
@@ -102,7 +106,7 @@ class ParallelModel:
         """
 
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+        if self.n_jobs == 1 or sequential:
             ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -110,7 +114,11 @@ class ParallelModel:
         return ret
 
     def async_starmap(
-        self, function: Callable, map_input: Iterable, **kwargs
+        self,
+        function: Callable,
+        map_input: Iterable,
+        sequential: bool = False,
+        **kwargs,
     ) -> Iterable:
         """
         Asynchronously apply function to map_input, where map_input might be a
@@ -131,7 +139,7 @@ class ParallelModel:
             Returns the result of applying function to each element of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+        if self.n_jobs == 1 or sequential:
             ret = list(starmap(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -140,10 +148,12 @@ class ParallelModel:
         return ret
 
     def starmap(
-            self,
-            function: Callable,
-            map_input: Iterable,
-            **kwargs) -> Any:
+        self,
+        function: Callable,
+        map_input: Iterable,
+        sequential: bool = False,
+        **kwargs,
+    ) -> Any:
         """
         Applies function to each elemetn of map_input but guarantees that
         element i of return value is the result of function applied to element i
@@ -165,9 +175,7 @@ class ParallelModel:
             Returns the result of applying function to each element of map_input
         """
         partial_func = partial(function, **kwargs)
-        if (self.n_jobs == 1) or (
-            ("__no_parallel" in kwargs) and kwargs["__no_parallel"]
-        ):
+        if (self.n_jobs == 1) or sequential:
             ret = list(starmap(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:
@@ -175,10 +183,8 @@ class ParallelModel:
         return ret
 
     def async_apply(
-            self,
-            function: Callable,
-            n_iterations: int,
-            **kwargs) -> Iterable:
+        self, function: Callable, n_iterations: int, sequential: bool = False, **kwargs
+    ) -> Iterable:
         """
         Applies the function n_iterations number of times and returns the result
         of the n_iterations in an unknown order.
@@ -197,20 +203,17 @@ class ParallelModel:
             Function applied n_iterations number of times
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+        if self.n_jobs == 1 or sequential:
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:
-                promise = [p.apply_async(partial_func)
-                           for _ in range(n_iterations)]
+                promise = [p.apply_async(partial_func) for _ in range(n_iterations)]
                 ret = [res.get() for res in promise]
         return ret
 
     def apply(
-            self,
-            function: Callable,
-            n_iterations: int,
-            **kwargs) -> Iterable:
+        self, function: Callable, n_iterations: int, sequential: bool = False, **kwargs
+    ) -> Iterable:
         """
         Applies the function n_iterations number of times and returns the result
         of the n_iterations where element i corresponds to the i'th return value
@@ -229,7 +232,7 @@ class ParallelModel:
             Function applied n_iterations number of times
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+        if self.n_jobs == 1 or sequential:
             ret = [partial_func() for _ in range(n_iterations)]
         else:
             with self.ctx.Pool(self.n_jobs) as p:

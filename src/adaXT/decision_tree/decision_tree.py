@@ -1,3 +1,4 @@
+from multiprocessing.dummy import Value
 from typing import Type, Literal
 from numpy.typing import ArrayLike
 import numpy as np
@@ -155,8 +156,7 @@ class DecisionTree(BaseModel):
                 self.leaf_builder,
                 self.predictor,
             )
-            self.max_features = self._check_max_features(
-                self.max_features, X.shape[0])
+            self.max_features = self._check_max_features(self.max_features, X.shape[0])
 
         self._tree = _DecisionTree(
             max_depth=self.max_depth,
@@ -177,10 +177,8 @@ class DecisionTree(BaseModel):
         self._tree.n_features = X.shape[1]
 
         if not self.skip_check_input:
-            sample_weight = self._check_sample_weight(
-                sample_weight=sample_weight)
-            sample_indices = self._check_sample_indices(
-                sample_indices=sample_indices)
+            sample_weight = self._check_sample_weight(sample_weight=sample_weight)
+            sample_indices = self._check_sample_indices(sample_indices=sample_indices)
 
         builder = DepthTreeBuilder(
             X=X,
@@ -237,7 +235,9 @@ class DecisionTree(BaseModel):
             (N, K) numpy array with the prediction, where K depends on the
             Prediction class and is generally 1
         """
-        if self.predictor_instance is None:
+        try:
+            self._tree
+        except AttributeError:
             raise AttributeError(
                 "The tree has not been fitted before trying to call predict"
             )
@@ -275,6 +275,15 @@ class DecisionTree(BaseModel):
             self._check_dimensions(X)
         return self._tree.predict_weights(X=X, scale=scale)
 
+    def _forest_predict_leaf(
+        self, X_pred: ArrayLike, X_train: ArrayLike, Y_train: ArrayLike
+    ):
+        if not self.skip_check_input:
+            raise ValueError("_forest_predict can only be called with skip_check_input")
+        return self._tree._forest_predict_leaf(
+            X_train=X_train, Y_train=Y_train, X_pred=X_pred
+        )
+
     def predict_leaf(self, X: ArrayLike | None) -> dict:
         """
         Computes a hash table indexing in which LeafNodes the rows of the provided
@@ -298,18 +307,11 @@ class DecisionTree(BaseModel):
         return self._tree.predict_leaf(X=X)
 
     def _tree_based_weights(
-            self,
-            hash0: dict,
-            hash1: dict,
-            size_X0: int,
-            size_X1: int,
-            scaling: str) -> np.ndarray:
+        self, hash0: dict, hash1: dict, size_X0: int, size_X1: int, scaling: str
+    ) -> np.ndarray:
         return self._tree._tree_based_weights(
-            hash0=hash0,
-            hash1=hash1,
-            size_X0=size_X0,
-            size_X1=size_X1,
-            scaling=scaling)
+            hash0=hash0, hash1=hash1, size_X0=size_X0, size_X1=size_X1, scaling=scaling
+        )
 
     def similarity(self, X0: ArrayLike, X1: ArrayLike) -> np.ndarray:
         """

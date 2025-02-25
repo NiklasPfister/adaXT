@@ -23,17 +23,17 @@ cdef class LeafBuilderClassification(LeafBuilder):
         self.classes = np.array(np.unique(Y.base[all_idx, 0]), dtype=np.double)
         self.n_classes = self.classes.shape[0]
 
-    cdef double[::1] __get_mean(self, int[::1] indices):
+    cdef inline cnp.ndarray __get_mean(self, int[::1] indices):
         cdef:
-            cnp.ndarray[double, ndim=1] ret
+            cnp.ndarray[float, ndim=1] ret
             int i, idx, n_samples
 
         n_samples = indices.shape[0]
-        ret = np.zeros(self.n_classes)
+        ret = np.zeros(self.n_classes, dtype=np.float32)
         for idx in range(n_samples):
             for i in range(self.n_classes):
                 if self.Y[indices[idx], 0] == self.classes[i]:
-                    ret[i] += 1  # add 1, if the value is the same as class value
+                    ret[i] += 1.0  # add 1, if the value is the same as class value
                     break
 
         ret = ret / n_samples
@@ -46,9 +46,14 @@ cdef class LeafBuilderClassification(LeafBuilder):
                             double impurity,
                             double weighted_samples,
                             object parent):
-        cdef double[::1] mean = self.__get_mean(indices)
-        return LeafNode(leaf_id, indices, depth, impurity, weighted_samples,
-                        mean, parent)
+        cdef cnp.ndarray mean = self.__get_mean(indices)
+        return LeafNode(id=leaf_id,
+                        indices=indices,
+                        depth=depth,
+                        impurity=impurity,
+                        weighted_samples=weighted_samples,
+                        value=mean,
+                        parent=parent)
 
 
 cdef class LeafBuilderRegression(LeafBuilder):

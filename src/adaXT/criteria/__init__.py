@@ -1,4 +1,6 @@
 from .criteria import (
+    ClassificationCriteria,
+    RegressionCriteria,
     Gini_index,
     Squared_error,
     Entropy,

@@ -52,9 +52,9 @@ class Predictor:
 
     @staticmethod
     def forest_predict(
-        X_old: np.ndarray,
-        Y_old: np.ndarray,
-        X_new: np.ndarray,
+        X_train: np.ndarray,
+        Y_train: np.ndarray,
+        X_pred: np.ndarray,
         trees: list[DecisionTree],
         parallel: ParallelModel,
         **kwargs,
@@ -68,11 +68,11 @@ class Predictor:
 
         Parameters
         ----------
-        X_old: np.ndarray
+        X_train: np.ndarray
             Array of feature values used during training.
-        Y_old: np.ndarray
+        Y_train: np.ndarray
             Array of response values used during training.
-        X_new: np.ndarray
+        X_pred: np.ndarray
             Array of new feature values at which to predict.
         trees: list[DecisionTree]
             List of fitted DecisionTrees fitted within the random forest.
@@ -82,7 +82,7 @@ class Predictor:
         Returns
         -------
         np.ndarray
-            An array with predictions for each row of X_new.
+            An array with predictions for each row of X_pred.
         """
         pass
 
