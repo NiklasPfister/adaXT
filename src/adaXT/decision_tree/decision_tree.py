@@ -57,7 +57,6 @@ class DecisionTree(BaseModel):
         predictor: Type[Predictor] | None = None,
         splitter: Type[Splitter] | None = None,
         skip_check_input: bool = False,
-        ensemble: bool = False,
     ) -> None:
         """
         Parameters
@@ -97,7 +96,6 @@ class DecisionTree(BaseModel):
         """
 
         self.skip_check_input = skip_check_input
-        self.ensemble = ensemble
 
         # Input only checked on fitting.
         self.criteria = criteria
@@ -192,7 +190,6 @@ class DecisionTree(BaseModel):
             leaf_builder=self.leaf_builder,
             predictor=self.predictor,
             splitter=self.splitter,
-            ensemble=self.ensemble,
         )
         builder.build_tree(self._tree)
 

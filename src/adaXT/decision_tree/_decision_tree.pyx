@@ -398,7 +398,6 @@ class DepthTreeBuilder:
         splitter: Splitter,
         leaf_builder: LeafBuilder,
         predictor: Predictor,
-        ensemble: bool = False,
     ) -> None:
         """
         Parameters
@@ -432,8 +431,6 @@ class DepthTreeBuilder:
         self.criteria = criteria
         self.predictor = predictor
         self.leaf_builder = leaf_builder
-
-        self.ensemble = ensemble
 
     def __get_feature_indices(self) -> np.ndarray:
         if self.max_features == -1:
@@ -592,5 +589,4 @@ class DepthTreeBuilder:
         tree.max_depth = max_depth_seen
         tree.root = root
         tree.leaf_nodes = leaf_node_list
-        if not self.ensemble:
-            tree.predictor_instance = self.predictor(self.X, self.Y, root)
+        tree.predictor_instance = self.predictor(self.X, self.Y, root)

@@ -8,6 +8,8 @@ cimport numpy as cnp
 
 from ..parallel import ParallelModel
 
+import time
+
 # Circular import. Since only used for typing, this fixes the issue.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -21,26 +23,18 @@ ctypedef cnp.float64_t DOUBLE_t
 def predict_default(
         tree,
         double[:, ::1] X_pred,
-        double[:, ::1] X_train,
-        double[:, ::1] Y_train,
-        predictor,
         **kwargs) -> np.ndarray:
 
-    predictor_instance = predictor(X_train, Y_train, tree.root)
-    res = predictor_instance.predict(X_pred)
+    res = tree.predict(X_pred, **kwargs)
     return res
 
 
 def predict_proba(
         tree,
         double[:, ::1] X_pred,
-        double[:, ::1] X_train,
-        double[:, ::1] Y_train,
-        predictor,
         **kwargs) -> np.ndarray:
 
-    predictor_instance = predictor(X_train, Y_train, tree.root)
-    res = predictor_instance.predict(X_pred, predict_proba=True)
+    res = tree.predict(X_pred, predict_proba=True, **kwargs)
     return res
 
 
@@ -76,8 +70,8 @@ def predict_quantile(
 cdef class Predictor():
 
     def __init__(self, const double[:, ::1] X, const double[:, ::1] Y, object root, **kwargs):
-        self.X = X
-        self.Y = Y
+        self.X = np.asarray(X)
+        self.Y = np.asarray(Y)
         self.root = root
         self.n_features = X.shape[1]
 
@@ -113,9 +107,20 @@ cdef class Predictor():
                 ht[cur_node.id] += [i]
         return ht
 
-    @classmethod
-    def forest_predict(cls,
-                       cnp.ndarray[DOUBLE_t, ndim=2] X_train,
+    def __get_state__(self):
+        return {
+                "root": self.root,
+                "X": np.asarray(self.X),
+                "Y": np.asarray(self.Y),
+                }
+
+    def __set_state__(self, d: dict):
+        self.X = d["X"]
+        self.Y = d["Y"]
+        self.root = d["root"]
+
+    @staticmethod
+    def forest_predict(cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
@@ -123,10 +128,8 @@ cdef class Predictor():
                        **kwargs) -> np.ndarray:
         predictions = parallel.async_map(predict_default,
                                          trees,
-                                         X_train = X_train,
-                                         Y_train = Y_train,
                                          X_pred=X_pred,
-                                         predictor=cls,
+                                         __no_parallel=True,
                                          **kwargs)
         return np.mean(predictions, axis=0, dtype=DOUBLE)
 
@@ -139,7 +142,7 @@ cdef class PredictorClassification(Predictor):
         super().__init__(X, Y, root, **kwargs)
         self.classes = np.unique(Y)
 
-    cdef int __find_max_index(self, double[::1] lst):
+    cdef int __find_max_index(self, float[::1] lst):
         cdef:
             int cur_max, i
         cur_max = 0
@@ -209,33 +212,35 @@ cdef class PredictorClassification(Predictor):
         # if predict_proba = False this return is hit
         return self.__predict(X)
 
-    @classmethod
-    def forest_predict(cls,
-                       cnp.ndarray[DOUBLE_t, ndim=2] X_train,
+    @staticmethod
+    def forest_predict(cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
                        **kwargs) -> np.ndarray:
+
+        # Remove no parallel if given
+        kwargs.pop("__no_parallel", None)
+
         # Forest_predict_proba
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
                 predictions = parallel.async_map(predict_proba,
                                                  map_input=trees,
-                                                 X_train = X_train,
-                                                 Y_train = Y_train,
                                                  X_pred=X_pred,
-                                                 predictor=cls,
+                                                 __no_parallel=True,
                                                  **kwargs)
                 return np.mean(predictions, axis=0, dtype=DOUBLE)
 
+        st = time.time()
         predictions = parallel.async_map(predict_default,
                                          map_input=trees,
-                                         X_train = X_train,
-                                         Y_train = Y_train,
                                          X_pred=X_pred,
-                                         predictor=cls,
+                                         __no_parallel=True,
                                          **kwargs)
+        et = time.time()
+        print("Parallel time predict: ", et - st)
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
@@ -348,12 +353,11 @@ cdef class PredictorQuantile(Predictor):
                 else:
                     cur_node = dNode.right_child
 
-            prediction[i] = np.quantile(self.Y.base[cur_node.indices, 0], quantile)
+            prediction[i] = np.quantile(self.Y[cur_node.indices, 0], quantile)
         return prediction
 
-    @classmethod
-    def forest_predict(cls,
-                       cnp.ndarray[DOUBLE_t, ndim=2] X_train,
+    @staticmethod
+    def forest_predict(cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],

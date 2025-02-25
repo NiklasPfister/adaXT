@@ -151,7 +151,6 @@ def build_single_tree(
         leaf_builder=leaf_builder,
         predictor=predictor,
         splitter=splitter,
-        ensemble=True,
     )
     tree.fit(X=X, Y=Y, sample_indices=fitting_indices, sample_weight=sample_weight)
     if honest_tree:

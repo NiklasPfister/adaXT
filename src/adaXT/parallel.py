@@ -63,7 +63,13 @@ class ParallelModel:
             Returns the result of running function on all elements of map_input
         """
         partial_func = partial(function, **kwargs)
-        if self.n_jobs == 1 or ("__no_parallel" in kwargs):
+
+        parallel = True
+        if "__no_parallel" in kwargs:
+            if kwargs["__no_parallel"]:
+                parallel = False
+
+        if self.n_jobs == 1 or not parallel:
             ret = list(map(partial_func, map_input))
         else:
             with self.ctx.Pool(self.n_jobs) as p:

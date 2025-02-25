@@ -2,8 +2,9 @@ cimport numpy as cnp
 
 cdef class Predictor():
     cdef:
-        const double[:, ::1] X
-        const double[:, ::1] Y
+        # Must be ndarray such that it and all children can be pickled
+        cnp.ndarray X
+        cnp.ndarray Y
         int n_features
         object root
 
@@ -12,9 +13,9 @@ cdef class Predictor():
 
 cdef class PredictorClassification(Predictor):
     cdef:
-        readonly double[::1] classes
+        readonly cnp.ndarray classes
 
-    cdef int __find_max_index(self, double[::1] lst)
+    cdef int __find_max_index(self, float[::1] lst)
 
     cdef cnp.ndarray __predict_proba(self, double[:, ::1] X)
 
