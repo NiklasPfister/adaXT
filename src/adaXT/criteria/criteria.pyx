@@ -439,6 +439,7 @@ cdef class Squared_error(RegressionCriteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
+# TODO: Euclidean norm Criteria.
 
 # Partial linear criteria
 cdef class Partial_linear(RegressionCriteria):
