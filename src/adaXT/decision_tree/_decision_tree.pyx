@@ -1,4 +1,3 @@
-# cython: auto_pickle=False
 import numpy as np
 import sys
 
