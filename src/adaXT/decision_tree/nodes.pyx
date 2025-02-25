@@ -30,7 +30,6 @@ cdef class DecisionNode(Node):
             is_leaf: int = 0,
             visited: int = 0) -> None:
 
-
         super().__init__(indices, depth, impurity)
         self.threshold = threshold
         self.split_idx = split_idx

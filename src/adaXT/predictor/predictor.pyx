@@ -5,7 +5,7 @@ from collections.abc import Sequence
 from statistics import mode
 
 cimport numpy as cnp
-from ..decision_tree.nodes cimport Node, DecisionNode, LeafNode
+from ..decision_tree.nodes cimport Node, DecisionNode
 cimport cython
 
 from ..parallel import ParallelModel
@@ -63,7 +63,6 @@ def predict_quantile(
                 cur_node = <Node> dNode.left_child
             else:
                 cur_node = <Node> dNode.right_child
-
 
         indices.append(cur_node.indices)
 
@@ -138,6 +137,7 @@ cdef class Predictor():
                                          sequential=sequential,
                                          **kwargs)
         return np.mean(predictions, axis=0, dtype=DOUBLE)
+
 
 @cython.final
 cdef class PredictorClassification(Predictor):
@@ -248,6 +248,7 @@ cdef class PredictorClassification(Predictor):
         et = time.time()
         print("Parallel time predict: ", et - st)
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
+
 
 @cython.final
 cdef class PredictorRegression(Predictor):
