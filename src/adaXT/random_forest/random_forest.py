@@ -564,6 +564,7 @@ class RandomForest(BaseModel):
             X_pred=predict_value,
             trees=self.trees,
             parallel=self.parallel,
+            sequential=True,
             **kwargs,
         )
         return prediction
