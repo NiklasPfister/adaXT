@@ -9,7 +9,6 @@ cdef class Node:
         bint visited
         bint is_leaf
 
-
 @cython.final
 cdef class DecisionNode(Node):
     cdef public:

@@ -10,7 +10,6 @@ cimport cython
 
 from ..parallel import ParallelModel
 
-import time
 
 # Circular import. Since only used for typing, this fixes the issue.
 from typing import TYPE_CHECKING
@@ -126,15 +125,12 @@ cdef class Predictor():
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
+                       n_jobs: int=1,
                        **kwargs) -> np.ndarray:
-        sequential = True
-        if "sequential" in kwargs:
-            sequential = kwargs["sequential"]
-            kwargs.pop("sequential")
         predictions = parallel.async_map(predict_default,
                                          trees,
                                          X_pred=X_pred,
-                                         sequential=sequential,
+                                         n_jobs=n_jobs,
                                          **kwargs)
         return np.mean(predictions, axis=0, dtype=DOUBLE)
 
@@ -223,30 +219,21 @@ cdef class PredictorClassification(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
+                       n_jobs: int=1,
                        **kwargs) -> np.ndarray:
-        sequential = True
-        if "sequential" in kwargs:
-            sequential = kwargs["sequential"]
-            kwargs.pop("sequential")
-
         # Forest_predict_proba
         if "predict_proba" in kwargs:
             if kwargs["predict_proba"]:
-                predictions = parallel.async_map(predict_proba,
-                                                 map_input=trees,
-                                                 X_pred=X_pred,
-                                                 sequential=sequential,
+                predictions = parallel.async_map(predict_proba, map_input=trees,
+                                                 X_pred=X_pred, n_jobs=n_jobs
                                                  **kwargs)
                 return np.mean(predictions, axis=0, dtype=DOUBLE)
 
-        st = time.time()
         predictions = parallel.async_map(predict_default,
                                          trees,
                                          X_pred=X_pred,
                                          sequential=sequential,
                                          **kwargs)
-        et = time.time()
-        print("Parallel time predict: ", et - st)
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
@@ -369,6 +356,7 @@ cdef class PredictorQuantile(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
+                       n_jobs: int=1,
                        **kwargs) -> np.ndarray:
         cdef:
             int i, j, n_obs, n_trees
@@ -377,16 +365,11 @@ cdef class PredictorQuantile(Predictor):
             raise ValueError(
                 "quantile called without quantile passed as argument"
             )
-        sequential = True
-        if "sequential" in kwargs:
-            sequential = kwargs["sequential"]
-            kwargs.pop("sequential")
-
         quantile = kwargs['quantile']
         n_obs = X_pred.shape[0]
         prediction_indices = parallel.async_map(predict_quantile,
                                                 map_input=trees,
-                                                sequential=sequential,
+                                                n_jobs=n_jobs,
                                                 X_pred=X_pred)
         # In case the leaf nodes have multiple elements and not just one, we
         # have to combine them together
