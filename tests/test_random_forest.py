@@ -1,9 +1,9 @@
 from adaXT.decision_tree import DecisionTree
 from adaXT.criteria import (
-    Gini_index,
-    Squared_error,
+    GiniIndex,
+    SquaredError,
     Entropy,
-    Partial_quadratic,
+    PartialQuadratic,
 )
 from adaXT.predictor import PredictorLocalPolynomial
 from adaXT.leaf_builder import LeafBuilderPartialQuadratic
@@ -57,7 +57,7 @@ def run_gini_index(
 ):
     forest = RandomForest(
         forest_type="Classification",
-        criteria=Gini_index,
+        criteria=GiniIndex,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
@@ -107,7 +107,7 @@ def run_squared_error(
 ):
     forest = RandomForest(
         forest_type="Regression",
-        criteria=Squared_error,
+        criteria=SquaredError,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
         sampling=sampling,
@@ -133,7 +133,7 @@ def test_dominant_feature():
     forest = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria=Gini_index,
+        criteria=GiniIndex,
         sampling="resampling",
     )
     forest.fit(X, Y)
@@ -162,7 +162,7 @@ def test_deterministic_seeding_regression():
     forest1 = RandomForest(
         "Regression",
         n_estimators=100,
-        criteria=Squared_error,
+        criteria=SquaredError,
         seed=tree_state,
         sampling="resampling",
     )
@@ -171,7 +171,7 @@ def test_deterministic_seeding_regression():
     forest2 = RandomForest(
         "Regression",
         n_estimators=100,
-        criteria=Squared_error,
+        criteria=SquaredError,
         seed=tree_state,
         sampling="resampling",
     )
@@ -196,7 +196,7 @@ def test_deterministic_seeding_classification():
     forest1 = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria=Gini_index,
+        criteria=GiniIndex,
         seed=tree_state,
         sampling="resampling",
     )
@@ -205,7 +205,7 @@ def test_deterministic_seeding_classification():
     forest2 = RandomForest(
         "Classification",
         n_estimators=100,
-        criteria=Gini_index,
+        criteria=GiniIndex,
         seed=tree_state,
         sampling="resampling",
     )
@@ -291,13 +291,13 @@ def test_gradient_forest():
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
         predictor=PredictorLocalPolynomial,
-        criteria=Partial_quadratic,
+        criteria=PartialQuadratic,
     )
     forest = RandomForest(
         "Gradient",
         leaf_builder=LeafBuilderPartialQuadratic,
         predictor=PredictorLocalPolynomial,
-        criteria=Partial_quadratic,
+        criteria=PartialQuadratic,
         sampling=None,
     )
     tree.fit(X_reg, Y_reg)

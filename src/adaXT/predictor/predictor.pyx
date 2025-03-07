@@ -106,18 +106,6 @@ cdef class Predictor():
                 ht[cur_node.id] += [i]
         return ht
 
-    def __get_state__(self):
-        return {
-                "root": self.root,
-                "X": np.asarray(self.X),
-                "Y": np.asarray(self.Y),
-                }
-
-    def __set_state__(self, d: dict):
-        self.X = d["X"]
-        self.Y = d["Y"]
-        self.root = d["root"]
-
     @staticmethod
     def forest_predict(cnp.ndarray[DOUBLE_t, ndim=2] X_train,
                        cnp.ndarray[DOUBLE_t, ndim=2] Y_train,
