@@ -151,6 +151,13 @@ cdef class SquaredError(RegressionCriteria):
         The variance of the response y
     """
 
+cdef class EuclideanNorm(RegressionCriteria):
+    cdef:
+        double left_dist_sum, right_dist_sum
+        double weight_left, weight_right
+        double[:, ::1] right_indiv_dist
+        double[:, ::1] left_indiv_dist
+        int Y_cols
 
 cdef class PartialLinear(RegressionCriteria):
 
