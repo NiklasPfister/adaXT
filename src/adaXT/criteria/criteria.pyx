@@ -450,31 +450,34 @@ cdef class EuclideanNorm(RegressionCriteria):
         self.right_indiv_dist = np.zeros((Y.shape[0], Y.shape[0]-1), dtype=np.float64)
         self.Y_cols = Y.shape[1]
 
-    cdef inline double __sum_arr(self, double[:] arr, int n_obs):
+    cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
+                                        double[::1] arr2, val2):
         cdef:
             int i
-            double cur_sum = 0.0
-
-        for i in range(n_obs):
-            cur_sum += arr[i]
-        return cur_sum
+            double tmp
+            double square_sum = 0.0
+        for i in range(self.Y_cols):
+            tmp = arr1[i] * val1 - arr2[i] * val2
+            square_sum += tmp*tmp
+        return square_sum
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
             int i, j, idx_i, idx_j
             int prev_n_right
-            double tmp, weight, tmp_squared
+            double tmp, weight_i, weight_j, square_sum
             double[:] tmp_arr
         for i in range(self.old_split, new_split):
             idx_i = indices[i]
-            weight = self.sample_weight[idx]
+            weight_i = self.sample_weight[idx_i]
             for j in range(self.old_split):
                 idx_j = indices[j]
-                tmp_arr = (
-                        self.Y[idx_i, :] * weight_i -
-                        self.Y[idx_j, :] * weight_j
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
                     )
-                tmp = sqrt(self.__sum_arr(tmp_arr * tmp_arr, self.Y_cols))
+                tmp = sqrt(square_sum)
                 self.left_dist_sum += tmp
 
 
@@ -483,8 +486,8 @@ cdef class EuclideanNorm(RegressionCriteria):
                 self.right_dist_sum -= self.right_indiv_dist[j]
             self.right_start_idx += prev_n_right
 
-            self.weight_left += weight
-            self.weight_right -= weight
+            self.weight_left += weight_i
+            self.weight_right -= weight_i
 
         # No proxy for EuclideanNorm, so calculate fully
         return (self.left_dist_sum * self.weight_left +
@@ -494,8 +497,7 @@ cdef class EuclideanNorm(RegressionCriteria):
         cdef:
             int i, j, idx_i, idx_j
             int n_obs = indices.shape[0]
-            double weight_i, weight_j, tmp
-            double[:] tmp_arr
+            double weight_i, weight_j, tmp, square_sum
             int indiv_idx = 0
 
         # reset the start idx for self.right_indiv_dist
@@ -506,7 +508,7 @@ cdef class EuclideanNorm(RegressionCriteria):
 
         # Create individual distances for right half, as we will be wanting to
         # subtract a point by removing its distance to all other nodes
-        self.right_indiv_dist[i, j] = np.zeros((n_obs, n_obs))
+        self.right_indiv_dist = np.zeros(n_obs)
 
         # Calculate sum of each Y point
         for i in range(split_idx):
@@ -515,11 +517,11 @@ cdef class EuclideanNorm(RegressionCriteria):
             for j in range(i+1, n_obs):
                 idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
-                tmp_arr = (
-                        self.Y[idx_i, :] * weight_i -
-                        self.Y[idx_j, :] * weight_j
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
                     )
-                tmp = sqrt(self.__sum_arr(tmp_arr * tmp_arr, self.Y_cols))
+                tmp = sqrt(square_sum)
                 # i and j remain the same for current node checking
                 self.left_dist_sum += tmp
             
@@ -531,11 +533,11 @@ cdef class EuclideanNorm(RegressionCriteria):
             for j in range(i+1, n_obs):
                 idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
-                tmp_arr = (
-                        self.Y[idx_i, :] * weight_i -
-                        self.Y[idx_j, :] * weight_j
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
                     )
-                tmp = sqrt(self.__sum_arr(tmp_arr * tmp_arr, self.Y_cols))
+                tmp = sqrt(square_sum)
                 self.right_dist_sum += tmp
                 # Just a list of all distances, should start at index 0.
                 # Therefore, we remove split_idx, and 1 as the distance from idx
@@ -554,22 +556,22 @@ cdef class EuclideanNorm(RegressionCriteria):
 
     cdef inline double __euclidean_norm(self, int[::1] indices):
         cdef:
-            double[:] tmp_arr
             double dist_sum = 0.0
-            int i, j
+            int i, j, idx_i, idx_j
             int n_indices = indices.shape[0]
-            double weight_i, weight_j
+            double weight_i, weight_j, square_sum
 
         for i in range(n_indices):
-            weight_i = self.sample_weight[i]
+            idx_i = indices[i]
+            weight_i = self.sample_weight[idx_i]
             for j in range(i+1, n_indices):
-                weight_j = self.sample_weight[j]
-                tmp_arr = (
-                        self.Y[i, :] * weight_i -
-                        self.Y[j, :] * weight_j
+                idx_j = indices[idx_j]
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
                     )
-                tmp = sqrt(self.__sum_arr(tmp_arr * tmp_arr, self.Y_cols))
-                dist_sum += tmp 
+                dist_sum += sqrt(square_sum)
 
         return dist_sum
 

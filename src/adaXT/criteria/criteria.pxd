@@ -159,6 +159,12 @@ cdef class EuclideanNorm(RegressionCriteria):
         int right_start_idx
         int Y_cols
 
+    cdef inline double __euclidean_norm(self, int[::1] indices)
+
+
+    cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
+                                        double[::1] arr2, val2)
+
 cdef class PartialLinear(RegressionCriteria):
 
     cdef (double, double) __custom_mean(self, int[:] indices)
