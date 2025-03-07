@@ -10,7 +10,6 @@ cimport cython
 
 from ..parallel import ParallelModel
 
-
 # Circular import. Since only used for typing, this fixes the issue.
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -125,8 +124,9 @@ cdef class Predictor():
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
-                       n_jobs: int=1,
+                       n_jobs: int = 1,
                        **kwargs) -> np.ndarray:
+
         predictions = parallel.async_map(predict_default,
                                          trees,
                                          X_pred=X_pred,
@@ -219,7 +219,7 @@ cdef class PredictorClassification(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
-                       n_jobs: int=1,
+                       n_jobs: int = 1,
                        **kwargs) -> np.ndarray:
         # Forest_predict_proba
         if "predict_proba" in kwargs:
@@ -232,12 +232,11 @@ cdef class PredictorClassification(Predictor):
         predictions = parallel.async_map(predict_default,
                                          trees,
                                          X_pred=X_pred,
-                                         sequential=sequential,
+                                         n_jobs=n_jobs,
                                          **kwargs)
         return np.array(np.apply_along_axis(mode, 0, predictions), dtype=int)
 
 
-@cython.final
 cdef class PredictorRegression(Predictor):
     def predict(self, double[:, ::1] X, **kwargs) -> np.ndarray:
         cdef:
@@ -356,7 +355,7 @@ cdef class PredictorQuantile(Predictor):
                        cnp.ndarray[DOUBLE_t, ndim=2] X_pred,
                        trees: list[DecisionTree],
                        parallel: ParallelModel,
-                       n_jobs: int=1,
+                       n_jobs: int = 1,
                        **kwargs) -> np.ndarray:
         cdef:
             int i, j, n_obs, n_trees

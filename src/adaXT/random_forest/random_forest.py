@@ -25,12 +25,10 @@ def tree_based_weights(
     X1: np.ndarray | None,
     size_X0: int,
     size_X1: int,
-    X_train: np.ndarray,
-    Y_train: np.ndarray,
     scaling: str,
 ) -> np.ndarray:
-    hash0 = tree._forest_predict_leaf(X_pred=X0, X_train=X_train, Y_train=Y_train)
-    hash1 = tree._forest_predict_leaf(X_pred=X1, X_train=X_train, Y_train=Y_train)
+    hash0 = tree.predict_leaf(X=X0)
+    hash1 = tree.predict_leaf(X=X1)
     return tree._tree_based_weights(
         hash0=hash0,
         hash1=hash1,
