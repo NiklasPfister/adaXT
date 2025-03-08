@@ -13,7 +13,7 @@ class ClassificationCriteria(Criteria):
 
     pass
 
-class Gini_index(ClassificationCriteria):
+class GiniIndex(ClassificationCriteria):
     r"""
     Gini index based criteria, which can be used for classification.
     Formally, given class labels $\mathcal{L}$, the Gini index in a node
@@ -49,7 +49,7 @@ class RegressionCriteria(Criteria):
 
     pass
 
-class Squared_error(RegressionCriteria):
+class SquaredError(RegressionCriteria):
     r"""
     Squared error based criteria, which can be used for regression and
     leads to standard CART splits. Formally, the squared error in a node
@@ -69,7 +69,7 @@ class Squared_error(RegressionCriteria):
 
     pass
 
-class Partial_linear(RegressionCriteria):
+class PartialLinear(RegressionCriteria):
     r"""
     Criteria based on fitting a linear function in the first predictor
     variable in each leaf. Formally, in a node consisting of samples $I$,
@@ -87,7 +87,7 @@ class Partial_linear(RegressionCriteria):
 
     pass
 
-class Partial_quadratic(RegressionCriteria):
+class PartialQuadratic(RegressionCriteria):
     r"""
     Criteria based on fitting a quadratic function in the first predictor
     variable in each leaf. Formally, in a node consisting of samples $I$,

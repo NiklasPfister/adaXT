@@ -1,10 +1,10 @@
 from .criteria import (
     ClassificationCriteria,
     RegressionCriteria,
-    Gini_index,
-    Squared_error,
+    GiniIndex,
+    SquaredError,
     Entropy,
-    Partial_linear,
-    Partial_quadratic,
+    PartialLinear,
+    PartialQuadratic,
     Criteria,
 )

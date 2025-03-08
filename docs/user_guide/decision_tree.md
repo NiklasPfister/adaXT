@@ -58,14 +58,14 @@ Below is a short example that illustrates how to use a classification tree.
 ```py
 import numpy as np
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Gini_index
+from adaXT.criteria import GiniIndex
 
 X = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1],
               [1, 1], [1, -1], [-1, -1], [-1, 1]])
 Xtest = np.array([[1, 1], [1, -1], [-1, -1], [-1, 1]])
 Y = [0, 1, 0, 1, 0, 0, 1, 1]
 
-tree = DecisionTree("Classification", criteria=Gini_index)
+tree = DecisionTree("Classification", criteria=GiniIndex)
 tree.fit(X, Y)
 print(tree.predict(Xtest))
 print(tree.predict(Xtest, predict_proba=True))
@@ -74,7 +74,7 @@ print(tree.predict(Xtest, predict_proba=True))
 In this example we created and fit a classification tree using training data and
 then used the fitted tree to predict the response at the training data. When
 initializing the tree we changed the default criteria to the
-[Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.Gini_index); it is
+[Gini Index](../api_docs/Criteria.md#adaXT.criteria.criteria.GiniIndex); it is
 always possible to overwrite any of the default components of a specific tree
 type. Classification trees use a majority vote in each of the leaf nodes to
 decide which class to predict and ties are broken by selecting the smaller
@@ -96,7 +96,7 @@ the data.
 For the `Regression` tree type, the following default components are used:
 
 - Criteria class:
-  [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+  [SquaredError](../api_docs/Criteria.md#adaXT.criteria.criteria.SquaredError)
 - Predict class:
   [PredictRegression](../api_docs/Predictor.md#adaXT.predict.predict.PredictRegression)
 - LeafBuilder class:
@@ -124,7 +124,7 @@ print(tree.predict(Xnew))
 For the `Quantile` tree type, the following default components are used:
 
 - Criteria class:
-  [Squared_error](../api_docs/Criteria.md#adaXT.criteria.criteria.Squared_error)
+  [SquaredError](../api_docs/Criteria.md#adaXT.criteria.criteria.SquaredError)
 - Predict class:
   [PredictorQuantile](../api_docs/Predictor.md#adaXT.predictor.predictor.PredictQuantile)
 - LeafBuilder class:
@@ -159,7 +159,7 @@ prediction and it is possible to predict several quantiles simultaneously.
 For the `Gradient` tree type, the following default components are used:
 
 - Criteria class:
-  [Partial_quadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.Partial_quadratic)
+  [PartialQuadratic](../api_docs/Criteria.md#adaXT.criteria.criteria.PartialQuadratic)
 - Predict class:
   [PredictLocalPolynomial](../api_docs/Predictor.md#adaXT.predict.predict.PredictLocalPolynomial)
 - LeafBuilder class:

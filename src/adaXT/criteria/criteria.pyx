@@ -106,7 +106,7 @@ cdef class ClassificationCriteria(Criteria):
         return tot_sum / n_samples
 
 # Gini index criteria
-cdef class Gini_index(ClassificationCriteria):
+cdef class GiniIndex(ClassificationCriteria):
 
     cpdef double impurity(self, int[::1] indices):
         if self.first_call:
@@ -372,7 +372,7 @@ cdef class RegressionCriteria(Criteria):
 
 
 # Squared error criteria
-cdef class Squared_error(RegressionCriteria):
+cdef class SquaredError(RegressionCriteria):
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
@@ -395,6 +395,7 @@ cdef class Squared_error(RegressionCriteria):
             int i, idx
             int n_obs = indices.shape[0]
             double y_val, weight
+            # More efficient data excess
 
         self.left_sum = 0.0
         self.right_sum = 0.0
@@ -424,8 +425,7 @@ cdef class Squared_error(RegressionCriteria):
     cdef double __squared_error(self, int[::1] indices):
         cdef:
             double cur_sum = 0.0
-            double[:, ::1] Y = self.Y
-            double mu = weighted_mean(Y[:, 0], indices, self.sample_weight)  # set mu to be the mean of the dataset
+            double mu = weighted_mean(self.Y[:, 0], indices, self.sample_weight)  # set mu to be the mean of the dataset
             double square_err, tmp
             double obs_weight = 0.0
             int i, p
@@ -433,16 +433,19 @@ cdef class Squared_error(RegressionCriteria):
         # Calculate the variance using: variance = sum((y_i - mu)^2)/y_len
         for i in range(n_indices):
             p = indices[i]
-            tmp = Y[p, 0] * self.sample_weight[p]
+            tmp = self.Y[p, 0] * self.sample_weight[p]
             cur_sum += tmp*tmp
             obs_weight += self.sample_weight[p]
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
+cdef class EuclideanNorm(RegressionCriteria):
+    pass
+
 # TODO: Euclidean norm Criteria.
 
 # Partial linear criteria
-cdef class Partial_linear(RegressionCriteria):
+cdef class PartialLinear(RegressionCriteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) __custom_mean(self, int[:] indices):
@@ -493,7 +496,7 @@ cdef class Partial_linear(RegressionCriteria):
             cur_sum += step_calc * step_calc
         return cur_sum / length
 
-cdef class Partial_quadratic(RegressionCriteria):
+cdef class PartialQuadratic(RegressionCriteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double, double) __custom_mean(self, int[:] indices):

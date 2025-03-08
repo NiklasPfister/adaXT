@@ -61,7 +61,7 @@ cdef class ClassificationCriteria(Criteria):
     cdef void reset_weight_list(self, double* class_occurences)
 
 
-cdef class Gini_index(ClassificationCriteria):
+cdef class GiniIndex(ClassificationCriteria):
 
     cdef void reset_weight_list(self, double* class_occurences)
 
@@ -123,7 +123,7 @@ cdef class Entropy(ClassificationCriteria):
 cdef class RegressionCriteria(Criteria):
     pass
 
-cdef class Squared_error(RegressionCriteria):
+cdef class SquaredError(RegressionCriteria):
     cdef:
         double left_sum
         double right_sum
@@ -152,7 +152,7 @@ cdef class Squared_error(RegressionCriteria):
     """
 
 
-cdef class Partial_linear(RegressionCriteria):
+cdef class PartialLinear(RegressionCriteria):
 
     cdef (double, double) __custom_mean(self, int[:] indices)
 
@@ -192,7 +192,7 @@ cdef class Partial_linear(RegressionCriteria):
     """
 
 
-cdef class Partial_quadratic(RegressionCriteria):
+cdef class PartialQuadratic(RegressionCriteria):
 
     cdef (double, double, double) __custom_mean(self, int[:] indices)
 

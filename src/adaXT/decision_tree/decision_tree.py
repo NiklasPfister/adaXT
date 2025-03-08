@@ -275,15 +275,6 @@ class DecisionTree(BaseModel):
             self._check_dimensions(X)
         return self._tree.predict_weights(X=X, scale=scale)
 
-    def _forest_predict_leaf(
-        self, X_pred: ArrayLike, X_train: ArrayLike, Y_train: ArrayLike
-    ):
-        if not self.skip_check_input:
-            raise ValueError("_forest_predict can only be called with skip_check_input")
-        return self._tree._forest_predict_leaf(
-            X_train=X_train, Y_train=Y_train, X_pred=X_pred
-        )
-
     def predict_leaf(self, X: ArrayLike | None) -> dict:
         """
         Computes a hash table indexing in which LeafNodes the rows of the provided

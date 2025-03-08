@@ -1,7 +1,7 @@
 from numpy import float64 as DOUBLE
 from .predictor import Predictor
 from .criteria import Criteria
-from .criteria.criteria import Entropy, Squared_error, Partial_quadratic
+from .criteria.criteria import Entropy, SquaredError, PartialQuadratic
 from .decision_tree.splitter import Splitter
 from .leaf_builder import LeafBuilder
 
@@ -131,9 +131,9 @@ class BaseModel():
         tree_types = {
                 "Classification": [Entropy, PredictorClassification,
                                    LeafBuilderClassification],
-                "Regression": [Squared_error, PredictorRegression, LeafBuilderRegression],
-                "Gradient": [Partial_quadratic, PredictorLocalPolynomial, LeafBuilderPartialQuadratic],
-                "Quantile": [Squared_error, PredictorQuantile, LeafBuilderRegression]
+                "Regression": [SquaredError, PredictorRegression, LeafBuilderRegression],
+                "Gradient": [PartialQuadratic, PredictorLocalPolynomial, LeafBuilderPartialQuadratic],
+                "Quantile": [SquaredError, PredictorQuantile, LeafBuilderRegression]
             }
         if tree_type in tree_types.keys():
             # Set the defaults

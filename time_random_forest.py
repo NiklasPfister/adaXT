@@ -1,6 +1,6 @@
 from multiprocessing import cpu_count
 from adaXT.random_forest import RandomForest
-from adaXT.criteria import Gini_index, Squared_error, Entropy
+from adaXT.criteria import GiniIndex, SquaredError, Entropy
 import matplotlib.pyplot as plt
 import time
 import numpy as np
@@ -39,7 +39,7 @@ def get_classification_data(
 def run_gini_index(X, Y, n_jobs, n_estimators):
     forest = RandomForest(
         forest_type="Classification",
-        criteria=Gini_index,
+        criteria=GiniIndex,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
     )
@@ -65,7 +65,7 @@ def run_entropy(X, Y, n_jobs, n_estimators):
 def run_squared_error(X, Y, n_jobs, n_estimators):
     forest = RandomForest(
         forest_type="Regression",
-        criteria=Squared_error,
+        criteria=SquaredError,
         n_estimators=n_estimators,
         n_jobs=n_jobs,
     )
