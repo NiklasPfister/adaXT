@@ -4,8 +4,8 @@ cnp.import_array()
 
 cdef class Splitter:
     cdef:
-        double[:, ::1] X
-        double[:, ::1] Y
+        const double[:, ::1] X
+        const double[:, ::1] Y
         int n_features
         int[:] indices
         int n_indices

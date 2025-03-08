@@ -5,7 +5,15 @@ class Criteria:
 
     pass
 
-class Gini_index(Criteria):
+class ClassificationCriteria(Criteria):
+    """
+    Parent class for Criteria used in the Classification Tree Type. Can not be
+    used as a standalone Criteria.
+    """
+
+    pass
+
+class Gini_index(ClassificationCriteria):
     r"""
     Gini index based criteria, which can be used for classification.
     Formally, given class labels $\mathcal{L}$, the Gini index in a node
@@ -19,7 +27,7 @@ class Gini_index(Criteria):
 
     pass
 
-class Entropy(Criteria):
+class Entropy(ClassificationCriteria):
     r"""
     Entropy based criteria, which can be used for classification.
     Formally, given class labels $\mathcal{L}$, the entropy in a node
@@ -33,7 +41,15 @@ class Entropy(Criteria):
 
     pass
 
-class Squared_error(Criteria):
+class RegressionCriteria(Criteria):
+    """
+    Parent class for criteria used in Regression Tree Type. Can not be used as a
+    standalone Criteria.
+    """
+
+    pass
+
+class Squared_error(RegressionCriteria):
     r"""
     Squared error based criteria, which can be used for regression and
     leads to standard CART splits. Formally, the squared error in a node
@@ -53,7 +69,7 @@ class Squared_error(Criteria):
 
     pass
 
-class Partial_linear(Criteria):
+class Partial_linear(RegressionCriteria):
     r"""
     Criteria based on fitting a linear function in the first predictor
     variable in each leaf. Formally, in a node consisting of samples $I$,
@@ -71,7 +87,7 @@ class Partial_linear(Criteria):
 
     pass
 
-class Partial_quadratic(Criteria):
+class Partial_quadratic(RegressionCriteria):
     r"""
     Criteria based on fitting a quadratic function in the first predictor
     variable in each leaf. Formally, in a node consisting of samples $I$,
