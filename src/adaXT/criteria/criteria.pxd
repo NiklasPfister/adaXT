@@ -135,7 +135,7 @@ cdef class SquaredError(RegressionCriteria):
 
     cpdef double impurity(self, int[::1] indices)
 
-    cdef double __squared_error(self, int[::1] indices)
+    cdef inline double __squared_error(self, int[::1] indices)
     """
     Function used to calculate the squared error of y[indices]
     ----------
@@ -150,8 +150,22 @@ cdef class SquaredError(RegressionCriteria):
     double
         The variance of the response y
     """
+cdef class SquaredDistance(RegressionCriteria):
+    cdef:
+        double* left_sum
+        double* right_sum
+        double weight_left, weight_right
 
-cdef class EuclideanNorm(RegressionCriteria):
+    cdef inline void __reset_sums(self)
+
+    cdef double update_proxy(self, int[::1] indices, int new_split)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
+
+    cpdef double impurity(self, int[::1] indices)
+
+
+cdef class PairwiseDistance(RegressionCriteria):
     cdef:
         double left_dist_sum, right_dist_sum
         double weight_left, weight_right

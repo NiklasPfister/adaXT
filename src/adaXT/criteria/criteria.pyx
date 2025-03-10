@@ -441,7 +441,112 @@ cdef class SquaredError(RegressionCriteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class EuclideanNorm(RegressionCriteria):
+cdef class SquaredDistance(RegressionCriteria):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+        super().__init__(X, Y, sample_weight)
+        self.Y_cols = Y.shape[1]
+        self.left_sum = <double*> malloc(sizeof(double) * self.Y_cols)
+        self.right_sum = <double*> malloc(sizeof(double) * self.Y_cols)
+
+    def __dealloc__(self):
+        free(self.left_sum)
+        free(self.right_sum)
+    
+    cdef inline void __reset_sums(self):
+        memset(self.left_sum, 0, self.Y_cols*sizeof(double))
+        memset(self.right_sum, 0, self.Y_cols*sizeof(double))
+
+    cdef double update_proxy(self, int[::1] indices, int new_split):
+        cdef:
+            int i, idx, j
+            double y_val, weight
+            double left_square_sum, right_square_sum
+
+        for i in range(self.old_split, new_split):
+            self.weight_left += weight
+            self.weight_right -= weight
+
+        left_square_sum = 0.0
+        right_square_sum = 0.0
+        
+        for j in range(self.Y_cols):
+            for i in range(self.old_split, new_split):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.left_sum[j] += y_val
+                self.right_sum[j] -= y_val
+            left_square_sum += self.left_sum[j]*self.left_sum[j]
+            right_square_sum += self.right_sum[j]*self.right_sum[j]
+
+        return -( left_square_sum / self.weight_left +
+                 right_square_sum / self.weight_right)
+
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx):
+        cdef:
+            int i, idx, j
+            int n_obs = indices.shape[0]
+            double y_val, weight, left_square_sum, right_square_sum
+
+        self.__reset_sums()
+        self.weight_left = 0.0
+        self.weight_right = 0.0
+        left_square_sum = 0.0
+        right_square_sum = 0.0
+
+        for i in range(split_idx):
+            idx = indices[i]
+            self.weight_left += self.sample_weight[idx]
+
+        for j in range(self.Y_cols):
+            for i in range(split_idx):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.left_sum[j] += y_val
+            left_square_sum += self.left_sum[j]*self.left_sum[j]
+
+        for i in range(split_idx, n_obs):
+            idx = indices[i]
+            self.weight_right += self.sample_weight[idx]
+
+        for j in range(self.Y_cols):
+            for i in range(split_idx, n_obs):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.right_sum[j] += y_val
+            right_square_sum += self.left_sum[j]*self.left_sum[j]
+
+        # Instead of calculating the squared error fully, we calculate 
+        # - (1/n_L sum_{i in left} y_i^2  + 1/n_R sum_{i in right} y_i^2)
+        return -( left_square_sum / self.weight_left +
+                 right_square_sum / self.weight_right)
+
+    cpdef double impurity(self, int[::1] indices):
+        cdef:
+            double cur_sum = 0.0
+            double mu = 0.0
+            double square_dist, tmp
+            double obs_weight = 0.0
+            int i, p, j
+            int n_indices = indices.shape[0]
+        for i in range(n_indices):
+            p = indices[i]
+            obs_weight += self.sample_weight[p]
+
+        for j in range(self.Y_cols):
+            mu = weighted_mean(self.Y[:, j], indices, self.sample_weight)
+            for i in range(n_indices):
+                p = indices[i]
+                tmp = self.Y[p, j] * self.sample_weight[p]
+                cur_sum += tmp*tmp
+            square_dist += cur_sum / obs_weight - mu*mu 
+        return square_dist
+
+
+cdef class PairwiseDistance(RegressionCriteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         super().__init__(X, Y, sample_weight)
         # Initialize two empty arrays for storing the sum of each Y[:, i] in a
