@@ -69,6 +69,12 @@ class SquaredError(RegressionCriteria):
 
     pass
 
+class SquaredDistance(RegressionCriteria):
+    pass
+
+class PairwiseDistance(RegressionCriteria):
+    pass
+
 class PartialLinear(RegressionCriteria):
     r"""
     Criteria based on fitting a linear function in the first predictor

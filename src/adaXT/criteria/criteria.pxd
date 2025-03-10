@@ -155,6 +155,7 @@ cdef class SquaredDistance(RegressionCriteria):
         double* left_sum
         double* right_sum
         double weight_left, weight_right
+        int Y_cols
 
     cdef inline void __reset_sums(self)
 

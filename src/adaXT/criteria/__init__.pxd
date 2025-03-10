@@ -6,5 +6,6 @@ from .criteria cimport (
     Entropy,
     SquaredError,
     PartialLinear,
-    PartialQuadratic
+    PartialQuadratic,
+    SquaredDistance
 )
