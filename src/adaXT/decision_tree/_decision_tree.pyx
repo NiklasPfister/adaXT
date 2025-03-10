@@ -122,7 +122,7 @@ cdef class _DecisionTree():
                                         size_0, self.n_rows_predict,
                                         scaling=scaling)
 
-    def predict_leaf(self, X: double[:, ::1] | None = None) -> dict:
+    def predict_leaf(self, X: np.ndarray | None = None) -> dict:
         if X is None:
             return self.__get_leaf()
         if self.predictor_instance is None:
