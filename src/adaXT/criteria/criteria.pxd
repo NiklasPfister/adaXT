@@ -176,7 +176,6 @@ cdef class PairwiseDistance(RegressionCriteria):
 
     cdef inline double __euclidean_norm(self, int[::1] indices)
 
-
     cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
                                         double[::1] arr2, val2)
 

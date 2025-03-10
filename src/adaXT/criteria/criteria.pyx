@@ -416,7 +416,7 @@ cdef class SquaredError(RegressionCriteria):
             self.right_sum += y_val
             self.weight_right += weight
 
-        # Instead of calculating the squared error fully, we calculate 
+        # Instead of calculating the squared error fully, we calculate
         # - (1/n_L sum_{i in left} y_i^2  + 1/n_R sum_{i in right} y_i^2)
         return -((self.left_sum*self.left_sum) / self.weight_left +
                  (self.right_sum*self.right_sum) / self.weight_right)
@@ -451,7 +451,7 @@ cdef class SquaredDistance(RegressionCriteria):
     def __dealloc__(self):
         free(self.left_sum)
         free(self.right_sum)
-    
+
     cdef inline void __reset_sums(self):
         memset(self.left_sum, 0, self.Y_cols*sizeof(double))
         memset(self.right_sum, 0, self.Y_cols*sizeof(double))
@@ -468,7 +468,7 @@ cdef class SquaredDistance(RegressionCriteria):
 
         left_square_sum = 0.0
         right_square_sum = 0.0
-        
+
         for j in range(self.Y_cols):
             for i in range(self.old_split, new_split):
                 idx = indices[i]
@@ -479,9 +479,8 @@ cdef class SquaredDistance(RegressionCriteria):
             left_square_sum += self.left_sum[j]*self.left_sum[j]
             right_square_sum += self.right_sum[j]*self.right_sum[j]
 
-        return -( left_square_sum / self.weight_left +
+        return -(left_square_sum / self.weight_left +
                  right_square_sum / self.weight_right)
-
 
     cdef double proxy_improvement(self, int[::1] indices, int split_idx):
         cdef:
@@ -519,9 +518,9 @@ cdef class SquaredDistance(RegressionCriteria):
                 self.right_sum[j] += y_val
             right_square_sum += self.left_sum[j]*self.left_sum[j]
 
-        # Instead of calculating the squared error fully, we calculate 
+        # Instead of calculating the squared error fully, we calculate
         # - (1/n_L sum_{i in left} y_i^2  + 1/n_R sum_{i in right} y_i^2)
-        return -( left_square_sum / self.weight_left +
+        return -(left_square_sum / self.weight_left +
                  right_square_sum / self.weight_right)
 
     cpdef double impurity(self, int[::1] indices):
@@ -542,7 +541,7 @@ cdef class SquaredDistance(RegressionCriteria):
                 p = indices[i]
                 tmp = self.Y[p, j] * self.sample_weight[p]
                 cur_sum += tmp*tmp
-            square_dist += cur_sum / obs_weight - mu*mu 
+            square_dist += cur_sum / obs_weight - mu*mu
         return square_dist
 
 
@@ -571,7 +570,6 @@ cdef class PairwiseDistance(RegressionCriteria):
             int i, j, idx_i, idx_j
             int prev_n_right
             double tmp, weight_i, weight_j, square_sum
-            double[:] tmp_arr
         for i in range(self.old_split, new_split):
             idx_i = indices[i]
             weight_i = self.sample_weight[idx_i]
@@ -584,7 +582,6 @@ cdef class PairwiseDistance(RegressionCriteria):
                     )
                 tmp = sqrt(square_sum)
                 self.left_dist_sum += tmp
-
 
             prev_n_right = self.obs - i
             for j in range(self.right_start_idx, self.right_start_idx+prev_n_right):
@@ -629,7 +626,7 @@ cdef class PairwiseDistance(RegressionCriteria):
                 tmp = sqrt(square_sum)
                 # i and j remain the same for current node checking
                 self.left_dist_sum += tmp
-            
+
             self.weight_left += weight_i
 
         for i in range(split_idx, n_obs):
@@ -649,13 +646,13 @@ cdef class PairwiseDistance(RegressionCriteria):
                 # 0 to 1 is the first distance.
                 self.right_indiv_dist[indiv_idx] = tmp
                 indiv_idx += 1
-            
+
             self.weight_right += weight_i
 
         # No proxy for EuclideanNorm, so calculate fully
         return (self.left_dist_sum * self.weight_left +
                 self.right_dist_sum * self.weight_right)
-    
+
     cpdef double impurity(self, int[::1] indices):
         return self.__euclidean_norm(indices)
 
