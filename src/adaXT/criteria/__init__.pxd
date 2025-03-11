@@ -7,5 +7,5 @@ from .criteria cimport (
     SquaredError,
     PartialLinear,
     PartialQuadratic,
-    SquaredDistance
+    MultiSquaredError
 )

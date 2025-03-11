@@ -7,5 +7,5 @@ from .criteria import (
     PartialLinear,
     PartialQuadratic,
     Criteria,
-    SquaredDistance,
+    MultiSquaredError,
 )

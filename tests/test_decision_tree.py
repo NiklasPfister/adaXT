@@ -5,7 +5,7 @@ from adaXT.criteria import (
     Entropy,
     PartialLinear,
     PartialQuadratic,
-    SquaredDistance,
+    MultiSquaredError,
 )
 import numpy as np
 
@@ -273,7 +273,7 @@ def test_entropy_multi():
     rec_node(root, 0)
 
 
-def test_squared_distance():
+def test_multi_squared():
     N = 500
     Y_M = 4
 
@@ -290,7 +290,7 @@ def test_squared_distance():
         ]
     )
 
-    tree = DecisionTree(max_depth=1, tree_type="SquaredDistance")
+    tree = DecisionTree(tree_type="MultiRegression")
     tree.fit(X, Y)
 
     # Should only predict the values of the random normal
@@ -384,5 +384,5 @@ if __name__ == "__main__":
     # test_gini_multi()
     # test_entropy_single()
     # test_entropy_multi()
-    test_squared_distance()
-    # print("Done.")
+    test_multi_squared()
+    print("Done.")

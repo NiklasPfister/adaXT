@@ -69,7 +69,7 @@ class SquaredError(RegressionCriteria):
 
     pass
 
-class SquaredDistance(RegressionCriteria):
+class MultiSquaredError(RegressionCriteria):
     pass
 
 class PairwiseDistance(RegressionCriteria):

@@ -441,7 +441,7 @@ cdef class SquaredError(RegressionCriteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class SquaredDistance(RegressionCriteria):
+cdef class MultiSquaredError(RegressionCriteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         super().__init__(X, Y, sample_weight)
         self.Y_cols = Y.shape[1]
@@ -545,6 +545,7 @@ cdef class SquaredDistance(RegressionCriteria):
         return square_dist
 
 
+# TODO: Rename PairwiseEuclideanDistance
 cdef class PairwiseDistance(RegressionCriteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         super().__init__(X, Y, sample_weight)
@@ -663,7 +664,7 @@ cdef class PairwiseDistance(RegressionCriteria):
             int n_indices = indices.shape[0]
             double weight_i, weight_j, square_sum
 
-        for i in range(n_indices):
+        for i in range(n_indices-1):
             idx_i = indices[i]
             weight_i = self.sample_weight[idx_i]
             for j in range(i+1, n_indices):

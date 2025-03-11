@@ -150,7 +150,7 @@ cdef class SquaredError(RegressionCriteria):
     double
         The variance of the response y
     """
-cdef class SquaredDistance(RegressionCriteria):
+cdef class MultiSquaredError(RegressionCriteria):
     cdef:
         double* left_sum
         double* right_sum
