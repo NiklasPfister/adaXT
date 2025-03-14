@@ -4,7 +4,7 @@ from setuptools import setup, Extension, find_packages
 import os
 
 NAME = "adaXT"
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
     "Documentation": "https://NiklasPfister.github.io/adaXT/",
