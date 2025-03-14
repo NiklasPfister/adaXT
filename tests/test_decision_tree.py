@@ -303,8 +303,10 @@ def test_multi_squared():
     assert np.all(pred_1 == pred_1[0]), "All elements of pred_1 are not equal"
     assert np.all(pred_2 == pred_2[0]), "All elements of pred_1 are not equal"
 
-    assert abs(np.mean(pred_1) - 0.0) < 1, "Mean of pred_1 is not approximately 0.0"
-    assert abs(np.mean(pred_2) - 10.0) < 1, "Mean of pred_2 is not approximately 10.0"
+    assert abs(np.mean(pred_1) -
+               0.0) < 1, "Mean of pred_1 is not approximately 0.0"
+    assert abs(np.mean(pred_2) -
+               10.0) < 1, "Mean of pred_2 is not approximately 10.0"
 
 
 def test_Pairwise():
@@ -325,7 +327,9 @@ def test_Pairwise():
         ]
     )
 
-    tree = DecisionTree(tree_type="MultiRegression", criteria=PairwiseEuclideanDistance)
+    tree = DecisionTree(
+        tree_type="MultiRegression",
+        criteria=PairwiseEuclideanDistance)
     tree.fit(X, Y)
 
     # Should only predict the values of the random normal
@@ -336,8 +340,10 @@ def test_Pairwise():
     assert np.all(pred_1 == pred_1[0]), "All elements of pred_1 are not equal"
     assert np.all(pred_2 == pred_2[0]), "All elements of pred_1 are not equal"
 
-    assert abs(np.mean(pred_1) - 0.0) < 1, "Mean of pred_1 is not approximately 0.0"
-    assert abs(np.mean(pred_2) - 10.0) < 1, "Mean of pred_2 is not approximately 10.0"
+    assert abs(np.mean(pred_1) -
+               0.0) < 1, "Mean of pred_1 is not approximately 0.0"
+    assert abs(np.mean(pred_2) -
+               10.0) < 1, "Mean of pred_2 is not approximately 10.0"
 
 
 def sanity_regression(n, m):

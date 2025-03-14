@@ -121,25 +121,31 @@ def get_label(**kwargs):
     if isinstance(node, DecisionNode):
         node_string += "DecisionNode" + new_line
         node_string += f"X{node.split_idx} <= "
-        node_string += str(round(node.threshold, impurity_precision)) + new_line
+        node_string += str(round(node.threshold,
+                           impurity_precision)) + new_line
         if kwargs["impurity"]:
             node_string += "Impurity: "
-            node_string += str(round(node.impurity, impurity_precision)) + new_line
+            node_string += str(round(node.impurity,
+                               impurity_precision)) + new_line
 
     elif isinstance(node, LeafNode):
         node_string += "LeafNode" + new_line
         if kwargs["impurity"]:
             node_string += "Impurity: "
-            node_string += str(round(node.impurity, impurity_precision)) + new_line
+            node_string += str(round(node.impurity,
+                               impurity_precision)) + new_line
         node_string += "Samples: "
-        node_string += str(round(node.weighted_samples, impurity_precision)) + new_line
+        node_string += str(round(node.weighted_samples,
+                           impurity_precision)) + new_line
         node_string += "Value: "
         if len(node.value) == 1:
             node_string += str(round(node.value[0], node_precision))
         else:
             node_value_string = "\n ["
             value_length = len(node.value)
-            n_vals_per_line = max(value_length / 3, 4)  # Number of values per line
+            n_vals_per_line = max(
+                value_length / 3,
+                4)  # Number of values per line
             for i in range(value_length):
                 node_value_string += str(round(node.value[i], node_precision))
                 if (i + 1) % n_vals_per_line == 0 and i != value_length - 1:
@@ -162,12 +168,20 @@ class DrawTree(object):
 
             if node.left_child is not None:
                 lst.append(
-                    DrawTree(node.left_child, self, depth + 1, number=1, **kwargs)
-                )
+                    DrawTree(
+                        node.left_child,
+                        self,
+                        depth + 1,
+                        number=1,
+                        **kwargs))
             if node.right_child is not None:
                 lst.append(
-                    DrawTree(node.right_child, self, depth + 1, number=2, **kwargs)
-                )
+                    DrawTree(
+                        node.right_child,
+                        self,
+                        depth + 1,
+                        number=2,
+                        **kwargs))
         self.children = lst
         self.parent = parent
         self.thread = None
