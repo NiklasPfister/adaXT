@@ -8,4 +8,5 @@ from .criteria import (
     PartialQuadratic,
     Criteria,
     MultiSquaredError,
+    PairwiseEuclideanDistance,
 )

@@ -463,6 +463,8 @@ cdef class MultiSquaredError(RegressionCriteria):
             double left_square_sum, right_square_sum
 
         for i in range(self.old_split, new_split):
+            idx = indices[i]
+            weight = self.sample_weight[idx]
             self.weight_left += weight
             self.weight_right -= weight
 
@@ -545,14 +547,11 @@ cdef class MultiSquaredError(RegressionCriteria):
         return square_dist
 
 
-# TODO: Rename PairwiseEuclideanDistance
-cdef class PairwiseDistance(RegressionCriteria):
+cdef class PairwiseEuclideanDistance(RegressionCriteria):
     def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
         super().__init__(X, Y, sample_weight)
-        # Initialize two empty arrays for storing the sum of each Y[:, i] in a
-        # split
-        self.left_indiv_dist = np.zeros((Y.shape[0], Y.shape[0]-1), dtype=np.float64)
-        self.right_indiv_dist = np.zeros((Y.shape[0], Y.shape[0]-1), dtype=np.float64)
+        # Right individual distances
+        self.right_indiv_dist = np.zeros((Y.shape[0]*Y.shape[0],), dtype=np.float64)
         self.Y_cols = Y.shape[1]
 
     cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
@@ -568,13 +567,14 @@ cdef class PairwiseDistance(RegressionCriteria):
 
     cdef double update_proxy(self, int[::1] indices, int new_split):
         cdef:
-            int i, j, idx_i, idx_j
+            int i, j, idx_i, idx_j, n_left
             int prev_n_right
             double tmp, weight_i, weight_j, square_sum
+        n_left = self.old_split
         for i in range(self.old_split, new_split):
             idx_i = indices[i]
             weight_i = self.sample_weight[idx_i]
-            for j in range(self.old_split):
+            for j in range(n_left):
                 idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
                 square_sum = self.__get_square_sum(
@@ -592,18 +592,20 @@ cdef class PairwiseDistance(RegressionCriteria):
             self.weight_left += weight_i
             self.weight_right -= weight_i
 
+            n_left = i
+
         # No proxy for EuclideanNorm, so calculate fully
         return (self.left_dist_sum * self.weight_left +
                 self.right_dist_sum * self.weight_right)
 
     cdef double proxy_improvement(self, int[::1] indices, int split_idx):
         cdef:
-            int i, j, idx_i, idx_j
+            int i, j, idx_i, idx_j, indiv_idx
             int n_obs = indices.shape[0]
             double weight_i, weight_j, tmp, square_sum
-            int indiv_idx = 0
 
         # reset the start idx for self.right_indiv_dist
+        indiv_idx = 0
         self.right_start_idx = indiv_idx
 
         self.weight_left = 0.0
@@ -611,12 +613,12 @@ cdef class PairwiseDistance(RegressionCriteria):
 
         # Create individual distances for right half, as we will be wanting to
         # subtract a point by removing its distance to all other nodes
-        self.right_indiv_dist = np.zeros(n_obs)
+        self.right_indiv_dist = np.zeros((n_obs*n_obs,), dtype=np.float64)
 
         # Calculate sum of each Y point
-        for i in range(split_idx):
+        for i in range(split_idx-1):
             idx_i = indices[i]
-            weight_i = self.sample_weight[i]
+            weight_i = self.sample_weight[idx_i]
             for j in range(i+1, n_obs):
                 idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
@@ -630,9 +632,9 @@ cdef class PairwiseDistance(RegressionCriteria):
 
             self.weight_left += weight_i
 
-        for i in range(split_idx, n_obs):
+        for i in range(split_idx, n_obs-1):
             idx_i = indices[i]
-            weight_i = self.sample_weight[i]
+            weight_i = self.sample_weight[idx_i]
             for j in range(i+1, n_obs):
                 idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
@@ -662,21 +664,23 @@ cdef class PairwiseDistance(RegressionCriteria):
             double dist_sum = 0.0
             int i, j, idx_i, idx_j
             int n_indices = indices.shape[0]
-            double weight_i, weight_j, square_sum
+            double weight_i, weight_j, square_sum, tot_weight
 
+        tot_weight = 0.0
         for i in range(n_indices-1):
             idx_i = indices[i]
             weight_i = self.sample_weight[idx_i]
             for j in range(i+1, n_indices):
-                idx_j = indices[idx_j]
+                idx_j = indices[j]
                 weight_j = self.sample_weight[idx_j]
                 square_sum = self.__get_square_sum(
                         self.Y[idx_i, :], weight_i,
                         self.Y[idx_j, :], weight_j
                     )
                 dist_sum += sqrt(square_sum)
+            tot_weight += weight_i
 
-        return dist_sum
+        return dist_sum / tot_weight
 
 # Partial linear criteria
 cdef class PartialLinear(RegressionCriteria):

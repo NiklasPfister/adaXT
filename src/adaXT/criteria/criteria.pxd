@@ -166,7 +166,7 @@ cdef class MultiSquaredError(RegressionCriteria):
     cpdef double impurity(self, int[::1] indices)
 
 
-cdef class PairwiseDistance(RegressionCriteria):
+cdef class PairwiseEuclideanDistance(RegressionCriteria):
     cdef:
         double left_dist_sum, right_dist_sum
         double weight_left, weight_right

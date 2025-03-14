@@ -8,4 +8,5 @@ from .criteria cimport (
     PartialLinear,
     PartialQuadratic,
     MultiSquaredError
+    PairwiseEuclideanDistance
 )
