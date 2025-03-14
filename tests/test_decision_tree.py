@@ -275,6 +275,7 @@ def test_entropy_multi():
 
 
 def test_multi_squared():
+    np.random.seed(2025)
     N = 500
     Y_M = 4
 
@@ -307,6 +308,7 @@ def test_multi_squared():
 
 
 def test_Pairwise():
+    np.random.seed(2025)
     N = 500
     Y_M = 4
 
