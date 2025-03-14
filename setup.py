@@ -29,7 +29,7 @@ USE_CYTHON = True
 DEBUG = False
 
 PROFILE = False
-ANNOTATE = True
+ANNOTATE = False
 
 # Make all pyx files for the decision_tree
 ext = ".pyx" if USE_CYTHON else ".cpp"
@@ -100,15 +100,6 @@ def run_build():
         from Cython.Compiler.Options import get_directive_defaults
 
         compiler_directives = get_directive_defaults()
-        compiler_directives.update(
-            {
-                "boundscheck": False,
-                "wraparound": False,
-                "cdivision": True,
-                "initializedcheck": False,
-                "nonecheck": False,
-            }
-        )
 
         if PROFILE:
             compiler_directives["profile"] = True
@@ -124,6 +115,27 @@ def run_build():
 
         if ANNOTATE:
             arg_dir["annotate"] = True
+
+        if DEBUG:
+            compiler_directives.update(
+                {
+                    "boundscheck": True,
+                    "wraparound": True,
+                    "cdivision": False,
+                    "initializedcheck": True,
+                    "nonecheck": True,
+                }
+            )
+        else:
+            compiler_directives.update(
+                {
+                    "boundscheck": False,
+                    "wraparound": False,
+                    "cdivision": True,
+                    "initializedcheck": False,
+                    "nonecheck": False,
+                }
+            )
 
         extensions = cythonize(extensions, **arg_dir)
     setup(
