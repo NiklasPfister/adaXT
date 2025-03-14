@@ -6,6 +6,7 @@ from adaXT.criteria import (
     PartialLinear,
     PartialQuadratic,
     MultiSquaredError,
+    PairwiseEuclideanDistance,
 )
 import numpy as np
 
@@ -291,6 +292,38 @@ def test_multi_squared():
     )
 
     tree = DecisionTree(tree_type="MultiRegression")
+    tree.fit(X, Y)
+
+    # Should only predict the values of the random normal
+    X_pred_1 = np.array([[0, 1] for _ in range(N // 2)])
+    X_pred_2 = np.array([[0, 2] for _ in range(N // 2)])
+    pred_1 = tree.predict(X_pred_1)
+    pred_2 = tree.predict(X_pred_2)
+    assert np.all(pred_1 == pred_1[0]), "All elements of pred_1 are not equal"
+    assert np.all(pred_2 == pred_2[0]), "All elements of pred_1 are not equal"
+
+    assert abs(np.mean(pred_1) - 0.0) < 1, "Mean of pred_1 is not approximately 0.0"
+    assert abs(np.mean(pred_2) - 10.0) < 1, "Mean of pred_2 is not approximately 10.0"
+
+
+def test_Pairwise():
+    N = 500
+    Y_M = 4
+
+    # Create clear split on the uneven numbers
+    X = np.array([[0, 1] if x % 2 == 0 else [0, 2] for x in range(N)])
+    # All the Y values for the even numbers gather around 0.0, and all the
+    # values for the uneven numbers gather around 10
+    Y = np.array(
+        [
+            np.random.normal(0.0, 1.0, Y_M)
+            if x % 2 == 0
+            else np.random.normal(10.0, 1.0, Y_M)
+            for x in range(N)
+        ]
+    )
+
+    tree = DecisionTree(tree_type="MultiRegression", criteria=PairwiseEuclideanDistance)
     tree.fit(X, Y)
 
     # Should only predict the values of the random normal
