@@ -7,4 +7,6 @@ from .criteria import (
     PartialLinear,
     PartialQuadratic,
     Criteria,
+    MultiSquaredError,
+    PairwiseEuclideanDistance,
 )

@@ -4,6 +4,7 @@ from libc.string cimport memset
 import numpy as np
 from .crit_helpers cimport weighted_mean
 
+from libc.math cimport sqrt
 
 # Abstract Criteria class
 cdef class Criteria:
@@ -395,7 +396,6 @@ cdef class SquaredError(RegressionCriteria):
             int i, idx
             int n_obs = indices.shape[0]
             double y_val, weight
-            # More efficient data excess
 
         self.left_sum = 0.0
         self.right_sum = 0.0
@@ -416,13 +416,15 @@ cdef class SquaredError(RegressionCriteria):
             self.right_sum += y_val
             self.weight_right += weight
 
+        # Instead of calculating the squared error fully, we calculate
+        # - (1/n_L sum_{i in left} y_i^2  + 1/n_R sum_{i in right} y_i^2)
         return -((self.left_sum*self.left_sum) / self.weight_left +
                  (self.right_sum*self.right_sum) / self.weight_right)
 
     cpdef double impurity(self, int[::1] indices):
         return self.__squared_error(indices)
 
-    cdef double __squared_error(self, int[::1] indices):
+    cdef inline double __squared_error(self, int[::1] indices):
         cdef:
             double cur_sum = 0.0
             double mu = weighted_mean(self.Y[:, 0], indices, self.sample_weight)  # set mu to be the mean of the dataset
@@ -439,10 +441,246 @@ cdef class SquaredError(RegressionCriteria):
         square_err = cur_sum/obs_weight - mu*mu
         return square_err
 
-cdef class EuclideanNorm(RegressionCriteria):
-    pass
+cdef class MultiSquaredError(RegressionCriteria):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+        super().__init__(X, Y, sample_weight)
+        self.Y_cols = Y.shape[1]
+        self.left_sum = <double*> malloc(sizeof(double) * self.Y_cols)
+        self.right_sum = <double*> malloc(sizeof(double) * self.Y_cols)
 
-# TODO: Euclidean norm Criteria.
+    def __dealloc__(self):
+        free(self.left_sum)
+        free(self.right_sum)
+
+    cdef inline void __reset_sums(self):
+        memset(self.left_sum, 0, self.Y_cols*sizeof(double))
+        memset(self.right_sum, 0, self.Y_cols*sizeof(double))
+
+    cdef double update_proxy(self, int[::1] indices, int new_split):
+        cdef:
+            int i, idx, j
+            double y_val, weight
+            double left_square_sum, right_square_sum
+
+        for i in range(self.old_split, new_split):
+            idx = indices[i]
+            weight = self.sample_weight[idx]
+            self.weight_left += weight
+            self.weight_right -= weight
+
+        left_square_sum = 0.0
+        right_square_sum = 0.0
+
+        for j in range(self.Y_cols):
+            for i in range(self.old_split, new_split):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.left_sum[j] += y_val
+                self.right_sum[j] -= y_val
+            left_square_sum += self.left_sum[j]*self.left_sum[j]
+            right_square_sum += self.right_sum[j]*self.right_sum[j]
+
+        return -(left_square_sum / self.weight_left +
+                 right_square_sum / self.weight_right)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx):
+        cdef:
+            int i, idx, j
+            int n_obs = indices.shape[0]
+            double y_val, weight, left_square_sum, right_square_sum
+
+        self.__reset_sums()
+        self.weight_left = 0.0
+        self.weight_right = 0.0
+        left_square_sum = 0.0
+        right_square_sum = 0.0
+
+        for i in range(split_idx):
+            idx = indices[i]
+            self.weight_left += self.sample_weight[idx]
+
+        for j in range(self.Y_cols):
+            for i in range(split_idx):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.left_sum[j] += y_val
+            left_square_sum += self.left_sum[j]*self.left_sum[j]
+
+        for i in range(split_idx, n_obs):
+            idx = indices[i]
+            self.weight_right += self.sample_weight[idx]
+
+        for j in range(self.Y_cols):
+            for i in range(split_idx, n_obs):
+                idx = indices[i]
+                weight = self.sample_weight[idx]
+                y_val = self.Y[idx, j]*weight
+                self.right_sum[j] += y_val
+            right_square_sum += self.left_sum[j]*self.left_sum[j]
+
+        # Instead of calculating the squared error fully, we calculate
+        # - (1/n_L sum_{i in left} y_i^2  + 1/n_R sum_{i in right} y_i^2)
+        return -(left_square_sum / self.weight_left +
+                 right_square_sum / self.weight_right)
+
+    cpdef double impurity(self, int[::1] indices):
+        cdef:
+            double cur_sum = 0.0
+            double mu = 0.0
+            double square_dist, tmp
+            double obs_weight = 0.0
+            int i, p, j
+            int n_indices = indices.shape[0]
+        for i in range(n_indices):
+            p = indices[i]
+            obs_weight += self.sample_weight[p]
+
+        for j in range(self.Y_cols):
+            mu = weighted_mean(self.Y[:, j], indices, self.sample_weight)
+            for i in range(n_indices):
+                p = indices[i]
+                tmp = self.Y[p, j] * self.sample_weight[p]
+                cur_sum += tmp*tmp
+            square_dist += cur_sum / obs_weight - mu*mu
+        return square_dist
+
+
+cdef class PairwiseEuclideanDistance(RegressionCriteria):
+    def __init__(self, double[:, ::1] X, double[:, ::1] Y, double[::1] sample_weight):
+        super().__init__(X, Y, sample_weight)
+        # Right individual distances
+        self.right_indiv_dist = np.zeros((Y.shape[0]*Y.shape[0],), dtype=np.float64)
+        self.Y_cols = Y.shape[1]
+
+    cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
+                                        double[::1] arr2, val2):
+        cdef:
+            int i
+            double tmp
+            double square_sum = 0.0
+        for i in range(self.Y_cols):
+            tmp = arr1[i] * val1 - arr2[i] * val2
+            square_sum += tmp*tmp
+        return square_sum
+
+    cdef double update_proxy(self, int[::1] indices, int new_split):
+        cdef:
+            int i, j, idx_i, idx_j, n_left
+            int prev_n_right
+            double tmp, weight_i, weight_j, square_sum
+        n_left = self.old_split
+        for i in range(self.old_split, new_split):
+            idx_i = indices[i]
+            weight_i = self.sample_weight[idx_i]
+            for j in range(n_left):
+                idx_j = indices[j]
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
+                    )
+                tmp = sqrt(square_sum)
+                self.left_dist_sum += tmp
+
+            prev_n_right = self.obs - i
+            for j in range(self.right_start_idx, self.right_start_idx+prev_n_right):
+                self.right_dist_sum -= self.right_indiv_dist[j]
+            self.right_start_idx += prev_n_right
+
+            self.weight_left += weight_i
+            self.weight_right -= weight_i
+
+            n_left = i
+
+        # No proxy for EuclideanNorm, so calculate fully
+        return (self.left_dist_sum * self.weight_left +
+                self.right_dist_sum * self.weight_right)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx):
+        cdef:
+            int i, j, idx_i, idx_j, indiv_idx
+            int n_obs = indices.shape[0]
+            double weight_i, weight_j, tmp, square_sum
+
+        # reset the start idx for self.right_indiv_dist
+        indiv_idx = 0
+        self.right_start_idx = indiv_idx
+
+        self.weight_left = 0.0
+        self.weight_right = 0.0
+
+        # Create individual distances for right half, as we will be wanting to
+        # subtract a point by removing its distance to all other nodes
+        self.right_indiv_dist = np.zeros((n_obs*n_obs,), dtype=np.float64)
+
+        # Calculate sum of each Y point
+        for i in range(split_idx-1):
+            idx_i = indices[i]
+            weight_i = self.sample_weight[idx_i]
+            for j in range(i+1, n_obs):
+                idx_j = indices[j]
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
+                    )
+                tmp = sqrt(square_sum)
+                # i and j remain the same for current node checking
+                self.left_dist_sum += tmp
+
+            self.weight_left += weight_i
+
+        for i in range(split_idx, n_obs-1):
+            idx_i = indices[i]
+            weight_i = self.sample_weight[idx_i]
+            for j in range(i+1, n_obs):
+                idx_j = indices[j]
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
+                    )
+                tmp = sqrt(square_sum)
+                self.right_dist_sum += tmp
+                # Just a list of all distances, should start at index 0.
+                # Therefore, we remove split_idx, and 1 as the distance from idx
+                # 0 to 1 is the first distance.
+                self.right_indiv_dist[indiv_idx] = tmp
+                indiv_idx += 1
+
+            self.weight_right += weight_i
+
+        # No proxy for EuclideanNorm, so calculate fully
+        return (self.left_dist_sum * self.weight_left +
+                self.right_dist_sum * self.weight_right)
+
+    cpdef double impurity(self, int[::1] indices):
+        return self.__euclidean_norm(indices)
+
+    cdef inline double __euclidean_norm(self, int[::1] indices):
+        cdef:
+            double dist_sum = 0.0
+            int i, j, idx_i, idx_j
+            int n_indices = indices.shape[0]
+            double weight_i, weight_j, square_sum, tot_weight
+
+        tot_weight = 0.0
+        for i in range(n_indices-1):
+            idx_i = indices[i]
+            weight_i = self.sample_weight[idx_i]
+            for j in range(i+1, n_indices):
+                idx_j = indices[j]
+                weight_j = self.sample_weight[idx_j]
+                square_sum = self.__get_square_sum(
+                        self.Y[idx_i, :], weight_i,
+                        self.Y[idx_j, :], weight_j
+                    )
+                dist_sum += sqrt(square_sum)
+            tot_weight += weight_i
+
+        return dist_sum / tot_weight
 
 # Partial linear criteria
 cdef class PartialLinear(RegressionCriteria):
