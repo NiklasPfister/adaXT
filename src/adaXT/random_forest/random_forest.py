@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 from numpy.random import Generator, default_rng
 
+from adaXT import parallel
 from adaXT.parallel import ParallelModel, shared_numpy_array
 
 from numpy.typing import ArrayLike
@@ -170,28 +171,22 @@ def build_single_tree(
 def oob_calculation(
     idx: np.int64,
     trees: list,
-    X_old: np.ndarray,
-    Y_old: np.ndarray,
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
     parallel: ParallelModel,
     predictor: type[Predictor],
 ) -> tuple:
-    X_pred = np.expand_dims(X_old[idx], axis=0)
+    X_pred = np.expand_dims(X_train[idx], axis=0)
     Y_pred = predictor.forest_predict(
-        X_old=X_old,
-        Y_old=Y_old,
-        X_new=X_pred,
+        X_train=X_train,
+        Y_train=Y_train,
+        X_pred=X_pred,
         trees=trees,
+        n_jobs=1,
         parallel=parallel,
-        __no_parallel=True,
     ).astype(np.float64)
-    Y_true = Y_old[idx]
+    Y_true = Y_train[idx]
     return (Y_pred, Y_true)
-
-
-def predict_single_tree(
-    tree: DecisionTree, predict_values: np.ndarray, **kwargs
-) -> np.ndarray:
-    return tree.predict(predict_values, **kwargs)
 
 
 class RandomForest(BaseModel):
@@ -207,9 +202,9 @@ class RandomForest(BaseModel):
         (currently "Regression", "Classification", "Quantile" or "Gradient").
     n_estimators : int
         The number of trees in the random forest.
-    n_jobs : int
-        The number of processes used to fit, and predict for the forest, -1
-        uses all available proccesors.
+    n_jobs : int | tuple[int, int]
+        The number of jobs used to fit and predict. If tuple, then different
+        between the two
     sampling: str | None
         Either resampling, honest_tree, honest_forest or None.
     sampling_args: dict | None
@@ -247,7 +242,7 @@ class RandomForest(BaseModel):
         self,
         forest_type: str | None,
         n_estimators: int = 100,
-        n_jobs: int = -1,
+        n_jobs: int | tuple[int, int] = 1,
         sampling: str | None = "resampling",
         sampling_args: dict | None = None,
         max_features: int | float | Literal["sqrt", "log2"] | None = None,
@@ -337,6 +332,7 @@ class RandomForest(BaseModel):
         self.predictor = predictor
 
         self.n_jobs = n_jobs
+
         self.seed = seed
 
     def __get_random_generator(self, seed) -> Generator:
@@ -421,6 +417,7 @@ class RandomForest(BaseModel):
             map_input=self.parent_rng.spawn(self.n_estimators),
             sampling_args=self.sampling_args,
             X_n_rows=self.X_n_rows,
+            n_jobs=self.n_jobs_fit,
             sampling=self.sampling,
         )
         self.fitting_indices, self.prediction_indices, self.out_of_bag_indices = zip(
@@ -444,6 +441,7 @@ class RandomForest(BaseModel):
             max_features=self.max_features,
             skip_check_input=True,
             sample_weight=self.sample_weight,
+            n_jobs=self.n_jobs_fit,
         )
 
     def fit(self, X: ArrayLike, Y: ArrayLike,
@@ -471,7 +469,7 @@ class RandomForest(BaseModel):
             self.leaf_builder,
             self.predictor,
         )
-        self.parallel = ParallelModel(n_jobs=self.n_jobs)
+        self.parallel = ParallelModel()
         self.parent_rng = self.__get_random_generator(self.seed)
 
         # Check input
@@ -483,6 +481,16 @@ class RandomForest(BaseModel):
             self.max_features, X.shape[0])
         self.sample_weight = self._check_sample_weight(sample_weight)
         self.sampling_args = self.__get_sampling_parameter(self.sampling_args)
+
+        # Check n_jobs
+        if isinstance(self.n_jobs, tuple):
+            self.n_jobs_fit = self.n_jobs[0]
+            self.n_jobs_pred = self.n_jobs[1]
+        elif isinstance(self.n_jobs, int):
+            self.n_jobs_fit = self.n_jobs
+            self.n_jobs_pred = self.n_jobs
+        else:
+            raise ValueError("n_jobs is neither a tuple or int")
 
         # Fit trees
         self.__build_trees()
@@ -508,10 +516,11 @@ class RandomForest(BaseModel):
                     *self.parallel.async_starmap(
                         oob_calculation,
                         map_input=tree_dict.items(),
-                        X_old=self.X,
-                        Y_old=self.Y,
+                        X_train=self.X,
+                        Y_train=self.Y,
                         parallel=self.parallel,
                         predictor=self.predictor,
+                        n_jobs=self.n_jobs_pred,
                     )
                 )
             )
@@ -570,11 +579,12 @@ class RandomForest(BaseModel):
 
         predict_value = shared_numpy_array(X)
         prediction = self.predictor.forest_predict(
-            X_old=self.X,
-            Y_old=self.Y,
-            X_new=predict_value,
+            X_train=self.X,
+            Y_train=self.Y,
+            X_pred=predict_value,
             trees=self.trees,
             parallel=self.parallel,
+            n_jobs=self.n_jobs_pred,
             **kwargs,
         )
         return prediction
@@ -628,6 +638,7 @@ class RandomForest(BaseModel):
             size_X0=size_0,
             size_X1=self.X_n_rows,
             scaling=scaling,
+            n_jobs=self.n_jobs_pred,
         )
 
         if scale:
@@ -669,5 +680,6 @@ class RandomForest(BaseModel):
             size_X0=size_0,
             size_X1=size_1,
             scaling="similarity",
+            n_jobs=self.n_jobs_pred,
         )
         return np.mean(weight_list, axis=0)

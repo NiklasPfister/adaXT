@@ -1,3 +1,4 @@
+from multiprocessing.dummy import Value
 from typing import Type, Literal
 from numpy.typing import ArrayLike
 import numpy as np
@@ -237,7 +238,9 @@ class DecisionTree(BaseModel):
             (N, K) numpy array with the prediction, where K depends on the
             Prediction class and is generally 1
         """
-        if self.predictor_instance is None:
+        try:
+            self._tree
+        except AttributeError:
             raise AttributeError(
                 "The tree has not been fitted before trying to call predict"
             )

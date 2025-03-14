@@ -61,7 +61,7 @@ cdef class ClassificationCriteria(Criteria):
     cdef void reset_weight_list(self, double* class_occurences)
 
 
-cdef class Gini_index(ClassificationCriteria):
+cdef class GiniIndex(ClassificationCriteria):
 
     cdef void reset_weight_list(self, double* class_occurences)
 
@@ -123,7 +123,7 @@ cdef class Entropy(ClassificationCriteria):
 cdef class RegressionCriteria(Criteria):
     pass
 
-cdef class Squared_error(RegressionCriteria):
+cdef class SquaredError(RegressionCriteria):
     cdef:
         double left_sum
         double right_sum
@@ -135,7 +135,7 @@ cdef class Squared_error(RegressionCriteria):
 
     cpdef double impurity(self, int[::1] indices)
 
-    cdef double __squared_error(self, int[::1] indices)
+    cdef inline double __squared_error(self, int[::1] indices)
     """
     Function used to calculate the squared error of y[indices]
     ----------
@@ -150,9 +150,36 @@ cdef class Squared_error(RegressionCriteria):
     double
         The variance of the response y
     """
+cdef class MultiSquaredError(RegressionCriteria):
+    cdef:
+        double* left_sum
+        double* right_sum
+        double weight_left, weight_right
+        int Y_cols
+
+    cdef inline void __reset_sums(self)
+
+    cdef double update_proxy(self, int[::1] indices, int new_split)
+
+    cdef double proxy_improvement(self, int[::1] indices, int split_idx)
+
+    cpdef double impurity(self, int[::1] indices)
 
 
-cdef class Partial_linear(RegressionCriteria):
+cdef class PairwiseEuclideanDistance(RegressionCriteria):
+    cdef:
+        double left_dist_sum, right_dist_sum
+        double weight_left, weight_right
+        double[::1] right_indiv_dist
+        int right_start_idx
+        int Y_cols
+
+    cdef inline double __euclidean_norm(self, int[::1] indices)
+
+    cdef inline double __get_square_sum(self, double[::1] arr1, double val1,
+                                        double[::1] arr2, val2)
+
+cdef class PartialLinear(RegressionCriteria):
 
     cdef (double, double) __custom_mean(self, int[:] indices)
 
@@ -192,7 +219,7 @@ cdef class Partial_linear(RegressionCriteria):
     """
 
 
-cdef class Partial_quadratic(RegressionCriteria):
+cdef class PartialQuadratic(RegressionCriteria):
 
     cdef (double, double, double) __custom_mean(self, int[:] indices)
 

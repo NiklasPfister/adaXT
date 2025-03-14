@@ -10,7 +10,7 @@ import sys
 
 def run_classification_tree(X, Y, criteria):
     sk_time = 0
-    if criteria.__name__ == "Gini_index":
+    if criteria.__name__ == "GiniIndex":
         tree = DecisionTreeClassifier(criteria="gini")
         st = time.time()
         tree.fit(X, Y)
@@ -23,7 +23,7 @@ def run_classification_tree(X, Y, criteria):
         et = time.time()
         sk_time = et - st
     else:
-        raise Exception("Tree neither Entropy nor Gini_index")
+        raise Exception("Tree neither Entropy nor GiniIndex")
 
     tree = DecisionTree("Classification", criteria=criteria)
     st = time.time()
@@ -36,14 +36,14 @@ def run_classification_tree(X, Y, criteria):
 
 def run_regression_tree(X, Y, criteria):
     sk_time = 0
-    if criteria.__name__ == "Squared_error":
+    if criteria.__name__ == "SquaredError":
         tree = DecisionTreeRegressor(criteria="squared_error")
         st = time.time()
         tree.fit(X, Y)
         et = time.time()
         sk_time = et - st
     else:
-        raise Exception("Tree not a Squared_error")
+        raise Exception("Tree not a SquaredError")
 
     tree = DecisionTree("Regression", criteria=criteria)
     st = time.time()
@@ -61,13 +61,13 @@ def run_num_iterations(n, m, x=[0, 100], y=[0, 5], num_trees=10):
     run_times = np.empty(shape=(num_trees, 6))
     for i in range(num_trees):
         gini_diff, gini_time = run_classification_tree(
-            X, y_classification, crit.Gini_index
+            X, y_classification, crit.GiniIndex
         )
         entropy_diff, entropy_time = run_classification_tree(
             X, y_classification, crit.Entropy
         )
         squared_diff, square_time = run_regression_tree(
-            X, y_regression, crit.Squared_error
+            X, y_regression, crit.SquaredError
         )
         run_times[i] = [
             gini_diff,

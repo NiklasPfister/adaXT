@@ -1,8 +1,12 @@
 from .criteria import (
-    Gini_index,
-    Squared_error,
+    ClassificationCriteria,
+    RegressionCriteria,
+    GiniIndex,
+    SquaredError,
     Entropy,
-    Partial_linear,
-    Partial_quadratic,
+    PartialLinear,
+    PartialQuadratic,
     Criteria,
+    MultiSquaredError,
+    PairwiseEuclideanDistance,
 )

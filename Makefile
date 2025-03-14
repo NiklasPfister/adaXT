@@ -13,3 +13,13 @@ clean:
 
 lint:
 	cython-lint src/* --max-line-length=127
+
+mkdocs_install:
+	pip install mkdocs mkdocs-material mkdocstrings 'mkdocstrings[python, cython]' mkdocs-autorefs pymdown-extensions
+
+mkdocs: mkdocs_install
+	mkdocs serve
+
+
+test_pypi:
+	pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple adaXT

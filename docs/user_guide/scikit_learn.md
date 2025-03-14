@@ -18,7 +18,7 @@ there is the initial setup:
 
 ```python
 from adaXT.decision_tree import DecisionTree
-from adaXT.criteria import Gini_index, Entropy
+from adaXT.criteria import GiniIndex, Entropy
 from sklearn.model_selection import GridSearchCV
 
 from sklearn.tree import DecisionTreeClassifier
@@ -36,14 +36,14 @@ param_grid = {
     "min_samples_split": [2, 5, 10],
 }
 
-param_grid_ada = param_grid | {"criteria": [Gini_index, Entropy]}
+param_grid_ada = param_grid | {"criteria": [GiniIndex, Entropy]}
 param_grid_sk = param_grid | {"criterion": ["gini", "entropy"]}
 ```
 Here, we import the necessary components and setup the parameter grids of the
 two decision trees. One small difference to be aware of is that the parameter names
 and format are different in some cases, e.g., in sklearn it is called criterion and
 takes a string as input, while in adaXT it is called criteria and takes a criteria class
-such as Gini_index, Entropy or perhaps your own [implementation](creatingCriteria.md).
+such as GiniIndex, Entropy or perhaps your own [implementation](creatingCriteria.md).
 Next, we define and fit the GridSearchCV instance.
 
 ```python

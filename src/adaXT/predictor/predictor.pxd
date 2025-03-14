@@ -1,31 +1,33 @@
 cimport numpy as cnp
+from ..decision_tree cimport Node
 
 cdef class Predictor():
     cdef:
-        double[:, ::1] X
-        double[:, ::1] Y
+        # Must be ndarray such that it and all children can be pickled
+        cnp.ndarray X
+        cnp.ndarray Y
         int n_features
-        object root
+        Node root
 
-    cpdef dict predict_leaf(self, cnp.ndarray X)
+    cpdef dict predict_leaf(self, double[:, ::1] X)
 
 
 cdef class PredictorClassification(Predictor):
     cdef:
-        readonly double[::1] classes
+        readonly cnp.ndarray classes
 
-    cdef int __find_max_index(self, double[::1] lst)
+    cdef int __find_max_index(self, float[::1] lst) noexcept nogil
 
-    cdef cnp.ndarray __predict_proba(self, cnp.ndarray X)
+    cdef cnp.ndarray __predict_proba(self, double[:, ::1] X)
 
-    cdef cnp.ndarray __predict(self, cnp.ndarray X)
+    cdef inline double[::1] __predict(self, double[:, ::1] X) noexcept
 
 
 cdef class PredictorRegression(Predictor):
     pass
 
 
-cdef class PredictorLocalPolynomial(PredictorRegression):
+cdef class PredictorLocalPolynomial(Predictor):
     pass
 
 

@@ -47,11 +47,15 @@ should be computed. To access the feature and response you can make use of
 `self.y[indices]` are the feature and response samples for which the impurity
 needs to be computed. With this in place you should be able to implement almost
 any criteria function you can imagine. Keep in mind that the `impurity` method
-is extremely often (approximately $n\log(n)$ times). Therefore you should invest
-a bit of time in optimizing the function in order to avoid long fitting times.
+is used often (approximately $n\log(n)$ times). Therefore you should invest a
+bit of time in optimizing the function in order to avoid long fitting times.
 Further computational speed-ups can be achieved by implementing
 `proxy_improvement` and `update_proxy` methods in the criteria class. If these
 are not explicitly defined the code defaults to using the `impurity` method.
+Although we do not provide in depth examples of those functionalities here, feel
+free to look at
+[criteria.pyx](https://github.com/NiklasPfister/adaXT/blob/main/src/adaXT/criteria/criteria.pyx)
+where the default criteria make use of both.
 
 Once you have finished defining your critera class and saved the .pyx file, you
 can compile the Cython code and use it as part of adaXT.
@@ -135,12 +139,12 @@ tree = DecisionTree("Regression", criteria=my_custom_critera.My_custom_criteria,
 tree.fit(X, Y)
 ```
 
-We now go over a detailed example in which we construct the `Partial_linear`
+We now go over a detailed example in which we construct the `PartialLinear`
 criteria.
 
-## A detailed example: `Partial_linear`
+## A detailed example: `PartialLinear`
 
-The general idea of the `Partial_linear` criteria is to fit a linear function on
+The general idea of the `PartialLinear` criteria is to fit a linear function on
 the first feature with the $Y$ value as the response, that is,
 
 $$
@@ -166,7 +170,7 @@ and start with the following lines:
 ```python
 from adaXT.criteria cimport Criteria
 
-cdef class Partial_linear(Criteria):
+cdef class PartialLinear(Criteria):
 ```
 
 ### Calculating the mean
@@ -312,7 +316,7 @@ X = np.random.uniform(0, 100, (n, m))
 Y = np.random.uniform(0, 10, n)
 
 # Initialize and fit tree
-tree = DecisionTree("Regression", testCrit.Partial_linear, max_depth=3)
+tree = DecisionTree("Regression", testCrit.PartialLinear, max_depth=3)
 tree.fit(X, Y)
 
 # Plot the tree
@@ -320,7 +324,7 @@ plot_tree(tree)
 plt.show()
 ```
 
-This creates a regression tree with the newly created custom `Partial_linear`
+This creates a regression tree with the newly created custom `PartialLinear`
 criteria class, specifies the `max_depth` to be 3 and then plots the tree using
 both the  
 [plot_tree](../api_docs/tree_utils.md#adaXT.decision_tree.tree_utils.plot_tree) based

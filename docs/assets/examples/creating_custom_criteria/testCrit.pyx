@@ -1,6 +1,6 @@
 from adaXT.criteria cimport Criteria
 
-cdef class Partial_linear(Criteria):
+cdef class PartialLinear(Criteria):
 
     # Custom mean function, such that we don't have to loop through twice.
     cdef (double, double) custom_mean(self, int[::1] indices):

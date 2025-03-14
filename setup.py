@@ -4,7 +4,7 @@ from setuptools import setup, Extension, find_packages
 import os
 
 NAME = "adaXT"
-VERSION = "1.4.0"
+VERSION = "1.5.0"
 DESCRIPTION = "A Python package for tree-based regression and classification"
 PROJECT_URLS = {
     "Documentation": "https://NiklasPfister.github.io/adaXT/",
@@ -29,6 +29,7 @@ USE_CYTHON = True
 DEBUG = False
 
 PROFILE = False
+ANNOTATE = False
 
 # Make all pyx files for the decision_tree
 ext = ".pyx" if USE_CYTHON else ".cpp"
@@ -99,29 +100,44 @@ def run_build():
         from Cython.Compiler.Options import get_directive_defaults
 
         compiler_directives = get_directive_defaults()
-        compiler_directives.update(
-            {
-                "boundscheck": False,
-                "wraparound": False,
-                "cdivision": True,
-                "initializedcheck": False,
-                "nonecheck": False,
-            }
-        )
 
         if PROFILE:
             compiler_directives["profile"] = True
             compiler_directives["linetrace"] = True
             compiler_directives["binding"] = True
 
-        extensions = cythonize(
-            extensions,
-            gdb_debug=False,
-            annotate=True,
-            language_level="3",
-            compiler_directives=compiler_directives,
-            verbose=True,
-        )
+        arg_dir = {
+            "gdb_debug": False,
+            "language_level": "3",
+            "compiler_directives": compiler_directives,
+            "verbose": True,
+        }
+
+        if ANNOTATE:
+            arg_dir["annotate"] = True
+
+        if DEBUG:
+            compiler_directives.update(
+                {
+                    "boundscheck": True,
+                    "wraparound": True,
+                    "cdivision": False,
+                    "initializedcheck": True,
+                    "nonecheck": True,
+                }
+            )
+        else:
+            compiler_directives.update(
+                {
+                    "boundscheck": False,
+                    "wraparound": False,
+                    "cdivision": True,
+                    "initializedcheck": False,
+                    "nonecheck": False,
+                }
+            )
+
+        extensions = cythonize(extensions, **arg_dir)
     setup(
         name=NAME,
         version=VERSION,

@@ -15,7 +15,7 @@ example below.
 import numpy as np
 import matplotlib.pyplot as plt
 from adaXT.random_forest import RandomForest
-from adaXT.criteria import Partial_linear
+from adaXT.criteria import PartialLinear
 from adaXT.leaf_builder import LeafBuilderPartialLinear
 from adaXT.predictor import PredictorLocalPolynomial
 
@@ -28,7 +28,7 @@ Xtest = np.linspace(-1, 1, 50).reshape(-1, 1)
 # Fit a regular regression forest and a regression forest with linear splits
 rf = RandomForest("Regression", min_samples_leaf=30)
 rf_lin = RandomForest("Regression",
-                      criteria=Partial_linear,
+                      criteria=PartialLinear,
                       leaf_builder=LeafBuilderPartialLinear,
                       predictor=PredictorLocalPolynomial,
                       min_samples_leaf=30)
@@ -44,8 +44,8 @@ plt.show()
 ```
 
 In this example, we fit a regular regression forest (which uses the
-[Squared_error](../api_docs/Criteria.md)) and a regression forest that uses the
-[Partial_linear](../api_docs/Criteria.md) splitting criteria and predicts a
+[SquaredError](../api_docs/Criteria.md)) and a regression forest that uses the
+[PartialLinear](../api_docs/Criteria.md) splitting criteria and predicts a
 linear function in each leaf. As can be seen when running this example, the
 forest with the linear splits is able to produce a better fit when both forests
 are grown similarly deep.
