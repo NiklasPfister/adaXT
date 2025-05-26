@@ -140,6 +140,7 @@ def run_build():
         extensions = cythonize(extensions, **arg_dir)
     setup(
         name=NAME,
+        license="BSD-3-clause",
         version=VERSION,
         description=DESCRIPTION,
         long_description=LONG_DESCRIPTION,
@@ -160,7 +161,6 @@ def run_build():
         classifiers=[
             "Programming Language :: Python :: 3",
             "Intended Audience :: Science/Research",
-            "License :: OSI Approved :: BSD License",
             "Operating System :: OS Independent",
         ],
         extras_require=extras,
