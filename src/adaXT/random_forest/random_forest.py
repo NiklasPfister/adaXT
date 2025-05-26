@@ -356,11 +356,11 @@ class RandomForest(BaseModel):
                 sampling_args["split"] = np.min(
                     [int(0.5 * self.X_n_rows), self.X_n_rows - 1]
                 )
-            elif isinstance(sampling_args["size"], float):
+            elif isinstance(sampling_args["split"], float):
                 sampling_args["split"] = np.min(
                     [int(sampling_args["split"] * self.X_n_rows), self.X_n_rows - 1]
                 )
-            elif not isinstance(sampling_args["size"], int):
+            elif not isinstance(sampling_args["split"], (int, np.integer)):
                 raise ValueError(
                     "The provided sampling_args['split'] is not an integer or float as required."
                 )
@@ -370,7 +370,7 @@ class RandomForest(BaseModel):
                 sampling_args["size"] = int(
                     sampling_args["size"] * sampling_args["split"]
                 )
-            elif not isinstance(sampling_args["size"], int):
+            elif not isinstance(sampling_args["size"], (np.integer, int)):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
                 )
