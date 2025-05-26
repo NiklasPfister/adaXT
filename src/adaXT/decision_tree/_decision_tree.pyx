@@ -44,9 +44,7 @@ cdef class refit_object(Node):
     def add_idx(self, idx: int) -> None:
         self.list_idx.append(idx)
 
-
-@cython.auto_pickle(True)
-cdef class _DecisionTree():
+cdef class _DecisionTree:
     cdef public:
         object criteria
         object splitter
@@ -342,6 +340,10 @@ cdef class _DecisionTree():
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
+
+        # Make sure that predictor_instance points to the same root, if we have
+        # changed it
+        self.predictor_instance.root = self.root
 
 
 # From below here, it is the DepthTreeBuilder
