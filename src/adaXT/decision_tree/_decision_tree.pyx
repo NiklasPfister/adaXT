@@ -16,7 +16,6 @@ from .nodes import DecisionNode
 
 # for c level definitions
 
-cimport cython
 from .nodes cimport DecisionNode, Node
 
 from ..utils cimport dsum
@@ -27,7 +26,7 @@ cdef double EPSILON = np.finfo('double').eps
 cdef class refit_object(Node):
     cdef public:
         list list_idx
-        bint is_left
+        bool is_left
 
     def __init__(
             self,
