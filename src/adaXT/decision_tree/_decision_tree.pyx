@@ -3,7 +3,7 @@ import sys
 
 cimport numpy as cnp
 ctypedef cnp.float64_t DOUBLE_t
-ctypedef cnp.int64_t LONG_t
+ctypedef cnp.int32_t INT32_T
 from libcpp cimport bool
 
 
@@ -178,7 +178,7 @@ cdef class _DecisionTree:
     cdef void __fit_new_leaf_nodes(self, cnp.ndarray[DOUBLE_t, ndim=2] X,
                                    cnp.ndarray[DOUBLE_t, ndim=2] Y,
                                    cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
-                                   cnp.ndarray[LONG_t, ndim=1] sample_indices):
+                                   cnp.ndarray[INT32_T, ndim=1] sample_indices):
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -326,7 +326,7 @@ cdef class _DecisionTree:
                          cnp.ndarray[DOUBLE_t, ndim=2] X,
                          cnp.ndarray[DOUBLE_t, ndim=2] Y,
                          cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
-                         cnp.ndarray[LONG_t, ndim=1] sample_indices) -> None:
+                         cnp.ndarray[INT32_T, ndim=1] sample_indices) -> None:
 
         if self.root is None:
             raise ValueError("The tree has not been trained before trying to\

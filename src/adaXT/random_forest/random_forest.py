@@ -48,17 +48,17 @@ def get_sample_indices(
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
     """
+    indices = np.arange(0, X_n_rows, dtype=np.int32)
     if sampling == "resampling":
         ret = (
             gen.choice(
-                np.arange(0, X_n_rows),
+                indices,
                 size=sampling_args["size"],
                 replace=sampling_args["replace"],
             ),
             None,
         )
     elif sampling == "honest_tree":
-        indices = np.arange(0, X_n_rows)
         gen.shuffle(indices)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
@@ -80,7 +80,6 @@ def get_sample_indices(
         )
         ret = (fit_indices, pred_indices)
     elif sampling == "honest_forest":
-        indices = np.arange(0, X_n_rows)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
@@ -101,7 +100,7 @@ def get_sample_indices(
         )
         ret = (fit_indices, pred_indices)
     else:
-        ret = (np.arange(0, X_n_rows), None)
+        ret = (indices, None)
 
     if sampling_args["OOB"]:
         # Only fitting indices
