@@ -48,17 +48,17 @@ def get_sample_indices(
     Assumes there has been a previous call to self.__get_sample_indices on the
     RandomForest.
     """
+    indices = np.arange(0, X_n_rows, dtype=np.int32)
     if sampling == "resampling":
         ret = (
             gen.choice(
-                np.arange(0, X_n_rows),
+                indices,
                 size=sampling_args["size"],
                 replace=sampling_args["replace"],
             ),
             None,
         )
     elif sampling == "honest_tree":
-        indices = np.arange(0, X_n_rows)
         gen.shuffle(indices)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
@@ -81,7 +81,6 @@ def get_sample_indices(
         )
         ret = (fit_indices, pred_indices)
     elif sampling == "honest_forest":
-        indices = np.arange(0, X_n_rows)
         if sampling_args["replace"]:
             resample_size0 = sampling_args["size"]
             resample_size1 = sampling_args["size"]
@@ -103,7 +102,7 @@ def get_sample_indices(
         )
         ret = (fit_indices, pred_indices)
     else:
-        ret = (np.arange(0, X_n_rows), None)
+        ret = (indices, None)
 
     if sampling_args["OOB"]:
         # Only fitting indices
@@ -164,7 +163,6 @@ def build_single_tree(
             Y=Y,
             sample_weight=sample_weight,
             sample_indices=prediction_indices)
-
     return tree
 
 
@@ -366,11 +364,11 @@ class RandomForest(BaseModel):
                 sampling_args["split"] = np.min(
                     [int(0.5 * self.X_n_rows), self.X_n_rows - 1]
                 )
-            elif isinstance(sampling_args["size"], float):
+            elif isinstance(sampling_args["split"], float):
                 sampling_args["split"] = np.min(
                     [int(sampling_args["split"] * self.X_n_rows), self.X_n_rows - 1]
                 )
-            elif not isinstance(sampling_args["size"], int):
+            elif not isinstance(sampling_args["split"], (int, np.integer)):
                 raise ValueError(
                     "The provided sampling_args['split'] is not an integer or float as required."
                 )
@@ -380,7 +378,7 @@ class RandomForest(BaseModel):
                 sampling_args["size"] = int(
                     sampling_args["size"] * sampling_args["split"]
                 )
-            elif not isinstance(sampling_args["size"], int):
+            elif not isinstance(sampling_args["size"], (np.integer, int)):
                 raise ValueError(
                     "The provided sampling_args['size'] is not an integer or float as required."
                 )

@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "Cython", "numpy", "wheel"]
+requires = ["setuptools", "Cython==3.1.0", "numpy", "wheel"]
 
 [tool.cython-lint]
 max-line-length = 127

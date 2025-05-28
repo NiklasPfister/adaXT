@@ -7,7 +7,7 @@ cdef class Predictor():
         cnp.ndarray X
         cnp.ndarray Y
         int n_features
-        Node root
+    cdef public Node root
 
     cpdef dict predict_leaf(self, double[:, ::1] X)
 

@@ -3,7 +3,7 @@ import sys
 
 cimport numpy as cnp
 ctypedef cnp.float64_t DOUBLE_t
-ctypedef cnp.int64_t LONG_t
+ctypedef cnp.int32_t INT32_T
 from libcpp cimport bool
 
 
@@ -16,7 +16,6 @@ from .nodes import DecisionNode
 
 # for c level definitions
 
-cimport cython
 from .nodes cimport DecisionNode, Node
 
 from ..utils cimport dsum
@@ -27,7 +26,7 @@ cdef double EPSILON = np.finfo('double').eps
 cdef class refit_object(Node):
     cdef public:
         list list_idx
-        bint is_left
+        bool is_left
 
     def __init__(
             self,
@@ -44,9 +43,7 @@ cdef class refit_object(Node):
     def add_idx(self, idx: int) -> None:
         self.list_idx.append(idx)
 
-
-@cython.auto_pickle(True)
-cdef class _DecisionTree():
+cdef class _DecisionTree:
     cdef public:
         object criteria
         object splitter
@@ -180,7 +177,7 @@ cdef class _DecisionTree():
     cdef void __fit_new_leaf_nodes(self, cnp.ndarray[DOUBLE_t, ndim=2] X,
                                    cnp.ndarray[DOUBLE_t, ndim=2] Y,
                                    cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
-                                   cnp.ndarray[LONG_t, ndim=1] sample_indices):
+                                   cnp.ndarray[INT32_T, ndim=1] sample_indices):
         cdef:
             int idx, n_objs, depth, cur_split_idx
             double cur_threshold
@@ -328,7 +325,7 @@ cdef class _DecisionTree():
                          cnp.ndarray[DOUBLE_t, ndim=2] X,
                          cnp.ndarray[DOUBLE_t, ndim=2] Y,
                          cnp.ndarray[DOUBLE_t, ndim=1] sample_weight,
-                         cnp.ndarray[LONG_t, ndim=1] sample_indices) -> None:
+                         cnp.ndarray[INT32_T, ndim=1] sample_indices) -> None:
 
         if self.root is None:
             raise ValueError("The tree has not been trained before trying to\
@@ -342,6 +339,10 @@ cdef class _DecisionTree():
 
         # Now squash all the DecisionNodes not visited
         self.__squash_tree()
+
+        # Make sure that predictor_instance points to the same root, if we have
+        # changed it
+        self.predictor_instance.root = self.root
 
 
 # From below here, it is the DepthTreeBuilder
